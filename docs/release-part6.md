@@ -8,12 +8,12 @@ No tag, push, GitHub Release, account or deployment was created. The workflow is
 
 Set these GitHub **Actions repository variables** after choosing the names:
 
-| Variable           | Value                             |
-| ------------------ | --------------------------------- |
-| SITE_URL           | `https://streamlaughs.vercel.app` |
-| VITE_CROWD_API_URL | your actual HTTPS Worker origin   |
-| RELEASE_REPO_OWNER | `uzerkayat2004-gif`               |
-| RELEASE_REPO_NAME  | `streamlaughs`                    |
+| Variable           | Value                                                 |
+| ------------------ | ----------------------------------------------------- |
+| SITE_URL           | `https://streamlaughs.vercel.app`                     |
+| VITE_CROWD_API_URL | `https://streamlaughs-crowd.streamlaughs.workers.dev` |
+| RELEASE_REPO_OWNER | `uzerkayat2004-gif`                                   |
+| RELEASE_REPO_NAME  | `streamlaughs`                                        |
 
 SITE_URL and VITE_CROWD_API_URL may instead be repository secrets; variables take precedence. These are public origins, not credentials. Preflight requires owner/repo to match the actual GitHub repository, HTTPS origins without paths/queries/credentials/localhost, and a matching tag. Missing configuration fails before publication. Twitch credentials, SESSION_SECRET, WORKER_OWNER_KEY and the private extension PEM are **never needed in CI**; keep them only in Vercel/Cloudflare. GitHub supplies its ephemeral GITHUB_TOKEN to the release command. No personal token or private signing key is required.
 

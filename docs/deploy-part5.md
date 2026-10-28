@@ -1,6 +1,6 @@
 # Part 5 setup and deployment handoff
 
-**No account, repository, OAuth app, secret upload or deployment has been created by Codex.** This guide contains actions for you to perform. Local verification uses a localhost-only mock Twitch provider; real Twitch authorization and hosted provider behavior still need the manual checklist.
+**Historical Part 5 handoff.** The owner subsequently authorized GitHub/Vercel publication and Part 7 Cloudflare deployment. Live services are now connected; use [current production instructions](production-part7.md) and [verification](verification-part7.txt). The sequence below remains useful for a fresh installation, not for regenerating the existing production secrets. Physical Twitch/audio and a multi-person session still need the manual checklist.
 
 ## Names and public configuration
 

@@ -1,0 +1,46 @@
+StreamLaughs Part 7 verification — 2026-10-28 (Asia/Calcutta)
+
+Cloudflare login: PASS — npx wrangler login, owner approval in own Chrome.
+Cloudflare identity: PASS — npx wrangler whoami --json, output filtered to metadata.
+Deploy: PASS — streamlaughs-crowd, v1 SQLite Durable Object migration.
+Public URL: https://streamlaughs-crowd.streamlaughs.workers.dev
+Paid upgrades/card entry: NONE.
+Cloudflare secrets: HMAC_KEY + WORKER_OWNER_KEY set via wrangler secret put.
+Vercel production: WORKER_API_URL + matching sensitive WORKER_OWNER_KEY set; redeploy READY.
+Secret backup: Windows-user-encrypted DPAPI outside repository; no plaintext values in evidence.
+
+pnpm -r typecheck: PASS.
+pnpm -r test: PASS — 152 tests across all seven tested packages.
+  shared 21; eval 2; crowd-sim 2; release-tools 7; web 23; extension 84; api 13.
+pnpm build: PASS — API dry run, website production, Chrome, Edge.
+pnpm release:zip: PASS — both connected production ZIPs, manifest ID, origins, content guards, checksums.
+Fixed extension ID: fkocldgggcmhihelohiicoakcfomhepg, unchanged.
+Fresh Chrome ZIP extraction and headless Playwright load: PASS.
+Actual installed extension fetch/CORS/CSP to production Worker: PASS (HTTP 200).
+Actual installed extension watch-only WebSocket to production: PASS (few packet).
+No microphone/tab audio capture was started by this package verification.
+
+Live production probes:
+PASS /health: HTTP 200, ok=true, crowdEnabled=true.
+PASS extension origin: allowed with exact Access-Control-Allow-Origin.
+PASS website origin: allowed with exact Access-Control-Allow-Origin.
+PASS random origin: HTTP 403.
+PASS testTraffic=true session: HTTP 400; production simulator disabled.
+PASS website watch-only WebSocket: connects and receives few state.
+PASS two-contributor privacy floor: repeated complete packets contain only {state:"few"}; no words/counts exposed.
+PASS signed owner timeline: HTTP 200, empty minutes for isolated verification channel.
+PASS sub-floor history: no eligible aggregate saved.
+PASS unsigned timeline and different-channel owner token: HTTP 403.
+
+Existing authenticated Chrome dashboard, after owner opened the exact /dashboard page:
+PASS live: a few here.
+PASS crowd setup-pending state absent.
+PASS past streams: successful empty-history state.
+PASS history-unavailable error absent.
+Cookies/tokens read from Chrome: NONE.
+
+No three-person production audience was fabricated. Populated history/VOD moments
+need real eligible traffic; physical Edge/audio and the multi-profile Twitch pass
+remain manual. Production ALLOW_TEST_TRAFFIC=false throughout.
+
+No tags, GitHub Releases, paid subscriptions or release workflow runs created.

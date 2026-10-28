@@ -8,7 +8,7 @@ enabled = false
 
 [vars]
 ENVIRONMENT = "production"
-CROWD_ENABLED = "false"
+CROWD_ENABLED = "true"
 ALLOW_TEST_TRAFFIC = "false"
 EXTENSION_ORIGINS = "chrome-extension://fkocldgggcmhihelohiicoakcfomhepg"
 SITE_ORIGINS = "https://streamlaughs.vercel.app"

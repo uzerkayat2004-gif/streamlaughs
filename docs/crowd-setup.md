@@ -2,7 +2,7 @@
 
 **Part 5 supersedes the historical timeline-secret/deployment instructions below. Use [deploy-part5.md](deploy-part5.md) for current setup, Twitch owner auth and deployment. TIMELINE_READ_KEY is retired.** The fixed Chrome/Edge unpacked ID is `fkocldgggcmhihelohiicoakcfomhepg`; current EXTENSION_ORIGINS uses `chrome-extension://fkocldgggcmhihelohiicoakcfomhepg`, not a different ID per folder. Extra verified store origins are comma-separated; [migration/key storage](extension-identity.md).
 
-No login, account creation, secret upload or deploy was run by Codex. All verification used local Miniflare/Wrangler. Production is disabled in the checked-in config.
+**Current deployment:** Part 7 deployed and connected the production Worker with the owner's browser authorization. Crowd is enabled; production test traffic is disabled. Use [production-part7.md](production-part7.md) for the live URL, keys, connected ZIPs, safe simulator demo and verification. The first-deployment sequence below is historical guidance for a new account; do not regenerate the deployed keys by following it again.
 
 ## Local development (PowerShell, from repo root)
 

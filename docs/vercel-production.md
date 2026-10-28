@@ -20,13 +20,13 @@ Twitch sign-in requires these three production values. The owner supplied both T
 - `TWITCH_CLIENT_SECRET`: Twitch application's secret; server-only.
 - `SESSION_SECRET`: independent random session-encryption secret of at least 32 bytes; server-only.
 
-These crowd/backend values remain unset:
+These crowd/backend values are configured in production as of Part 7:
 
-- `WORKER_API_URL`: the actual HTTPS crowd Worker origin.
-- `WORKER_OWNER_KEY`: independent random owner-token HMAC key of at least 32 bytes, matching the Worker; server-only.
+- `WORKER_API_URL`: `https://streamlaughs-crowd.streamlaughs.workers.dev`.
+- `WORKER_OWNER_KEY`: independent 64-random-byte owner-token HMAC key, matching the Cloudflare secret; a sensitive server-only variable.
 
 Register exactly `https://streamlaughs.vercel.app/auth/callback` in the Twitch console. Public pages, `/for-streamers` (also available at `/streamers`), the labelled `/demo`, and `/version.json` do not require credentials. Streamer login depends only on the three Twitch/session values. A signed-in owner can open their dashboard while the crowd backend is unconfigured; live and past views explain that crowd setup is pending and make no Worker requests. The owner-only history API returns a clean setup-pending 503, while another channel remains forbidden. Redeploy after changing production environment variables.
 
-Both Chrome and Edge Install buttons point to https://github.com/uzerkayat2004-gif/streamlaughs/releases/latest. That destination becomes downloadable after the owner publishes a release; website deployment creates no tags or releases. Cloudflare provisioning and live crowd deployment remain separate.
+Both Chrome and Edge Install buttons point to https://github.com/uzerkayat2004-gif/streamlaughs/releases/latest. That destination becomes downloadable after the owner publishes a release; website deployment creates no tags or releases. [Part 7](production-part7.md) records the connected Cloudflare deployment, local ZIPs and safe simulator instructions.
 
-Validation: ten website unit tests, website typecheck and optimized production build pass. Route tests preserve owner rejection and verify that an authenticated owner receives setup-pending status without calling a Worker. The live deployment is checked separately; real Twitch authorization requires the owner to sign in in the visible test browser, without sharing credentials in chat.
+Validation: 23 website tests, recursive typecheck/tests and all production builds pass. Route tests preserve owner rejection and the unconfigured fallback. The owner confirmed real Twitch login in their own Chrome. After the Worker env redeploy, the authenticated dashboard showed live “a few here” and successfully loaded empty history. No cookies were read; no account sign-in browser was automated. [Verification](verification-part7.txt).
