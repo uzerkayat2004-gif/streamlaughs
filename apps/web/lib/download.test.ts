@@ -6,11 +6,24 @@ import { GET } from '../app/version.json/route';
 
 afterEach(() => vi.unstubAllEnvs());
 
-it('starts the download on the website without a GitHub page or a new tab', () => {
-  const html = renderToStaticMarkup(Install());
+it('offers a direct download on plain setup without a GitHub page or a new tab', async () => {
+  const html = renderToStaticMarkup(
+    await Install({ searchParams: Promise.resolve({}) }),
+  );
   expect(html).toContain(`Download ${PRODUCT.name}`);
   expect(html).toContain('href="/download"');
   expect(html).not.toMatch(/github\.com|GitHub Releases|target="_blank"/);
+});
+
+it('shows download confirmation and a direct retry for the automatic setup entry', async () => {
+  const html = renderToStaticMarkup(
+    await Install({ searchParams: Promise.resolve({ downloaded: '1' }) }),
+  );
+  expect(html).toContain('your download started');
+  expect(html).toContain('didn’t start? download again');
+  expect(html).toContain('href="/download"');
+  expect(html).toContain('manifest.json');
+  expect(html).not.toContain(`Download ${PRODUCT.name}`);
 });
 
 it('reports the built artifact checksum, size and same-site download URL with extension CORS', async () => {

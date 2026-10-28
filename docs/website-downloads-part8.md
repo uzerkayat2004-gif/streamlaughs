@@ -2,6 +2,13 @@
 
 Download: https://streamlaughs.vercel.app/download. Install help: https://streamlaughs.vercel.app/install. Neither download navigates to GitHub. Only the small footer source-code link does.
 
+
+## Setup entry (Part 10)
+
+Home, navigation, the final CTA and demo Download links open `/install?downloaded=1`. That page starts the `/download` attachment once after mounting and keeps the setup steps visible under “your download started”, with a direct retry link. Browser-tab switches do not restart the download. Plain `/install` shows an explicit direct Download button and does not start automatically. The extension's update notice continues directly to `/download`.
+
+The setup guide covers Windows Extract All, Finder double-click, Linux extraction, keeping the folder, Chrome/Edge/Brave extension-page addresses, Developer mode, choosing the folder containing manifest.json, pinning, Welcome mic permission and starting from the toolbar on a live Twitch stream. The stuck section explains the nested-folder error, permanent folder and reload update flow.
+
 ## Automatic build
 
 Every successful GitHub main deployment runs `pnpm --filter web build` with root directory `apps/web` and sources outside that directory included. `tools/build-web.mjs` builds both production browser targets, checks the manifest public key/fixed ID and production URLs, packages the bundled models/licenses, and requires byte-identical Chrome and Edge ZIPs before publishing one universal ZIP. It then builds Next.js with the artifact's SHA-256 and byte count embedded in `/version.json`.

@@ -19,9 +19,9 @@ export default function Home() {
           <br />A little more together, wherever you watch.
         </p>
         <div className="hero-actions">
-          <a className="button yellow" href="/download" download>
+          <Link className="button yellow" href="/install?downloaded=1">
             Download {PRODUCT.name} <Arrow />
-          </a>
+          </Link>
           <Link href="/demo" className="text-link">
             take a peek first ↗
           </Link>
@@ -65,6 +65,11 @@ export default function Home() {
         </h2>
         <Link className="button outline" href="/streamers">
           {PRODUCT.name} for streamers <Arrow />
+        </Link>
+      </section>
+      <section className="download-invite" aria-label="join the crowd">
+        <Link className="button yellow" href="/install?downloaded=1">
+          Download {PRODUCT.name} <Arrow />
         </Link>
       </section>
     </main>

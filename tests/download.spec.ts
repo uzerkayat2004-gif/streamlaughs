@@ -17,7 +17,7 @@ const identity = JSON.parse(
 );
 const slug = product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
-test('website download is an attachment, matches metadata, unzips and loads with the fixed ID', async ({
+test('home opens setup, starts one matching ZIP download and preserves the fixed ID', async ({
   page,
   request,
   baseURL,
@@ -35,17 +35,39 @@ test('website download is an attachment, matches metadata, unzips and loads with
   expect(head.headers()['content-disposition']).toContain('attachment');
   expect(head.headers()['content-type']).toContain('application/zip');
   expect(Number(head.headers()['content-length'])).toBe(metadata.bytes);
-  await page.goto('/install');
+  let downloadCount = 0;
+  page.on('download', () => downloadCount++);
+  await page.goto('/');
+  const heroDownload = page
+    .locator('.hero-actions')
+    .getByRole('link', { name: `Download ${product.name}`, exact: true });
+  await expect(heroDownload).toHaveAttribute('href', '/install?downloaded=1');
+  expect(downloadCount).toBe(0);
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    heroDownload.click(),
+  ]);
+  await expect(page).toHaveURL(`${baseURL}/install?downloaded=1`);
+  await expect(page.getByRole('status')).toHaveText('your download started');
+  await expect(
+    page.getByRole('heading', { name: 'unzip the download.' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: /didn’t start\? download again/ }),
+  ).toHaveAttribute('href', '/download');
   await expect(page.locator('main a[href*="github.com"]')).toHaveCount(0);
   await expect(
     page.getByRole('link', { name: 'source code ↗' }),
   ).toHaveAttribute('href', /^https:\/\/github\.com\/[^/]+\/[^/]+$/);
-  const [download] = await Promise.all([
-    page.waitForEvent('download'),
-    page
-      .getByRole('link', { name: `Download ${product.name}`, exact: true })
-      .click(),
-  ]);
+  await page.getByRole('tab', { name: 'Brave', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: /brave:\/\/extensions/ }),
+  ).toBeVisible();
+  await page.getByRole('tab', { name: 'Edge', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: /edge:\/\/extensions/ }),
+  ).toBeVisible();
+  expect(downloadCount).toBe(1);
   expect(download.url()).toBe(`${baseURL}/download`);
   expect(download.suggestedFilename()).toBe(`${slug}.zip`);
   const archive = testInfo.outputPath(`${slug}.zip`);
@@ -101,5 +123,86 @@ test('website download is an attachment, matches metadata, unzips and loads with
     ).toBe(metadata.version);
   } finally {
     await context.close();
+  }
+});
+
+test('plain setup waits for a click; automatic setup offers a working retry', async ({
+  page,
+  baseURL,
+}, testInfo) => {
+  let downloadCount = 0;
+  page.on('download', () => downloadCount++);
+  // The first test verifies all artifact bytes; cancel UI-only downloads here.
+  for (const suffix of ['', '?downloaded=0']) {
+    await page.goto(`/install${suffix}`);
+    await expect(
+      page.getByRole('link', { name: `Download ${product.name}`, exact: true }),
+    ).toHaveAttribute('href', '/download');
+    await expect(
+      page.getByText('your download started', { exact: true }),
+    ).toHaveCount(0);
+  }
+  expect(downloadCount).toBe(0);
+  const [direct] = await Promise.all([
+    page.waitForEvent('download'),
+    page
+      .getByRole('link', { name: `Download ${product.name}`, exact: true })
+      .click(),
+  ]);
+  await direct.cancel();
+  await expect(page).toHaveURL(`${baseURL}/install?downloaded=0`);
+  expect(downloadCount).toBe(1);
+  const [automatic] = await Promise.all([
+    page.waitForEvent('download'),
+    page.goto('/install?downloaded=1'),
+  ]);
+  await automatic.cancel();
+  await expect(page.getByRole('status')).toHaveText('your download started');
+  const [retry] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('link', { name: /didn’t start\? download again/ }).click(),
+  ]);
+  await retry.cancel();
+  await expect(page).toHaveURL(`${baseURL}/install?downloaded=1`);
+  expect(downloadCount).toBe(3);
+  await expect(page.locator('.install-step')).toHaveCount(6);
+  await expect(
+    page.getByRole('heading', { name: 'stuck?', exact: true }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath('setup-desktop.png'),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: testInfo.outputPath('setup-mobile.png'),
+    fullPage: true,
+  });
+});
+
+test('nav, final CTA and demo downloads all open setup and start the attachment', async ({
+  page,
+  baseURL,
+}) => {
+  for (const entry of [
+    { path: '/', selector: '.site-header .nav-cta' },
+    { path: '/', selector: 'main > .download-invite a' },
+    { path: '/demo', selector: '.dashboard-page .download-invite a' },
+  ]) {
+    await page.goto(entry.path);
+    const link = page.locator(entry.selector);
+    await expect(link).toHaveAttribute('href', '/install?downloaded=1');
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      link.click(),
+    ]);
+    await download.cancel();
+    await expect(page).toHaveURL(`${baseURL}/install?downloaded=1`);
+    await expect(page.getByRole('status')).toHaveText('your download started');
   }
 });

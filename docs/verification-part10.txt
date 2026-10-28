@@ -1,0 +1,72 @@
+Part 10 verification — 2026-10-28 (Asia/Calcutta)
+
+PASS: recursive typecheck, 160 unit/Workers tests, all production builds, Biome and seven Playwright website/download tests.
+
+Verified: home/nav/final/demo → /install?downloaded=1 → one automatic attachment while setup remains visible; plain /install and downloaded=0 wait for a click; retry works; browser switches do not duplicate a download; mobile has no horizontal overflow.
+Real ZIP bytes match /version.json and its checksum; extraction and fresh Chromium loading keep fkocldgggcmhihelohiicoakcfomhepg. The update notice points directly to /download.
+Desktop/mobile setup screenshots visually inspected from ignored test-results output; Night Crowd styles preserved. Existing owner/OAuth/crowd/VOD tests passed against their local mock-provider/Wrangler fixture.
+A standalone local production preview command was blocked by automatic approval review without a reason. Verification completed through the existing repository-managed localhost test server instead.
+No tags or releases. Live deployment checks are reported after the main push.
+
+=== pnpm -r typecheck ===
+tools/eval typecheck$ node --check cli.mjs && node --check browser.mjs && node --check wav.mjs && node --check metrics.mjs
+packages/shared typecheck$ tsc --noEmit
+tools/release typecheck$ node --check config.mjs && node --check version.mjs && node --check verify-production.mjs && node --check branding.mjs && node --check offline-preview.mjs && node --check pack.mjs && node --check dependency-notices.mjs && node --check web-download.mjs && node --check ../build-web.mjs && python -m py_compile pack.py
+tools/crowd-sim typecheck: Done
+tools/eval typecheck: Done
+tools/release typecheck: Done
+packages/shared typecheck: Done
+apps/extension typecheck$ wxt prepare && tsc --noEmit
+workers/api typecheck$ tsc --noEmit
+apps/web typecheck$ node ../../tools/next-local.mjs typegen && tsc --noEmit
+apps/web typecheck: Generating route types...
+apps/web typecheck: ✓ Types generated successfully
+apps/extension typecheck: WXT 0.21.5
+apps/extension typecheck: i Generating types...
+apps/extension typecheck:  WARN  The following entrypoints have been skipped:
+apps/extension typecheck: - debug
+apps/extension typecheck: √ Finished in 598 ms
+workers/api typecheck: Done
+apps/web typecheck: Done
+apps/extension typecheck: Done
+
+=== pnpm -r test ===
+tools/eval test:       Tests  2 passed (2)
+tools/crowd-sim test:       Tests  2 passed (2)
+packages/shared test:       Tests  21 passed (21)
+tools/release test:       Tests  11 passed (11)
+apps/web test:       Tests  27 passed (27)
+apps/extension test:       Tests  84 passed (84)
+workers/api test:       Tests  13 passed (13)
+
+=== pnpm build ===
+├ ƒ /auth/login
+├ ƒ /auth/logout
+├ ƒ /dashboard
+├ ƒ /dashboard/[channel]
+├ ƒ /demo
+├ ƒ /for-streamers
+├ ○ /icon.svg
+├ ƒ /install
+├ ○ /opengraph-image
+├ ○ /privacy
+├ ƒ /streamers
+└ ƒ /version.json
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+StreamLaughs source, docs and requested website output branding checks passed.
+
+=== pnpm test:e2e:web (including download regressions) ===
+  ok 1 tests\download.spec.ts:20:1 › home opens setup, starts one matching ZIP download and preserves the fixed ID (6.4s)
+  ok 2 tests\download.spec.ts:129:1 › plain setup waits for a click; automatic setup offers a working retry (8.2s)
+  ok 3 tests\download.spec.ts:188:1 › nav, final CTA and demo downloads all open setup and start the attachment (9.2s)
+  ok 4 tests\web.spec.ts:18:1 › Twitch redirect mismatch shows setup help instead of silently landing on home (2.4s)
+  ok 5 tests\web.spec.ts:87:1 › public pages, responsive Night Crowd, privacy, configurable links and recorded demo (27.6s)
+  ok 6 tests\web.spec.ts:180:1 › OAuth state + owner isolation + real Wrangler and crowd-sim live/history/VOD stories (28.0s)
+  ok 7 tests\web.spec.ts:341:1 › fixed ID survives a copied folder; the extension checks public version metadata and shows its update dot (4.3s)
+  7 passed (2.2m)

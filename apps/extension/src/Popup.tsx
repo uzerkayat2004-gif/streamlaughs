@@ -89,7 +89,7 @@ export function Popup() {
           {SITE_URL && updateAvailable && (
             <a
               className="update-dot"
-              href={`${SITE_URL}/install`}
+              href={`${SITE_URL}/download`}
               target="_blank"
               rel="noreferrer"
               aria-label="new version available"

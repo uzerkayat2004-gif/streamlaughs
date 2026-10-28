@@ -111,14 +111,19 @@ test('public pages, responsive Night Crowd, privacy, configurable links and reco
     path: path.join(shots, 'home-desktop.png'),
     fullPage: true,
   });
-  await page
-    .getByRole('link', { name: 'get the extension ↗', exact: true })
-    .click();
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page
+      .getByRole('link', { name: 'get the extension ↗', exact: true })
+      .click(),
+  ]);
+  await download.cancel();
+  await expect(page).toHaveURL(`${SITE}/install?downloaded=1`);
   await expect(
     page.getByRole('heading', { name: 'make room for the crowd.' }),
   ).toBeVisible();
   await expect(
-    page.getByRole('link', { name: `Download ${product.name}`, exact: true }),
+    page.getByRole('link', { name: /didn’t start\? download again/ }),
   ).toHaveAttribute('href', '/download');
   await page.getByRole('tab', { name: 'Brave', exact: true }).click();
   await expect(
@@ -380,7 +385,7 @@ test('fixed ID survives a copied folder; the extension checks public version met
     await popup.goto(`chrome-extension://${identity.id}/popup.html`);
     await expect(
       popup.getByRole('link', { name: 'new version available' }),
-    ).toHaveAttribute('href', `${SITE}/install`);
+    ).toHaveAttribute('href', `${SITE}/download`);
   } finally {
     await context.close();
   }

@@ -51,7 +51,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <nav aria-label="main navigation">
             <Link href="/for-streamers">for streamers</Link>
             <Link href="/privacy">privacy</Link>
-            <Link className="nav-cta" href="/install">
+            <Link className="nav-cta" href="/install?downloaded=1">
               get the extension <span>↗</span>
             </Link>
           </nav>

@@ -1,5 +1,6 @@
 'use client';
-import type { CrowdState } from '@laughline/shared';
+import { type CrowdState, PRODUCT } from '@laughline/shared';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { RealCrowdSource } from '../../extension/src/real-crowd-source';
 import { CrowdArt } from './crowd-art';
@@ -167,6 +168,13 @@ export function Dashboard({
       ) : (
         <div id="past-panel" role="tabpanel" aria-labelledby="past-tab">
           {children}
+        </div>
+      )}
+      {demo && (
+        <div className="download-invite">
+          <Link className="button yellow" href="/install?downloaded=1">
+            Download {PRODUCT.name} ↗
+          </Link>
         </div>
       )}
     </main>

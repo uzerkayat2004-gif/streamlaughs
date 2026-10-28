@@ -542,6 +542,80 @@ p {
 .install-download {
   margin-top: 24px;
 }
+.download-started {
+  margin-top: 24px;
+}
+.download-started > p {
+  color: var(--teal);
+  font: 700 24px var(--display);
+  margin-bottom: 10px;
+}
+.download-started .text-link {
+  font-size: 13px;
+}
+.download-invite {
+  text-align: center;
+  padding: 20px 23px 65px;
+}
+.dashboard-page > .download-invite {
+  padding-bottom: 0;
+}
+.install-page .page-intro {
+  margin-bottom: 36px;
+}
+.install-page .step-art {
+  height: 160px;
+  margin-bottom: 24px;
+}
+.setup-glyph {
+  width: 52px;
+  height: 52px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.toolbar-illustration,
+.permission-illustration,
+.player-illustration {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  padding: 14px 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #12171b;
+  color: var(--teal);
+  font-size: 11px;
+  rotate: -4deg;
+}
+.permission-illustration {
+  color: var(--yellow);
+  rotate: 4deg;
+}
+.permission-illustration > span {
+  color: var(--ink);
+  background: var(--yellow);
+  border-radius: 99px;
+  padding: 7px 18px;
+}
+.player-illustration {
+  color: var(--coral);
+}
+.install-step .folder-trap {
+  border-left: 2px solid var(--yellow);
+  padding-left: 12px;
+  margin-top: 14px;
+}
+.install-help h2 {
+  font-size: 34px;
+  margin-bottom: 20px;
+}
+.install-help h3 {
+  font-size: 19px;
+  margin: 20px 0 8px;
+}
 .page-intro .download-browser-note,
 .install-step .os-note {
   color: var(--muted);
