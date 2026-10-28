@@ -1,6 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import {
   callbackUrl,
+  crowdConfigured,
   dashboardConfigured,
   releaseUrl,
   siteUrl,
@@ -10,7 +11,7 @@ import { ownsChannel, seal, unseal } from './session-crypto';
 
 const secret = 'local-session-test-key-0000000000000000000000000000000';
 afterEach(() => vi.unstubAllEnvs());
-it('keeps streamer login disabled until Twitch, session and Worker configuration are complete', () => {
+it('enables Twitch sign-in with its three settings while crowd setup remains independent', () => {
   for (const name of [
     'TWITCH_CLIENT_ID',
     'TWITCH_CLIENT_SECRET',
@@ -23,14 +24,19 @@ it('keeps streamer login disabled until Twitch, session and Worker configuration
   vi.stubEnv('TWITCH_CLIENT_ID', 'local-twitch-client');
   vi.stubEnv('TWITCH_CLIENT_SECRET', 'local-twitch-secret');
   vi.stubEnv('SESSION_SECRET', secret);
+  expect(dashboardConfigured()).toBe(true);
+  expect(crowdConfigured()).toBe(false);
   vi.stubEnv('WORKER_API_URL', 'https://crowd.example.workers.dev');
-  expect(dashboardConfigured()).toBe(false);
+  expect(crowdConfigured()).toBe(false);
   vi.stubEnv(
     'WORKER_OWNER_KEY',
     'local-owner-test-key-000000000000000000000000',
   );
-  expect(dashboardConfigured()).toBe(true);
+  expect(crowdConfigured()).toBe(true);
   vi.stubEnv('WORKER_API_URL', 'not an origin');
+  expect(crowdConfigured()).toBe(false);
+  expect(dashboardConfigured()).toBe(true);
+  vi.stubEnv('SESSION_SECRET', '');
   expect(dashboardConfigured()).toBe(false);
 });
 it('uses the selected public defaults while keeping site and repository configurable', () => {

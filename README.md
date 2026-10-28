@@ -14,7 +14,7 @@ A little crowd for Twitch: your local laughs, everyone’s anonymous reactions, 
 
 To update, replace the contents of the same extracted folder, reload the extension and refresh Twitch. The fixed unpacked ID is **fkocldgggcmhihelohiicoakcfomhepg** on Chrome and Edge. Parts 1–4 installs change origin once; [migration details](docs/extension-identity.md). No Chrome Web Store listing is claimed.
 
-**Website:** [streamlaughs.vercel.app](https://streamlaughs.vercel.app) serves the public pages and labelled demo; streamer login remains “not set up yet” until its [five required values](docs/vercel-production.md) are supplied. The repository is `uzerkayat2004-gif/streamlaughs`; env overrides remain supported. Nothing has been tagged or released, and Cloudflare has not been deployed. Offline previews explicitly disable public service connections. Follow the [release handoff](docs/release-part6.md) before publishing a connected build. [Internal compatibility identifiers](docs/internal-identifiers.md) remain unchanged.
+**Website:** [streamlaughs.vercel.app](https://streamlaughs.vercel.app) serves the public pages and labelled demo. Twitch sign-in uses its three [authentication values](docs/vercel-production.md); crowd features stay in a clear setup-pending state until the two Worker values are supplied. The repository is `uzerkayat2004-gif/streamlaughs`; env overrides remain supported. Nothing has been tagged or released, and Cloudflare has not been deployed. Offline previews explicitly disable public service connections. Follow the [release handoff](docs/release-part6.md) before publishing a connected build. [Internal compatibility identifiers](docs/internal-identifiers.md) remain unchanged.
 
 ## Privacy in three bullets
 

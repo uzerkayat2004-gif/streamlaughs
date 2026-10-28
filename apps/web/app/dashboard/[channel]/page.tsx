@@ -3,7 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { Dashboard } from '../../../components/dashboard';
 import { PastStreams } from '../../../components/past-streams';
 import { authenticated } from '../../../lib/auth';
-import { workerUrl } from '../../../lib/config';
+import { crowdConfigured, workerUrl } from '../../../lib/config';
 import { report } from '../../../lib/report';
 import { ownsChannel } from '../../../lib/session-crypto';
 export const dynamic = 'force-dynamic';
@@ -20,9 +20,16 @@ export default async function ChannelDashboard({
   if (!ownsChannel(user, channel)) notFound();
   const query = await searchParams,
     days = query.days === '30' ? 30 : 7;
-  const data = await report(user, channel, days).catch(() => null);
+  const crowdReady = crowdConfigured();
+  const data = crowdReady
+    ? await report(user, channel, days).catch(() => null)
+    : null;
   return (
-    <Dashboard channel={channel} api={workerUrl()} initialTab={query.tab}>
+    <Dashboard
+      channel={channel}
+      api={crowdReady ? workerUrl() : ''}
+      initialTab={query.tab}
+    >
       <div className="history-range">
         <Link
           href={`/dashboard/${channel}?tab=past&days=7`}
@@ -37,11 +44,20 @@ export default async function ChannelDashboard({
           last 30 days
         </Link>
       </div>
-      <PastStreams
-        streams={data?.streams ?? []}
-        unavailable={!data}
-        vodsUnavailable={data?.vodsUnavailable}
-      />
+      {crowdReady ? (
+        <PastStreams
+          streams={data?.streams ?? []}
+          unavailable={!data}
+          vodsUnavailable={data?.vodsUnavailable}
+        />
+      ) : (
+        <div className="quiet-empty">
+          <span>◡</span>
+          <h2>your crowd is coming soon.</h2>
+          <p>sign-in is ready. past streams will appear after crowd setup.</p>
+          <Link href="/demo">explore the demo ↗</Link>
+        </div>
+      )}
     </Dashboard>
   );
 }

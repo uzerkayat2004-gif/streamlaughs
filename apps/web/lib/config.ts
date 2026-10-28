@@ -77,10 +77,17 @@ export function dashboardConfigured() {
       'TWITCH_CLIENT_ID',
       'TWITCH_CLIENT_SECRET',
       'SESSION_SECRET',
-      'WORKER_OWNER_KEY',
     ] as const)
       if (!secret(name).trim()) return false;
-    return Boolean(workerUrl());
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function crowdConfigured() {
+  try {
+    return Boolean(workerUrl() && secret('WORKER_OWNER_KEY').trim());
   } catch {
     return false;
   }

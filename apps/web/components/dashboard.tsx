@@ -14,39 +14,50 @@ export function LiveCrowd({
 }) {
   const [crowd, setCrowd] = useState<CrowdState | null>(snapshot ?? null);
   useEffect(() => {
-    if (snapshot) return;
+    if (snapshot || !api) return;
     const source = new RealCrowdSource(api);
     source.setSharing(false);
     source.start(channel, setCrowd);
     return () => source.stop();
   }, [api, channel, snapshot]);
   const live = crowd?.state === 'live',
-    few = crowd?.state === 'few';
+    few = crowd?.state === 'few',
+    setupPending = !api && !snapshot;
   return (
     <section className="live-scene" aria-label="live crowd">
       <div className="scene-label">
         <span className={`connection-dot ${live ? 'is-live' : ''}`} />
-        {snapshot
-          ? 'recorded test snapshot'
-          : live
-            ? `live${crowd.testTraffic ? ' · test traffic' : ''}`
-            : few
-              ? 'few people here yet'
-              : 'offline'}
+        {setupPending
+          ? 'crowd setup pending'
+          : snapshot
+            ? 'recorded test snapshot'
+            : live
+              ? `live${crowd.testTraffic ? ' · test traffic' : ''}`
+              : few
+                ? 'few people here yet'
+                : 'offline'}
       </div>
       <CrowdArt calm={!live}>
         <strong
           className={live ? 'live-number' : 'calm-number'}
           aria-live="polite"
         >
-          {live ? crowd.laughingNow : few ? 'a few here' : 'offline'}
+          {setupPending
+            ? 'coming soon'
+            : live
+              ? crowd.laughingNow
+              : few
+                ? 'a few here'
+                : 'offline'}
         </strong>
         <span>
-          {live
-            ? 'laughing right now'
-            : few
-              ? 'a little room, for now'
-              : 'we’ll reconnect when we can'}
+          {setupPending
+            ? 'your crowd will join after setup'
+            : live
+              ? 'laughing right now'
+              : few
+                ? 'a little room, for now'
+                : 'we’ll reconnect when we can'}
         </span>
       </CrowdArt>
       <section className="live-words" aria-label="live crowd words">
@@ -111,6 +122,12 @@ export function Dashboard({
           </form>
         )}
       </div>
+      {!demo && !api && (
+        <p className="soft-note" role="status">
+          you’re signed in. crowd reactions and past streams aren’t set up yet.{' '}
+          <a href="/demo">explore the demo ↗</a>
+        </p>
+      )}
       {demo && (
         <p className="soft-note">
           Recorded aggregates from real local crowd-sim API traffic. Simulated
