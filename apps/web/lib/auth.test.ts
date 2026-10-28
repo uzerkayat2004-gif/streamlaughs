@@ -1,9 +1,38 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { callbackUrl, releaseUrl, siteUrl, twitchOrigin } from './config';
+import {
+  callbackUrl,
+  dashboardConfigured,
+  releaseUrl,
+  siteUrl,
+  twitchOrigin,
+} from './config';
 import { ownsChannel, seal, unseal } from './session-crypto';
 
 const secret = 'local-session-test-key-0000000000000000000000000000000';
 afterEach(() => vi.unstubAllEnvs());
+it('keeps streamer login disabled until Twitch, session and Worker configuration are complete', () => {
+  for (const name of [
+    'TWITCH_CLIENT_ID',
+    'TWITCH_CLIENT_SECRET',
+    'SESSION_SECRET',
+    'WORKER_API_URL',
+    'WORKER_OWNER_KEY',
+  ])
+    vi.stubEnv(name, '');
+  expect(dashboardConfigured()).toBe(false);
+  vi.stubEnv('TWITCH_CLIENT_ID', 'local-twitch-client');
+  vi.stubEnv('TWITCH_CLIENT_SECRET', 'local-twitch-secret');
+  vi.stubEnv('SESSION_SECRET', secret);
+  vi.stubEnv('WORKER_API_URL', 'https://crowd.example.workers.dev');
+  expect(dashboardConfigured()).toBe(false);
+  vi.stubEnv(
+    'WORKER_OWNER_KEY',
+    'local-owner-test-key-000000000000000000000000',
+  );
+  expect(dashboardConfigured()).toBe(true);
+  vi.stubEnv('WORKER_API_URL', 'not an origin');
+  expect(dashboardConfigured()).toBe(false);
+});
 it('uses the selected public defaults while keeping site and repository configurable', () => {
   vi.stubEnv('SITE_URL', undefined);
   vi.stubEnv('RELEASE_REPO_OWNER', undefined);

@@ -70,3 +70,18 @@ export function helixOrigin() {
     : twitchOrigin();
 }
 export const callbackUrl = () => `${siteUrl()}/auth/callback`;
+
+export function dashboardConfigured() {
+  try {
+    for (const name of [
+      'TWITCH_CLIENT_ID',
+      'TWITCH_CLIENT_SECRET',
+      'SESSION_SECRET',
+      'WORKER_OWNER_KEY',
+    ] as const)
+      if (!secret(name).trim()) return false;
+    return Boolean(workerUrl());
+  } catch {
+    return false;
+  }
+}

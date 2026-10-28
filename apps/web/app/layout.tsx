@@ -49,7 +49,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <header className="site-header">
           <Brand />
           <nav aria-label="main navigation">
-            <Link href="/streamers">for streamers</Link>
+            <Link href="/for-streamers">for streamers</Link>
             <Link href="/privacy">privacy</Link>
             <Link className="nav-cta" href="/install">
               get the extension <span>↗</span>

@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { authCookie, cookieOptions } from '../../../lib/auth';
 import {
   callbackUrl,
+  dashboardConfigured,
   secret,
   siteUrl,
   twitchOrigin,
@@ -10,6 +11,8 @@ import {
 import { seal } from '../../../lib/session-crypto';
 export async function GET() {
   try {
+    if (!dashboardConfigured())
+      return NextResponse.redirect(`${siteUrl()}/streamers?login=unconfigured`);
     const state = randomBytes(32).toString('hex');
     const authorize = new URL(`${twitchOrigin()}/oauth2/authorize`);
     authorize.search = new URLSearchParams({
