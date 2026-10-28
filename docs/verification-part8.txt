@@ -1,0 +1,723 @@
+Part 8 verification — 2026-10-28 (Asia/Calcutta)
+
+Build, unit and website/download test commands below passed after the cache-independent packaging fix. Full Brave/Comet audio acceptance is incomplete; browser results follow.
+Verified code deployment: 32bacfad8e946a956c9dadf37dc46f6a7680a262, Vercel READY.
+Live /download: 40,506,651 bytes.
+SHA-256: c3fb90e7da6fad39e73e67d827d899cfa867cf9a6340df07c3eeac7dbbdb376f
+/version.json, attachment headers, actual downloaded file, versioned checksum, ZIP extraction and fresh Chromium fixed-ID load: PASS.
+Fresh installed Google Chrome: Developer mode + native Load unpacked picker + fixed ID from the live ZIP: PASS.
+Live /, /install, /privacy, /for-streamers, /demo, /version.json and versioned ZIP: HTTP 200.
+No ZIP binaries tracked; no tags, releases, paid upgrade or Cloudflare changes.
+
+
+=== Additional real-browser results (Windows) ===
+Google Chrome: fresh isolated profile, Developer mode + actual native Load unpacked folder picker, live ZIP, expected ID: PASS.
+Brave 1.97.56: official signed portable build; normal installer failed 0x80040902. Fresh profile, brave://extensions (canonical chrome://extensions), Developer mode + native Load unpacked, expected ID: PASS.
+Comet 155.0.8059.150: existing signed Perplexity installation reused. Fresh profile, chrome://extensions, Developer mode + native Load unpacked, expected ID: PASS.
+Both Brave/Comet: actual Welcome microphone permission with physical device (no fake-device flag), watch-only production Worker session 200 and WebSocket state few: PASS.
+Both Brave/Comet: real Twitch Caedrel live video advancing: PASS. Initial Monstercat channel was offline and was not counted as browser failure.
+Brave Shields remained at fresh-profile defaults; no Shields disabled or site exception added. No evidence establishes a Shields mic/Worker block.
+Brave full capture: UNVERIFIED. Native toolbar automation did not create a detectable actual popup; full-page popup fallback reported capture=error, apiFailure=extension_not_invoked, micFrames=0, tabFrames=0. Do not claim a complete mic/tab capture pass or add a speculative disable-Shields tip.
+Comet full capture: UNVERIFIED. Native toolbar automation stopped with Toolbar accessibility action unavailable. No complete mic/tab capture run. Comet deliberately absent from the public Install page.
+No browser account sign-in was automated. No audio written, logged or sent by these checks; only numeric state and safe diagnostic codes were read.
+Physical Mac/Linux sessions not tested on this Windows laptop. Exact remaining toolbar/audio acceptance steps are in website-downloads-part8.md.
+
+=== recursive typecheck ===
+Scope: 7 of 8 workspace projects
+packages/shared typecheck$ tsc --noEmit
+tools/crowd-sim typecheck$ node --check cli.mjs && node --check record-demo.mjs
+tools/eval typecheck$ node --check cli.mjs && node --check browser.mjs && node --check wav.mjs && node --check metrics.mjs
+tools/release typecheck$ node --check config.mjs && node --check version.mjs && node --check verify-production.mjs && node --check branding.mjs && node --check offline-preview.mjs && node --check pack.mjs && node --check dependency-notices.mjs && node --check web-download.mjs && node --check ../build-web.mjs && python -m py_compile pack.py
+tools/crowd-sim typecheck: Done
+tools/eval typecheck: Done
+tools/release typecheck: Done
+packages/shared typecheck: Done
+apps/extension typecheck$ wxt prepare && tsc --noEmit
+apps/web typecheck$ node ../../tools/next-local.mjs typegen && tsc --noEmit
+workers/api typecheck$ tsc --noEmit
+apps/web typecheck: Generating route types...
+apps/web typecheck: ✓ Types generated successfully
+apps/extension typecheck: WXT 0.21.5
+apps/extension typecheck: i Generating types...
+apps/extension typecheck:  WARN  The following entrypoints have been skipped:
+apps/extension typecheck: - debug
+apps/extension typecheck: √ Finished in 3.863 s
+workers/api typecheck: Done
+apps/web typecheck: Done
+apps/extension typecheck: Done
+
+=== recursive unit/Workers tests (159 tests) ===
+Scope: 7 of 8 workspace projects
+packages/shared test$ vitest run
+tools/crowd-sim test$ vitest run
+tools/eval test$ vitest run
+tools/release test$ vitest run
+packages/shared test:  RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/packages/shared
+tools/release test:  RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/tools/release
+tools/eval test:  RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/tools/eval
+tools/crowd-sim test:  RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/tools/crowd-sim
+tools/eval test:  Test Files  1 passed (1)
+tools/eval test:       Tests  2 passed (2)
+tools/eval test:    Start at  22:09:24
+tools/eval test:    Duration  894ms (transform 106ms, setup 0ms, import 173ms, tests 16ms, environment 0ms)
+tools/eval test: Done
+tools/crowd-sim test:  Test Files  1 passed (1)
+tools/crowd-sim test:       Tests  2 passed (2)
+tools/crowd-sim test:    Start at  22:09:24
+tools/crowd-sim test:    Duration  1.49s (transform 189ms, setup 0ms, import 672ms, tests 66ms, environment 0ms)
+packages/shared test:  Test Files  4 passed (4)
+packages/shared test:       Tests  21 passed (21)
+packages/shared test:    Start at  22:09:24
+packages/shared test:    Duration  1.55s (transform 931ms, setup 0ms, import 2.46s, tests 209ms, environment 1ms)
+tools/crowd-sim test: Done
+packages/shared test: Done
+tools/release test:  Test Files  4 passed (4)
+tools/release test:       Tests  11 passed (11)
+tools/release test:    Start at  22:09:24
+tools/release test:    Duration  2.19s (transform 486ms, setup 0ms, import 866ms, tests 1.47s, environment 2ms)
+tools/release test: Done
+apps/extension pretest$ node ../../tools/ensure-built-identity.mjs
+apps/web test$ vitest run
+workers/api test$ vitest run
+apps/extension pretest: Done
+apps/extension test$ vitest run
+apps/web test:  RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/apps/web
+apps/extension test:  RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/apps/extension
+workers/api test:  RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/workers/api
+apps/web test:  Test Files  7 passed (7)
+apps/web test:       Tests  26 passed (26)
+apps/web test:    Start at  22:09:27
+apps/web test:    Duration  3.67s (transform 1.67s, setup 0ms, import 9.80s, tests 1.64s, environment 2ms)
+apps/web test: Done
+apps/extension test:  Test Files  15 passed (15)
+apps/extension test:       Tests  84 passed (84)
+apps/extension test:    Start at  22:09:27
+apps/extension test:    Duration  3.94s (transform 5.52s, setup 0ms, import 14.60s, tests 3.06s, environment 5ms)
+apps/extension test: Done
+workers/api test:  Test Files  3 passed (3)
+workers/api test:       Tests  13 passed (13)
+workers/api test:    Start at  22:09:29
+workers/api test:    Duration  24.53s (transform 5.10s, setup 0ms, import 13.83s, tests 14.35s, environment 1ms)
+workers/api test: Done
+
+=== all builds: Worker dry-run, Chrome, Edge, universal packaging, Next production ===
+
+> laughline-monorepo@ build C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline
+> pnpm --filter api build && pnpm --filter web build
+
+
+> api@ build C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline\workers\api
+> node ../../tools/wrangler-local.mjs deploy --env= --dry-run --outdir .wrangler/build
+
+
+ ⛅️ wrangler 4.153.0
+────────────────────
+Total Upload: 865.63 KiB / gzip: 143.28 KiB
+Your Worker has access to the following bindings:
+Binding                                                                  Resource
+env.CHANNELS (ChannelCrowd)                                              Durable Object
+env.ENVIRONMENT ("production")                                           Environment Variable
+env.CROWD_ENABLED ("true")                                               Environment Variable
+env.ALLOW_TEST_TRAFFIC ("false")                                         Environment Variable
+env.EXTENSION_ORIGINS ("chrome-extension://fkocldgggcmhiheloh...")       Environment Variable
+env.SITE_ORIGINS ("https://streamlaughs.vercel.app")                     Environment Variable
+
+--dry-run: exiting now.
+
+> web@ build C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline\apps\web
+> node ../../tools/build-web.mjs
+
+
+> extension@ build C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline\apps\extension
+> node ../../tools/prepare-runtime.mjs && node ../../tools/check-assets.mjs && wxt build && node ../../tools/check-extension-identity.mjs .output/chrome-mv3
+
+onnx: 21,640,503 local runtime bytes
+mediapipe: 12,205,698 local runtime bytes
+Verified 14 local model/license assets against SHA-256 receipts.
+
+WXT 0.21.5
+i Building chrome-mv3 for production with Vite 8.3.5
+
+ WARN  The following entrypoints have been skipped:
+- debug
+
+[ESC][?25l
+⠋ Preparing...[ESC][K
+⠋ [1/5] audio-worklet[ESC][K
+⠙ [1/5] audio-worklet[ESC][K
+⠹ [1/5] audio-worklet[ESC][K
+⠹ [2/5] background[ESC][K
+⠸ [2/5] background[ESC][K
+⠼ [2/5] background[ESC][K
+⠴ [2/5] background[ESC][K
+⠦ [2/5] background[ESC][K
+⠧ [2/5] background[ESC][K
+⠇ [2/5] background[ESC][K
+⠏ [2/5] background[ESC][K
+⠋ [2/5] background[ESC][K
+⠙ [2/5] background[ESC][K
+⠹ [2/5] background[ESC][K
+⠸ [2/5] background[ESC][K
+⠸ [3/5] inference-worker[ESC][K
+⠼ [3/5] inference-worker[ESC][K
+⠴ [3/5] inference-worker[ESC][K
+⠦ [3/5] inference-worker[ESC][K
+⠧ [3/5] inference-worker[ESC][K
+⠇ [3/5] inference-worker[ESC][K
+⠏ [3/5] inference-worker[ESC][K
+⠋ [3/5] inference-worker[ESC][K
+⠙ [3/5] inference-worker[ESC][K
+⠹ [3/5] inference-worker[ESC][K
+⠸ [3/5] inference-worker[ESC][K
+⠼ [3/5] inference-worker[ESC][K
+⠴ [3/5] inference-worker[ESC][K
+⠦ [3/5] inference-worker[ESC][K
+⠧ [3/5] inference-worker[ESC][K
+⠇ [3/5] inference-worker[ESC][K
+[EMPTY_IMPORT_META] `import.meta` may not be a valid syntax with the `iife` output format.
+      ╭─[ ../../node_modules/.pnpm/@huggingface+transformers@3.8.1/node_modules/@huggingface/transformers/dist/transformers.web.js:5101:37 ]
+      │
+ 5101 │     const _import_meta_url = Object(import.meta).url;
+      │                                     ─────┬─────
+      │                                          ╰─────── This `import.meta` will be replaced with an empty object (`{}`) automatically. If this is desired, you can suppress this warning by adding `transform.define: { 'import.meta': {} }`. If `import.meta` needs to be kept as-is, you need to set the output format to `esm`.
+──────╯
+
+⠏ [3/5] inference-worker[ESC][K
+⠏ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠋ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠙ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠹ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠸ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠼ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠴ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠦ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠧ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠇ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠏ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠋ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠙ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠹ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠸ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠼ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠴ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠦ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠧ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠇ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠏ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠋ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠙ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠹ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠸ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠼ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠴ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠦ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠧ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠇ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠏ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠋ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠙ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠹ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠸ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠼ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠴ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠦ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠧ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠇ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠏ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠋ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠙ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠹ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠸ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠼ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠴ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠦ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠧ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠇ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠏ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠋ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠙ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠹ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠸ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠼ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠴ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠦ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠧ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠇ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠏ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠋ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠙ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠹ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠸ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠼ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠴ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠦ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠧ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠇ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠏ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠋ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠙ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠹ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠸ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠼ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠴ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠦ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠧ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠇ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠏ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠋ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠙ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠹ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠸ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠼ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠴ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠦ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠧ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠇ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠏ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠋ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠙ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠹ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠸ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠼ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠴ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠦ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠧ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠇ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠏ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠋ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠙ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠹ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠸ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠼ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠴ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠦ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠧ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠇ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠏ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠋ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠙ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠹ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠸ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠼ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠴ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠦ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠧ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠇ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠏ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠋ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠙ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠹ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠸ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠼ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠴ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠦ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠧ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠇ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠏ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠋ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠙ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠹ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠸ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠼ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠴ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠦ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠧ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠇ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠏ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠋ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠙ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠹ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠸ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠼ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠴ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠦ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠧ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠇ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠏ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠋ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠙ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠹ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠸ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠼ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠴ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠦ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠧ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠇ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠏ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠋ [4/5] offscreen, popup, recap, welcome[ESC][K
+[PLUGIN_TIMINGS] JavaScript callbacks ran for 4.4s of this 17.4s build (25%).
+The slowest callbacks, timed inside each callback (the wait before a callback starts is excluded, the time it awaits is included):
+  - plugin @tailwindcss/vite:generate:build transform (12%, 2.2s, 1 call)
+  - plugin vite:css transform (8%, 1.3s, 1 call)
+Additional callback time came from the callbacks below and from callbacks under 1s.
+1 callback is listed without a time. Its calls overlapped, so the time inside one call includes work from other calls. To find its cost, profile the build with `node --cpu-prof`:
+  - plugin vite:build-html transform (4 calls)
+See https://rolldown.rs/reference/InputOptions.checks#bundlertimings for more details.
+
+⠙ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠹ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠹ [5/5] twitch[ESC][K
+⠸ [5/5] twitch[ESC][K
+⠼ [5/5] twitch[ESC][K
+⠴ [5/5] twitch[ESC][K
+⠦ [5/5] twitch[ESC][K
+⠧ [5/5] twitch[ESC][K
+⠇ [5/5] twitch[ESC][K
+⠏ [5/5] twitch[ESC][K
+⠋ [5/5] twitch[ESC][K
+⠙ [5/5] twitch[ESC][K
+⠹ [5/5] twitch[ESC][K
+⠸ [5/5] twitch[ESC][K
+⠼ [5/5] twitch[ESC][K
+[PLUGIN_TIMINGS] JavaScript callbacks ran for 3.1s of this 3.7s build (82%).
+The slowest callbacks, timed inside each callback (the wait before a callback starts is excluded, the time it awaits is included):
+  - plugin @tailwindcss/vite:generate:build transform (71%, 2.6s, 1 call)
+Additional callback time came from callbacks under 1s.
+See https://rolldown.rs/reference/InputOptions.checks#bundlertimings for more details.
+
+⠴ [5/5] twitch[ESC][K
+⠦ [5/5] twitch[ESC][K
+⠧ [5/5] twitch[ESC][K
+⠇ [5/5] twitch[ESC][K
+⠏ [5/5] twitch[ESC][K
+⠋ [5/5] twitch[ESC][K
+[ESC][K[ESC][?25h
+[ESC][K[ESC][?25h√ Built extension in 25.0 s
+  ├─ .output\chrome-mv3\manifest.json                                                    1.65 kB
+  ├─ .output\chrome-mv3\models\manifest.json                                             4.69 kB
+  ├─ .output\chrome-mv3\offscreen.html                                                   355 B
+  ├─ .output\chrome-mv3\popup.html                                                       578 B
+  ├─ .output\chrome-mv3\recap.html                                                       511 B
+  ├─ .output\chrome-mv3\welcome.html                                                     666 B
+  ├─ .output\chrome-mv3\audio-worklet.js                                                 2.98 kB
+  ├─ .output\chrome-mv3\background.js                                                    214.66 kB
+  ├─ .output\chrome-mv3\chunks\config-DJUTNp74.js                                        91 B
+  ├─ .output\chrome-mv3\chunks\offscreen-DaSH5dDT.js                                     11.94 kB
+  ├─ .output\chrome-mv3\chunks\popup-DuM9mRuJ.js                                         7.09 kB
+  ├─ .output\chrome-mv3\chunks\recap-BjgVX8uJ.js                                         106.68 kB
+  ├─ .output\chrome-mv3\chunks\src-nZLfxO-b.js                                           96.45 kB
+  ├─ .output\chrome-mv3\chunks\styles-B4_8TsRy.js                                        228.43 kB
+  ├─ .output\chrome-mv3\chunks\ui-status-BSSRNNcx.js                                     1.02 kB
+  ├─ .output\chrome-mv3\chunks\welcome-CpV5zgJ3.js                                       3.54 kB
+  ├─ .output\chrome-mv3\content-scripts\twitch.js                                        368.48 kB
+  ├─ .output\chrome-mv3\inference-worker.js                                              1.32 MB
+  ├─ .output\chrome-mv3\runtime\mediapipe\audio_wasm_internal.js                         161.73 kB
+  ├─ .output\chrome-mv3\runtime\mediapipe\audio_wasm_nosimd_internal.js                  161.59 kB
+  ├─ .output\chrome-mv3\assets\styles-ClcFAUIu.css                                       35.35 kB
+  ├─ .output\chrome-mv3\fonts\bricolage-grotesque-LICENSE.txt                            4.40 kB
+  ├─ .output\chrome-mv3\fonts\bricolage-grotesque.woff2                                  41.34 kB
+  ├─ .output\chrome-mv3\fonts\inter-LICENSE.txt                                          4.48 kB
+  ├─ .output\chrome-mv3\fonts\inter.woff2                                                48.26 kB
+  ├─ .output\chrome-mv3\fonts\jetbrains-mono-LICENSE.txt                                 4.52 kB
+  ├─ .output\chrome-mv3\fonts\jetbrains-mono.woff2                                       40.40 kB
+  ├─ .output\chrome-mv3\icon\128.png                                                     5.04 kB
+  ├─ .output\chrome-mv3\icon\16.png                                                      514 B
+  ├─ .output\chrome-mv3\icon\32.png                                                      1.12 kB
+  ├─ .output\chrome-mv3\icon\48.png                                                      1.64 kB
+  ├─ .output\chrome-mv3\models\licenses\silero-MIT.txt                                   1.07 kB
+  ├─ .output\chrome-mv3\models\licenses\Transformers-Apache-2.0.txt                      11.36 kB
+  ├─ .output\chrome-mv3\models\licenses\Whisper-MIT.txt                                  1.06 kB
+  ├─ .output\chrome-mv3\models\licenses\Whisper-model-card.md                            14.86 kB
+  ├─ .output\chrome-mv3\models\licenses\YAMNet-Apache-2.0.txt                            11.51 kB
+  ├─ .output\chrome-mv3\models\silero-v5.onnx                                            2.33 MB
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\config.json                               2.20 kB
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\generation_config.json                    1.65 kB
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\onnx\decoder_model_merged_quantized.onnx  30.72 MB
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\onnx\encoder_model_quantized.onnx         10.12 MB
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\preprocessor_config.json                  339 B
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\special_tokens_map.json                   2.17 kB
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\tokenizer_config.json                     282.66 kB
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\tokenizer.json                            2.41 MB
+  ├─ .output\chrome-mv3\models\yamnet.tflite                                             4.13 MB
+  ├─ .output\chrome-mv3\runtime\mediapipe\audio_wasm_internal.wasm                       6.00 MB
+  ├─ .output\chrome-mv3\runtime\mediapipe\audio_wasm_nosimd_internal.wasm                5.88 MB
+  ├─ .output\chrome-mv3\runtime\mediapipe\LICENSE.txt                                    11.51 kB
+  ├─ .output\chrome-mv3\runtime\onnx\LICENSE.txt                                         1.07 kB
+  ├─ .output\chrome-mv3\runtime\onnx\ort-wasm-simd-threaded.jsep.mjs                     44.48 kB
+  └─ .output\chrome-mv3\runtime\onnx\ort-wasm-simd-threaded.jsep.wasm                    21.60 MB
+Σ Total size: 86.45 MB
+√ Finished in 30.8 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (chrome-mv3)
+
+> extension@ build:edge C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline\apps\extension
+> node ../../tools/prepare-runtime.mjs && node ../../tools/check-assets.mjs && wxt build -b edge && node ../../tools/check-extension-identity.mjs .output/edge-mv3
+
+onnx: 21,640,503 local runtime bytes
+mediapipe: 12,205,698 local runtime bytes
+Verified 14 local model/license assets against SHA-256 receipts.
+
+WXT 0.21.5
+i Building edge-mv3 for production with Vite 8.3.5
+
+ WARN  The following entrypoints have been skipped:
+- debug
+
+[ESC][?25l
+⠋ Preparing...[ESC][K
+⠋ [1/5] audio-worklet[ESC][K
+⠙ [1/5] audio-worklet[ESC][K
+⠹ [1/5] audio-worklet[ESC][K
+⠹ [2/5] background[ESC][K
+⠸ [2/5] background[ESC][K
+⠼ [2/5] background[ESC][K
+⠴ [2/5] background[ESC][K
+⠦ [2/5] background[ESC][K
+⠦ [3/5] inference-worker[ESC][K
+⠧ [3/5] inference-worker[ESC][K
+⠇ [3/5] inference-worker[ESC][K
+⠏ [3/5] inference-worker[ESC][K
+⠋ [3/5] inference-worker[ESC][K
+⠙ [3/5] inference-worker[ESC][K
+⠹ [3/5] inference-worker[ESC][K
+⠸ [3/5] inference-worker[ESC][K
+⠼ [3/5] inference-worker[ESC][K
+⠴ [3/5] inference-worker[ESC][K
+⠦ [3/5] inference-worker[ESC][K
+[EMPTY_IMPORT_META] `import.meta` may not be a valid syntax with the `iife` output format.
+      ╭─[ ../../node_modules/.pnpm/@huggingface+transformers@3.8.1/node_modules/@huggingface/transformers/dist/transformers.web.js:5101:37 ]
+      │
+ 5101 │     const _import_meta_url = Object(import.meta).url;
+      │                                     ─────┬─────
+      │                                          ╰─────── This `import.meta` will be replaced with an empty object (`{}`) automatically. If this is desired, you can suppress this warning by adding `transform.define: { 'import.meta': {} }`. If `import.meta` needs to be kept as-is, you need to set the output format to `esm`.
+──────╯
+
+⠧ [3/5] inference-worker[ESC][K
+⠧ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠇ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠏ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠋ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠙ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠹ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠸ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠼ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠴ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠦ [4/5] offscreen, popup, recap, welcome[ESC][K
+⠦ [5/5] twitch[ESC][K
+⠧ [5/5] twitch[ESC][K
+⠇ [5/5] twitch[ESC][K
+⠏ [5/5] twitch[ESC][K
+⠋ [5/5] twitch[ESC][K
+⠙ [5/5] twitch[ESC][K
+⠹ [5/5] twitch[ESC][K
+⠸ [5/5] twitch[ESC][K
+⠼ [5/5] twitch[ESC][K
+⠴ [5/5] twitch[ESC][K
+⠦ [5/5] twitch[ESC][K
+⠧ [5/5] twitch[ESC][K
+⠇ [5/5] twitch[ESC][K
+⠏ [5/5] twitch[ESC][K
+[ESC][K[ESC][?25h
+[ESC][K[ESC][?25h√ Built extension in 7.976 s
+  ├─ .output\edge-mv3\manifest.json                                                    1.65 kB
+  ├─ .output\edge-mv3\models\manifest.json                                             4.69 kB
+  ├─ .output\edge-mv3\offscreen.html                                                   355 B
+  ├─ .output\edge-mv3\popup.html                                                       578 B
+  ├─ .output\edge-mv3\recap.html                                                       511 B
+  ├─ .output\edge-mv3\welcome.html                                                     666 B
+  ├─ .output\edge-mv3\audio-worklet.js                                                 2.98 kB
+  ├─ .output\edge-mv3\background.js                                                    214.66 kB
+  ├─ .output\edge-mv3\chunks\config-DJUTNp74.js                                        91 B
+  ├─ .output\edge-mv3\chunks\offscreen-DaSH5dDT.js                                     11.94 kB
+  ├─ .output\edge-mv3\chunks\popup-DuM9mRuJ.js                                         7.09 kB
+  ├─ .output\edge-mv3\chunks\recap-BjgVX8uJ.js                                         106.68 kB
+  ├─ .output\edge-mv3\chunks\src-nZLfxO-b.js                                           96.45 kB
+  ├─ .output\edge-mv3\chunks\styles-B4_8TsRy.js                                        228.43 kB
+  ├─ .output\edge-mv3\chunks\ui-status-BSSRNNcx.js                                     1.02 kB
+  ├─ .output\edge-mv3\chunks\welcome-CpV5zgJ3.js                                       3.54 kB
+  ├─ .output\edge-mv3\content-scripts\twitch.js                                        368.48 kB
+  ├─ .output\edge-mv3\inference-worker.js                                              1.32 MB
+  ├─ .output\edge-mv3\runtime\mediapipe\audio_wasm_internal.js                         161.73 kB
+  ├─ .output\edge-mv3\runtime\mediapipe\audio_wasm_nosimd_internal.js                  161.59 kB
+  ├─ .output\edge-mv3\assets\styles-ClcFAUIu.css                                       35.35 kB
+  ├─ .output\edge-mv3\fonts\bricolage-grotesque-LICENSE.txt                            4.40 kB
+  ├─ .output\edge-mv3\fonts\bricolage-grotesque.woff2                                  41.34 kB
+  ├─ .output\edge-mv3\fonts\inter-LICENSE.txt                                          4.48 kB
+  ├─ .output\edge-mv3\fonts\inter.woff2                                                48.26 kB
+  ├─ .output\edge-mv3\fonts\jetbrains-mono-LICENSE.txt                                 4.52 kB
+  ├─ .output\edge-mv3\fonts\jetbrains-mono.woff2                                       40.40 kB
+  ├─ .output\edge-mv3\icon\128.png                                                     5.04 kB
+  ├─ .output\edge-mv3\icon\16.png                                                      514 B
+  ├─ .output\edge-mv3\icon\32.png                                                      1.12 kB
+  ├─ .output\edge-mv3\icon\48.png                                                      1.64 kB
+  ├─ .output\edge-mv3\models\licenses\silero-MIT.txt                                   1.07 kB
+  ├─ .output\edge-mv3\models\licenses\Transformers-Apache-2.0.txt                      11.36 kB
+  ├─ .output\edge-mv3\models\licenses\Whisper-MIT.txt                                  1.06 kB
+  ├─ .output\edge-mv3\models\licenses\Whisper-model-card.md                            14.86 kB
+  ├─ .output\edge-mv3\models\licenses\YAMNet-Apache-2.0.txt                            11.51 kB
+  ├─ .output\edge-mv3\models\silero-v5.onnx                                            2.33 MB
+  ├─ .output\edge-mv3\models\whisper-tiny.en\config.json                               2.20 kB
+  ├─ .output\edge-mv3\models\whisper-tiny.en\generation_config.json                    1.65 kB
+  ├─ .output\edge-mv3\models\whisper-tiny.en\onnx\decoder_model_merged_quantized.onnx  30.72 MB
+  ├─ .output\edge-mv3\models\whisper-tiny.en\onnx\encoder_model_quantized.onnx         10.12 MB
+  ├─ .output\edge-mv3\models\whisper-tiny.en\preprocessor_config.json                  339 B
+  ├─ .output\edge-mv3\models\whisper-tiny.en\special_tokens_map.json                   2.17 kB
+  ├─ .output\edge-mv3\models\whisper-tiny.en\tokenizer_config.json                     282.66 kB
+  ├─ .output\edge-mv3\models\whisper-tiny.en\tokenizer.json                            2.41 MB
+  ├─ .output\edge-mv3\models\yamnet.tflite                                             4.13 MB
+  ├─ .output\edge-mv3\runtime\mediapipe\audio_wasm_internal.wasm                       6.00 MB
+  ├─ .output\edge-mv3\runtime\mediapipe\audio_wasm_nosimd_internal.wasm                5.88 MB
+  ├─ .output\edge-mv3\runtime\mediapipe\LICENSE.txt                                    11.51 kB
+  ├─ .output\edge-mv3\runtime\onnx\LICENSE.txt                                         1.07 kB
+  ├─ .output\edge-mv3\runtime\onnx\ort-wasm-simd-threaded.jsep.mjs                     44.48 kB
+  └─ .output\edge-mv3\runtime\onnx\ort-wasm-simd-threaded.jsep.wasm                    21.60 MB
+Σ Total size: 86.45 MB
+√ Finished in 9.192 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (edge-mv3)
+
+> laughline-monorepo@ release:zip C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline
+> node tools/release/pack.mjs
+
+Verified flat chrome ZIP: streamlaughs-chrome-v0.6.0.zip
+Verified flat edge ZIP: streamlaughs-edge-v0.6.0.zip
+Prepared production-configured assets in releases/production; no tag, release or deployment created.
+Universal download: 40029312 bytes; SHA-256 3c39ccb20fee0578cea23dfa218bb150418e7caf75971c3c14b6d056b985a53e
+▲ Next.js 16.4.3 (webpack)
+✓ Running next.config.ts took 214ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 20.0s
+  Running TypeScript ...
+  Finished TypeScript in 2.9s ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/14) ...
+  Generating static pages using 11 workers (3/14)
+  Generating static pages using 11 workers (6/14)
+  Generating static pages using 11 workers (10/14)
+✓ Generating static pages using 11 workers (14/14) in 3.9s
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/dashboard/[channel]
+├ ƒ /auth/callback
+├ ƒ /auth/login
+├ ƒ /auth/logout
+├ ƒ /dashboard
+├ ƒ /dashboard/[channel]
+├ ƒ /demo
+├ ƒ /for-streamers
+├ ○ /icon.svg
+├ ○ /install
+├ ○ /opengraph-image
+├ ○ /privacy
+├ ƒ /streamers
+└ ƒ /version.json
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+StreamLaughs source, docs and requested website output branding checks passed.
+
+=== cache-independent packaging / Vercel build fix ===
+
+> laughline-monorepo@ release:zip C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline
+> node tools/release/pack.mjs
+
+Verified flat chrome ZIP: streamlaughs-chrome-v0.6.0.zip
+Verified flat edge ZIP: streamlaughs-edge-v0.6.0.zip
+Prepared production-configured assets in releases/production; no tag, release or deployment created.
+
+=== website Playwright (4 tests) ===
+
+> laughline-monorepo@ test:e2e:web C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline
+> playwright test --config playwright.web.config.ts
+
+[WebServer] (node:7500) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:5768) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:12780) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:5076) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] [streamlaughs.auth] {"code":"state_missing"}
+[WebServer] (node:22196) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:22332) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 1 worker
+
+(node:23916) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] [streamlaughs.auth] {"code":"redirect_mismatch"}
+  ok 1 tests\web.spec.ts:18:1 › Twitch redirect mismatch shows setup help instead of silently landing on home (2.3s)
+  ok 2 tests\web.spec.ts:87:1 › public pages, responsive Night Crowd, privacy, configurable links and recorded demo (27.5s)
+[WebServer] [streamlaughs.auth] {"code":"state_missing"}
+[WebServer] (node:10056) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:16016) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:7172) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:5092) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:22376) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:8084) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:2088) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:23152) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:17512) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:16744) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:20664) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:21516) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:23032) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:2516) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:10936) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:7408) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:24440) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:22148) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:12532) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:11588) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:2572) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:9496) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:15804) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+  ok 3 tests\web.spec.ts:175:1 › OAuth state + owner isolation + real Wrangler and crowd-sim live/history/VOD stories (1.1m)
+  ok 4 tests\web.spec.ts:336:1 › fixed ID survives a copied folder; the extension checks public version metadata and shows its update dot (9.3s)
+
+  4 passed (3.0m)
+
+=== live download Playwright (1 test) ===
+
+Running 1 test using 1 worker
+
+(node:5640) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+  ok 1 tests\download.spec.ts:20:1 › website download is an attachment, matches metadata, unzips and loads with the fixed ID (35.1s)
+
+  1 passed (36.1s)
+
+=== Final live download regression on 32bacfa ===
+
+Running 1 test using 1 worker
+
+(node:21608) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+  ok 1 tests\download.spec.ts:20:1 › website download is an attachment, matches metadata, unzips and loads with the fixed ID (31.6s)
+
+  1 passed (32.4s)
