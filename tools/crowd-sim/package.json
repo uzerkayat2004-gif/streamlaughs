@@ -1,0 +1,14 @@
+{
+  "name": "crowd-sim",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node cli.mjs",
+    "typecheck": "node --check cli.mjs && node --check record-demo.mjs",
+    "record-demo": "node record-demo.mjs",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "ws": "8.22.0"
+  }
+}

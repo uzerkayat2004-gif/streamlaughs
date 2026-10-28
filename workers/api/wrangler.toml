@@ -1,0 +1,35 @@
+name = "streamlaughs-crowd"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = false
+
+[vars]
+ENVIRONMENT = "production"
+CROWD_ENABLED = "false"
+ALLOW_TEST_TRAFFIC = "false"
+EXTENSION_ORIGINS = "chrome-extension://fkocldgggcmhihelohiicoakcfomhepg"
+SITE_ORIGINS = "https://streamlaughs.vercel.app"
+
+[[durable_objects.bindings]]
+name = "CHANNELS"
+class_name = "ChannelCrowd"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ChannelCrowd"]
+
+[env.dev]
+name = "streamlaughs-crowd-dev"
+[env.dev.vars]
+ENVIRONMENT = "development"
+CROWD_ENABLED = "true"
+ALLOW_TEST_TRAFFIC = "true"
+EXTENSION_ORIGINS = "chrome-extension://fkocldgggcmhihelohiicoakcfomhepg"
+SITE_ORIGINS = "http://localhost:3000,http://127.0.0.1:3000"
+
+[[env.dev.durable_objects.bindings]]
+name = "CHANNELS"
+class_name = "ChannelCrowd"

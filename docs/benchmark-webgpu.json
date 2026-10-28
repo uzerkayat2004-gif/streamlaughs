@@ -1,0 +1,39 @@
+{
+  "machine": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+    "gpu": {
+      "vendor": "intel",
+      "architecture": "gen-12lp",
+      "device": "",
+      "description": ""
+    },
+    "logicalProcessors": 12
+  },
+  "benchmark": {
+    "type": "benchmarked",
+    "backend": "mixed",
+    "loadMs": {
+      "vad": 712.8000000007451,
+      "yamnet": 187.90000000037253,
+      "whisper": 2780.9000000003725
+    },
+    "ms": {
+      "vad": 1.5240000000223517,
+      "yamnet": 14.169999999925494,
+      "whisper": 9577.400000000373,
+      "whisperFirst": 9245.10000000149
+    },
+    "calls": {
+      "vad": 50,
+      "yamnet": 10,
+      "whisper": 2
+    }
+  },
+  "cpuEstimate": {
+    "wallMs": 19047.294800000003,
+    "cpuMs": 18730.37,
+    "cpuMsPerSecond": 983.3611647571074,
+    "logicalCpuPercent": 8.194676372975895,
+    "method": "CDP process CPU deltas for this isolated browser; exited/new processes excluded"
+  }
+}

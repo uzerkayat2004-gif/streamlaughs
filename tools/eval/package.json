@@ -1,0 +1,9 @@
+{
+  "name": "@laughline/eval",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "node --check cli.mjs && node --check browser.mjs && node --check wav.mjs && node --check metrics.mjs"
+  }
+}

@@ -1,0 +1,310 @@
+{
+  "generatedBy": "local Wrangler + crowd-sim",
+  "capturedAt": "2026-10-27T14:05:21.710Z",
+  "channel": "demo_channel",
+  "viewers": 25,
+  "script": "funny",
+  "minutes": [
+    {
+      "minute": 1793109660000,
+      "contributors": 25,
+      "peakLaughingNow": 9,
+      "averageLaughPercent": 29.12,
+      "phrases": [
+        {
+          "text": "bro",
+          "count": 25
+        },
+        {
+          "text": "no way",
+          "count": 25
+        }
+      ],
+      "hype": 73,
+      "testTraffic": true,
+      "moments": [
+        {
+          "ts": 1793109678897,
+          "kind": "peak",
+          "laughingNow": 9,
+          "phrases": [
+            {
+              "text": "bro",
+              "count": 25
+            }
+          ]
+        },
+        {
+          "ts": 1793109676869,
+          "kind": "spike",
+          "laughingNow": 8,
+          "phrases": [
+            {
+              "text": "bro",
+              "count": 25
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "minute": 1793109720000,
+      "contributors": 25,
+      "peakLaughingNow": 17,
+      "averageLaughPercent": 43.93,
+      "phrases": [
+        {
+          "text": "bro",
+          "count": 25
+        },
+        {
+          "text": "no way",
+          "count": 25
+        }
+      ],
+      "hype": 100,
+      "testTraffic": true,
+      "moments": [
+        {
+          "ts": 1793109742526,
+          "kind": "peak",
+          "laughingNow": 17,
+          "phrases": [
+            {
+              "text": "bro",
+              "count": 25
+            },
+            {
+              "text": "no way",
+              "count": 25
+            }
+          ]
+        },
+        {
+          "ts": 1793109724349,
+          "kind": "spike",
+          "laughingNow": 7,
+          "phrases": [
+            {
+              "text": "bro",
+              "count": 25
+            },
+            {
+              "text": "no way",
+              "count": 25
+            }
+          ]
+        },
+        {
+          "ts": 1793109740507,
+          "kind": "spike",
+          "laughingNow": 12,
+          "phrases": [
+            {
+              "text": "bro",
+              "count": 25
+            },
+            {
+              "text": "no way",
+              "count": 25
+            }
+          ]
+        },
+        {
+          "ts": 1793109756675,
+          "kind": "spike",
+          "laughingNow": 14,
+          "phrases": [
+            {
+              "text": "bro",
+              "count": 25
+            },
+            {
+              "text": "no way",
+              "count": 25
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "minute": 1793109780000,
+      "contributors": 25,
+      "peakLaughingNow": 25,
+      "averageLaughPercent": 67.19,
+      "phrases": [
+        {
+          "text": "bro",
+          "count": 25
+        },
+        {
+          "text": "no way",
+          "count": 25
+        }
+      ],
+      "hype": 100,
+      "testTraffic": true,
+      "moments": [
+        {
+          "ts": 1793109807220,
+          "kind": "peak",
+          "laughingNow": 25,
+          "phrases": [
+            {
+              "text": "bro",
+              "count": 25
+            },
+            {
+              "text": "no way",
+              "count": 25
+            }
+          ]
+        },
+        {
+          "ts": 1793109788986,
+          "kind": "spike",
+          "laughingNow": 14,
+          "phrases": [
+            {
+              "text": "bro",
+              "count": 25
+            },
+            {
+              "text": "no way",
+              "count": 25
+            }
+          ]
+        },
+        {
+          "ts": 1793109805191,
+          "kind": "spike",
+          "laughingNow": 20,
+          "phrases": [
+            {
+              "text": "bro",
+              "count": 25
+            },
+            {
+              "text": "no way",
+              "count": 25
+            }
+          ]
+        },
+        {
+          "ts": 1793109821412,
+          "kind": "spike",
+          "laughingNow": 20,
+          "phrases": [
+            {
+              "text": "bro",
+              "count": 25
+            },
+            {
+              "text": "no way",
+              "count": 25
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "minute": 1793109840000,
+      "contributors": 25,
+      "peakLaughingNow": 25,
+      "averageLaughPercent": 54.85,
+      "phrases": [
+        {
+          "text": "bro",
+          "count": 25
+        },
+        {
+          "text": "no way",
+          "count": 25
+        }
+      ],
+      "hype": 75,
+      "testTraffic": true,
+      "moments": [
+        {
+          "ts": 1793109840649,
+          "kind": "peak",
+          "laughingNow": 25,
+          "phrases": [
+            {
+              "text": "bro",
+              "count": 25
+            },
+            {
+              "text": "no way",
+              "count": 25
+            }
+          ]
+        },
+        {
+          "ts": 1793109853760,
+          "kind": "spike",
+          "laughingNow": 20,
+          "phrases": [
+            {
+              "text": "bro",
+              "count": 25
+            },
+            {
+              "text": "no way",
+              "count": 25
+            }
+          ]
+        },
+        {
+          "ts": 1793109868888,
+          "kind": "spike",
+          "laughingNow": 8,
+          "phrases": [
+            {
+              "text": "bro",
+              "count": 25
+            },
+            {
+              "text": "no way",
+              "count": 25
+            }
+          ]
+        },
+        {
+          "ts": 1793109885028,
+          "kind": "spike",
+          "laughingNow": 8,
+          "phrases": [
+            {
+              "text": "bro",
+              "count": 25
+            },
+            {
+              "text": "no way",
+              "count": 25
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "live": {
+    "state": "live",
+    "sharing": 3,
+    "laughingNow": 0,
+    "laughPercent": 0,
+    "topWord": "bro",
+    "bubbles": [
+      {
+        "text": "bro",
+        "count": 3
+      },
+      {
+        "text": "no way",
+        "count": 3
+      }
+    ],
+    "hype": 3,
+    "testTraffic": true
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "identifiers": [
+    "@laughline/shared",
+    "@laughline/eval",
+    "laughline-monorepo",
+    "laughline:state",
+    "laughline:update",
+    "laughline:dock",
+    "laughline:onboarded",
+    "laughline.v1",
+    "laughline-web",
+    "laughline-frames",
+    "laughlineViewers",
+    "laughline-overlay",
+    "laughline-crowd-box",
+    "__Host-laughline-auth",
+    "laughline-auth",
+    "X-Laughline-Timeline",
+    "LAUGHLINE_TEST_WAV"
+  ],
+  "databaseSource": "apps/extension/src/db.ts",
+  "databaseName": "laughline",
+  "documentationExceptions": ["docs/internal-identifiers.md"],
+  "historicalEvidence": "docs/verification*.txt and approved design/reference assets retain original provenance; never shipped as runtime UI"
+}

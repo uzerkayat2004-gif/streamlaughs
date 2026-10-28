@@ -1,0 +1,62 @@
+name: verified extension release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      WRANGLER_SEND_METRICS: "false"
+      SITE_URL: ${{ vars.SITE_URL || secrets.SITE_URL || 'https://streamlaughs.vercel.app' }}
+      VITE_CROWD_API_URL: ${{ vars.VITE_CROWD_API_URL || secrets.VITE_CROWD_API_URL }}
+      RELEASE_REPO_OWNER: ${{ vars.RELEASE_REPO_OWNER || 'uzerkayat2004-gif' }}
+      RELEASE_REPO_NAME: ${{ vars.RELEASE_REPO_NAME || 'streamlaughs' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24.11.1"
+          package-manager-cache: false
+      - name: validate tag and public production configuration
+        run: node tools/release/pack.mjs --check
+      - name: install pinned package manager and dependencies
+        run: |
+          npm install --global pnpm@10.33.2 --ignore-scripts
+          pnpm install --frozen-lockfile
+      - name: fetch and verify bundled model receipts
+        run: |
+          python3 tools/fetch-models.py
+          node tools/check-assets.mjs
+      - name: typecheck and unit / Worker integration tests
+        run: |
+          pnpm -r typecheck
+          pnpm -r test
+      - name: build website, local Worker bundle and release extensions
+        run: pnpm build
+      - name: verify identity, absence of development controls and flat ZIP contents
+        run: |
+          node tools/check-extension-identity.mjs
+          node tools/release/verify-production.mjs apps/extension/.output/chrome-mv3 apps/extension/.output/edge-mv3
+          pnpm release:zip
+          cd releases/production
+          sha256sum --check SHA256SUMS.txt
+      - name: publish existing verified version tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: >-
+          gh release create "$RELEASE_TAG"
+          releases/production/*.zip releases/production/SHA256SUMS.txt
+          --repo "$GITHUB_REPOSITORY" --verify-tag
+          --title "$RELEASE_TAG" --notes-file releases/production/release-notes.md

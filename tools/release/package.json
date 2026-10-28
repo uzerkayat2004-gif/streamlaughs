@@ -1,0 +1,9 @@
+{
+  "name": "release-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "node --check config.mjs && node --check version.mjs && node --check verify-production.mjs && node --check branding.mjs && node --check offline-preview.mjs && node --check pack.mjs && python -m py_compile pack.py",
+    "test": "vitest run"
+  }
+}

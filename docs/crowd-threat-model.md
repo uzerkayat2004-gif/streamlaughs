@@ -1,0 +1,41 @@
+# Crowd threat model · Part 4
+
+Written before implementation, 2026-10-27. The API contract is in [crowd-api.md](crowd-api.md).
+
+## Trust and visibility
+
+Audio, raw frames, voice embeddings, raw model inputs/outputs and full transcripts remain on the viewer's PC. Only the approved labels/counts described below may be shared. The inference worker retains its model-only fetch restriction even though the background gains access to one configured API origin. No audio/transcript endpoint exists.
+
+The crowd server sees the lowercase Twitch channel, an expiring random anonymous session ID, connection mode, server receipt times and small allowlisted counts. Sharing clients may send up to three labels from a fixed shared crowd vocabulary; local personal vocabulary is broader and is never uploaded wholesale. Swears travel only as one numeric count. The crowd app does not read or persist viewer IP addresses, user agents, Twitch viewer identities or install IDs, and does not log request bodies or tokens. Signed tokens are verified in RAM; contribution/rate maps also live in RAM. Logs/traces are disabled in deployment configuration; errors have generic messages.
+
+Part 5 streamer authentication is separate from anonymous viewing. The Next.js server validates the streamer's Twitch login, user ID and access token, keeping the session in one encrypted HttpOnly cookie. Worker timeline authorization temporarily reads the streamer's numeric ID from the signed owner token; it is not stored in aggregate rows or sent to the dashboard browser. There is no viewer account database. Vercel and Twitch also see their own network/authentication traffic.
+
+**Watch-only is not invisible.** It sends no application WebSocket messages, but obtains a session and makes a WebSocket handshake. The server learns “someone is viewing channel X from this connection.” HTTP/WebSocket protocol traffic still exists. Cloudflare terminates TLS and necessarily sees source IP, request paths, timing and authentication headers, and may retain security/network metadata under its policies. App-level no-IP storage is not a promise that Cloudflare cannot observe IPs or correlate connections.
+
+Tokens contain a random ID, channel and server expiry, signed with HMAC-SHA-256 for two hours. They contain no persistent identifier and are held only in extension RAM. Reconnects within a watching session reuse the token; a new watching session or expiry gets a fresh ID. This prevents an application install identifier from linking sessions, not network-level correlation or timing analysis. Tokens use a WebSocket subprotocol header, never URL queries, and are never echoed in broadcasts.
+
+## Live state, hibernation and retention
+
+One SQLite-backed Durable Object owns each validated channel. Contributions, phrase contributor sets and rate-limit maps are bounded in memory, never SQLite. Hibernation attachments contain only the ephemeral connection ID, mode, expiry and test-traffic flag: no signed token, phrases, counts or audio. Cloudflare may persist this connection metadata while hibernating; it disappears with the socket. It is not a dashboard viewer table. Rate limits are not written into attachments/storage.
+
+Active windows and the current minute stay in memory while the room ticks. After an unexpected object restart, partial live windows/in-progress minute may be lost; the server fails closed to “few” until fresh contributors arrive. Completed SQL minute aggregates survive. No attempt is made to persist per-viewer state to recover a partial minute.
+
+Only eligible minute aggregates are stored: contributor count, peak laughter, average laugh percentage, five approved labels with distinct-contributor counts, hype and bounded server-time peak/spike markers. A minute requires at least three contributors in eligible live samples. Phrase labels independently require at least three distinct contributors. Rows expire after 30 days through an automatic alarm and read-time retention bounds. There are no SQL per-viewer rows, tokens, IPs or raw event records.
+
+## Abuse and controls
+
+| Threat                                 | Control and limit                                                                                                                                                                                                                                           |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Audio/transcript/extra-field injection | Strict shared zod schemas, UTF-8 payload cap, binary rejection, fixed counts and finite integer bounds. No arbitrary text fields.                                                                                                                           |
+| Names, swears or unknown words         | Exact shared crowd allowlist plus the shared privacy deny rules, checked client-side and again on the server. Invalid phrases disappear silently. Only numeric swear totals cross the wire.                                                                 |
+| One viewer boosting a phrase           | One contribution per anonymous ID per phrase per window; token reconnects retain identity until expiry. One active connection per token.                                                                                                                    |
+| Floods and reconnect storms            | One message/second per token and per connection, bounded memory rate tables, connection/contributor caps, backoff and jitter. CORS/Origin checks restrict normal browser clients but are not authentication against scripts.                                |
+| Fake anonymous people                  | No login/IP tracking means a script can mint multiple identities. The three-contributor floor counts anonymous sessions, **not verified unique humans**. It cannot defeat Sybil attacks or prove three independent people.                                  |
+| Small-cohort inference                 | Server returns exactly `{"state":"few"}` below the floor; no counts, labels, room size or test marker. Aggregated minute/phrase floors also apply. Timing/intersection attacks remain possible.                                                             |
+| Stale data after opt-out               | Share-off immediately clears the client queue/counters, closes the sharing socket and opens a receive-only connection. Server drops the old connection's contribution. An already transmitted packet cannot be recalled.                                    |
+| Forged/replayed token                  | HMAC, channel binding, short server expiry and one live socket per token. A stolen token can impersonate its anonymous session until expiry; TLS and no token logging reduce exposure.                                                                      |
+| Dashboard access                       | Part 5 validates Twitch identity and exact channel ownership on the Next server, then signs a 60-second channel-bound owner token. Worker verifies issuer/audience/channel/expiry. Anonymous viewer tokens and retired placeholder read secrets are denied. |
+| Demo traffic mistaken for people       | Simulator tokens are explicitly marked; live packets/UI and stored minutes carry a test-traffic flag. Production rejects demo traffic by default.                                                                                                           |
+| Quota exhaustion                       | Small pilot sizing, bounded state, minute-only writes, sleeping idle rooms, no per-tick SQL writes, kill switch and documented free limits. Anonymous public issuance cannot guarantee a global spend/usage cap; free quotas fail closed.                   |
+
+The kill switch blocks new sessions/upgrades and closes sockets on subsequent events after configuration rollout. It is not a promise of instantaneous global revocation during Cloudflare deployment propagation. Retention removes application rows, not a guarantee about provider backups or infrastructure logs. No deployment or account creation is part of this implementation task.

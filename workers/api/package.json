@@ -1,0 +1,20 @@
+{
+  "name": "api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "build": "node ../../tools/wrangler-local.mjs deploy --env= --dry-run --outdir .wrangler/build",
+    "dev": "node ../../tools/wrangler-local.mjs dev --env dev --ip 127.0.0.1 --port 8787 --log-level error"
+  },
+  "dependencies": {
+    "@laughline/shared": "workspace:*",
+    "hono": "4.13.14"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "1.4.8",
+    "@cloudflare/workers-types": "^5.20261027.1",
+    "wrangler": "4.153.0"
+  }
+}

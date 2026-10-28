@@ -1,0 +1,43 @@
+{
+  "name": "extension",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "build": "node ../../tools/prepare-runtime.mjs && node ../../tools/check-assets.mjs && wxt build && node ../../tools/check-extension-identity.mjs .output/chrome-mv3",
+    "build:debug": "node ../../tools/prepare-runtime.mjs && node ../../tools/check-assets.mjs && wxt build --mode audio-debug && node ../../tools/check-extension-identity.mjs .output/chrome-mv3-audio-debug",
+    "build:edge": "node ../../tools/prepare-runtime.mjs && node ../../tools/check-assets.mjs && wxt build -b edge && node ../../tools/check-extension-identity.mjs .output/edge-mv3",
+    "build:test-ui": "node ../../tools/prepare-runtime.mjs && node ../../tools/check-assets.mjs && wxt build --mode ui-test && node ../../tools/check-extension-identity.mjs .output/chrome-mv3-ui-test",
+    "build:test-crowd": "node ../../tools/prepare-runtime.mjs && node ../../tools/check-assets.mjs && wxt build --mode crowd-test && node ../../tools/check-extension-identity.mjs .output/chrome-mv3-crowd-test",
+    "typecheck": "wxt prepare && tsc --noEmit",
+    "test": "vitest run",
+    "pretest": "node ../../tools/ensure-built-identity.mjs",
+    "postinstall": "wxt prepare",
+    "build:test-site": "node ../../tools/prepare-runtime.mjs && node ../../tools/check-assets.mjs && wxt build --mode site-test && node ../../tools/check-extension-identity.mjs .output/chrome-mv3-site-test"
+  },
+  "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5.2.0",
+    "@fontsource-variable/inter": "^5.2.0",
+    "@fontsource-variable/jetbrains-mono": "^5.2.0",
+    "@huggingface/transformers": "3.8.1",
+    "@laughline/shared": "workspace:*",
+    "@mediapipe/tasks-audio": "0.10.22-rc.20250304",
+    "dexie": "^4.2.0",
+    "lucide-react": "^0.468.0",
+    "onnxruntime-common": "1.22.0-dev.20250409-89f8206ba4",
+    "onnxruntime-web": "1.22.0-dev.20250409-89f8206ba4",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zod": "^4.1.0",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.0",
+    "@types/chrome": "^0.1.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@wxt-dev/module-react": "^1.2.2",
+    "tailwindcss": "^4.1.0",
+    "wxt": "^0.21.5"
+  }
+}

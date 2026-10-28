@@ -1,0 +1,10 @@
+packages:
+  - tools/eval
+  - tools/crowd-sim
+  - tools/release
+  - apps/*
+  - workers/*
+  - packages/*
+onlyBuiltDependencies:
+  - esbuild
+  - workerd

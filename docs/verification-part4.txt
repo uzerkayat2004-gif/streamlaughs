@@ -1,0 +1,658 @@
+Part 4 local verification · 2026-10-27T18:46:14.7852178+05:30
+Windows / Node v24.11.1 / pnpm 10.33.2
+No account/login/deploy. Playwright traces disabled; no recorded audio.
+
+> pnpm -r typecheck
+Scope: 6 of 7 workspace projects
+apps/web typecheck$ node -e "console.log('web: placeholder; no TypeScript yet')"
+packages/shared typecheck$ tsc --noEmit
+tools/crowd-sim typecheck$ node --check cli.mjs
+tools/eval typecheck$ node --check cli.mjs && node --check browser.mjs && node --check wav.mjs && node --check metrics.mjs
+apps/web typecheck: web: placeholder; no TypeScript yet
+apps/web typecheck: Done
+tools/crowd-sim typecheck: Done
+tools/eval typecheck: Done
+packages/shared typecheck: Done
+workers/api typecheck$ tsc --noEmit
+apps/extension typecheck$ wxt prepare && tsc --noEmit
+apps/extension typecheck: WXT 0.21.5
+apps/extension typecheck: i Generating types...
+apps/extension typecheck: √ Finished in 512 ms
+workers/api typecheck: Done
+apps/extension typecheck: Done
+Exit code: 0
+
+> pnpm -r test
+Scope: 6 of 7 workspace projects
+apps/web test$ node -e "console.log('web: placeholder; no tests yet')"
+packages/shared test$ vitest run
+tools/eval test$ vitest run
+tools/crowd-sim test$ vitest run
+apps/web test: web: placeholder; no tests yet
+apps/web test: Done
+packages/shared test:  RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/packages/shared
+tools/eval test:  RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/tools/eval
+tools/crowd-sim test:  RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/tools/crowd-sim
+tools/eval test:  Test Files  1 passed (1)
+tools/eval test:       Tests  2 passed (2)
+tools/eval test:    Start at  18:46:24
+tools/eval test:    Duration  463ms (transform 50ms, setup 0ms, import 86ms, tests 6ms, environment 0ms)
+tools/eval test: Done
+packages/shared test:  Test Files  3 passed (3)
+packages/shared test:       Tests  20 passed (20)
+packages/shared test:    Start at  18:46:24
+packages/shared test:    Duration  694ms (transform 221ms, setup 0ms, import 697ms, tests 91ms, environment 0ms)
+tools/crowd-sim test:  Test Files  1 passed (1)
+tools/crowd-sim test:       Tests  2 passed (2)
+tools/crowd-sim test:    Start at  18:46:24
+tools/crowd-sim test:    Duration  661ms (transform 89ms, setup 0ms, import 290ms, tests 37ms, environment 0ms)
+packages/shared test: Done
+tools/crowd-sim test: Done
+apps/extension test$ vitest run
+workers/api test$ vitest run
+apps/extension test:  RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/apps/extension
+workers/api test:  RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/workers/api
+apps/extension test:  Test Files  12 passed (12)
+apps/extension test:       Tests  76 passed (76)
+apps/extension test:    Start at  18:46:25
+apps/extension test:    Duration  1.43s (transform 1.52s, setup 0ms, import 4.63s, tests 935ms, environment 3ms)
+apps/extension test: Done
+workers/api test:  Test Files  3 passed (3)
+workers/api test:       Tests  12 passed (12)
+workers/api test:    Start at  18:46:26
+workers/api test:    Duration  21.91s (transform 5.93s, setup 0ms, import 11.74s, tests 13.88s, environment 1ms)
+workers/api test: Done
+Exit code: 0
+
+> pnpm --filter extension build
+
+> extension@0.4.0 build C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline\apps\extension
+> node ../../tools/prepare-runtime.mjs && node ../../tools/check-assets.mjs && wxt build
+
+onnx: 21,640,503 local runtime bytes
+mediapipe: 12,205,698 local runtime bytes
+Verified 14 local model/license assets against SHA-256 receipts.
+
+WXT 0.21.5
+i Building chrome-mv3 for production with Vite 8.3.5
+[?25l
+⠋ Preparing...[K
+⠋ [1/5] audio-worklet[K
+⠙ [1/5] audio-worklet[K
+⠙ [2/5] background[K
+⠹ [2/5] background[K
+⠸ [2/5] background[K
+⠸ [3/5] debug, offscreen, popup, recap, welcome[K
+⠼ [3/5] debug, offscreen, popup, recap, welcome[K
+⠴ [3/5] debug, offscreen, popup, recap, welcome[K
+⠦ [3/5] debug, offscreen, popup, recap, welcome[K
+⠧ [3/5] debug, offscreen, popup, recap, welcome[K
+⠇ [3/5] debug, offscreen, popup, recap, welcome[K
+⠏ [3/5] debug, offscreen, popup, recap, welcome[K
+⠋ [3/5] debug, offscreen, popup, recap, welcome[K
+⠙ [3/5] debug, offscreen, popup, recap, welcome[K
+⠙ [4/5] inference-worker[K
+⠹ [4/5] inference-worker[K
+⠸ [4/5] inference-worker[K
+⠼ [4/5] inference-worker[K
+⠴ [4/5] inference-worker[K
+⠦ [4/5] inference-worker[K
+⠧ [4/5] inference-worker[K
+⠇ [4/5] inference-worker[K
+⠏ [4/5] inference-worker[K
+⠋ [4/5] inference-worker[K
+⠙ [4/5] inference-worker[K
+[EMPTY_IMPORT_META] `import.meta` may not be a valid syntax with the `iife` output format.
+      ╭─[ ../../node_modules/.pnpm/@huggingface+transformers@3.8.1/node_modules/@huggingface/transformers/dist/transformers.web.js:5101:37 ]
+      │
+ 5101 │     const _import_meta_url = Object(import.meta).url;
+      │                                     ─────┬─────  
+      │                                          ╰─────── This `import.meta` will be replaced with an empty object (`{}`) automatically. If this is desired, you can suppress this warning by adding `transform.define: { 'import.meta': {} }`. If `import.meta` needs to be kept as-is, you need to set the output format to `esm`.
+──────╯
+
+⠹ [4/5] inference-worker[K
+⠹ [5/5] twitch[K
+⠸ [5/5] twitch[K
+⠼ [5/5] twitch[K
+⠴ [5/5] twitch[K
+⠦ [5/5] twitch[K
+⠧ [5/5] twitch[K
+⠇ [5/5] twitch[K
+⠏ [5/5] twitch[K
+⠋ [5/5] twitch[K
+⠙ [5/5] twitch[K
+⠹ [5/5] twitch[K
+⠸ [5/5] twitch[K
+[K[?25h
+[K[?25h√ Built extension in 5.724 s
+  ├─ .output\chrome-mv3\manifest.json                                                    1.09 kB  
+  ├─ .output\chrome-mv3\models\manifest.json                                             4.69 kB  
+  ├─ .output\chrome-mv3\debug.html                                                       442 B    
+  ├─ .output\chrome-mv3\offscreen.html                                                   352 B    
+  ├─ .output\chrome-mv3\popup.html                                                       570 B    
+  ├─ .output\chrome-mv3\recap.html                                                       581 B    
+  ├─ .output\chrome-mv3\welcome.html                                                     585 B    
+  ├─ .output\chrome-mv3\audio-worklet.js                                                 2.98 kB  
+  ├─ .output\chrome-mv3\background.js                                                    213.53 kB
+  ├─ .output\chrome-mv3\chunks\config-DJUTNp74.js                                        91 B     
+  ├─ .output\chrome-mv3\chunks\debug-BanAubEv.js                                         508 B    
+  ├─ .output\chrome-mv3\chunks\offscreen-B0Q7lFrW.js                                     11.93 kB 
+  ├─ .output\chrome-mv3\chunks\play-va70OeH4.js                                          124 B    
+  ├─ .output\chrome-mv3\chunks\popup-qpgvjxai.js                                         6.82 kB  
+  ├─ .output\chrome-mv3\chunks\recap-Ch4ZBxNx.js                                         106.14 kB
+  ├─ .output\chrome-mv3\chunks\src-B8IHTX5_.js                                           95.99 kB 
+  ├─ .output\chrome-mv3\chunks\styles-BHRWk2sP.js                                        228.42 kB
+  ├─ .output\chrome-mv3\chunks\welcome-aPiWQZ6i.js                                       3.08 kB  
+  ├─ .output\chrome-mv3\content-scripts\twitch.js                                        365.04 kB
+  ├─ .output\chrome-mv3\inference-worker.js                                              1.32 MB  
+  ├─ .output\chrome-mv3\runtime\mediapipe\audio_wasm_internal.js                         161.73 kB
+  ├─ .output\chrome-mv3\runtime\mediapipe\audio_wasm_nosimd_internal.js                  161.59 kB
+  ├─ .output\chrome-mv3\assets\styles-DjdH-Eiu.css                                       33.91 kB 
+  ├─ .output\chrome-mv3\fonts\bricolage-grotesque-LICENSE.txt                            4.40 kB  
+  ├─ .output\chrome-mv3\fonts\bricolage-grotesque.woff2                                  41.34 kB 
+  ├─ .output\chrome-mv3\fonts\inter-LICENSE.txt                                          4.48 kB  
+  ├─ .output\chrome-mv3\fonts\inter.woff2                                                48.26 kB 
+  ├─ .output\chrome-mv3\fonts\jetbrains-mono-LICENSE.txt                                 4.52 kB  
+  ├─ .output\chrome-mv3\fonts\jetbrains-mono.woff2                                       40.40 kB 
+  ├─ .output\chrome-mv3\icon\128.png                                                     5.04 kB  
+  ├─ .output\chrome-mv3\icon\16.png                                                      514 B    
+  ├─ .output\chrome-mv3\icon\32.png                                                      1.12 kB  
+  ├─ .output\chrome-mv3\icon\48.png                                                      1.64 kB  
+  ├─ .output\chrome-mv3\models\licenses\silero-MIT.txt                                   1.07 kB  
+  ├─ .output\chrome-mv3\models\licenses\Transformers-Apache-2.0.txt                      11.36 kB 
+  ├─ .output\chrome-mv3\models\licenses\Whisper-MIT.txt                                  1.06 kB  
+  ├─ .output\chrome-mv3\models\licenses\Whisper-model-card.md                            14.86 kB 
+  ├─ .output\chrome-mv3\models\licenses\YAMNet-Apache-2.0.txt                            11.51 kB 
+  ├─ .output\chrome-mv3\models\silero-v5.onnx                                            2.33 MB  
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\config.json                               2.20 kB  
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\generation_config.json                    1.65 kB  
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\onnx\decoder_model_merged_quantized.onnx  30.72 MB 
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\onnx\encoder_model_quantized.onnx         10.12 MB 
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\preprocessor_config.json                  339 B    
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\special_tokens_map.json                   2.17 kB  
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\tokenizer_config.json                     282.66 kB
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\tokenizer.json                            2.41 MB  
+  ├─ .output\chrome-mv3\models\yamnet.tflite                                             4.13 MB  
+  ├─ .output\chrome-mv3\runtime\mediapipe\audio_wasm_internal.wasm                       6.00 MB  
+  ├─ .output\chrome-mv3\runtime\mediapipe\audio_wasm_nosimd_internal.wasm                5.88 MB  
+  ├─ .output\chrome-mv3\runtime\mediapipe\LICENSE.txt                                    11.51 kB 
+  ├─ .output\chrome-mv3\runtime\onnx\LICENSE.txt                                         1.07 kB  
+  ├─ .output\chrome-mv3\runtime\onnx\ort-wasm-simd-threaded.jsep.mjs                     44.48 kB 
+  └─ .output\chrome-mv3\runtime\onnx\ort-wasm-simd-threaded.jsep.wasm                    21.60 MB 
+Σ Total size: 86.44 MB                                                                 
+√ Finished in 6.003 s
+Exit code: 0
+
+> pnpm --filter extension build:debug
+
+> extension@0.4.0 build:debug C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline\apps\extension
+> node ../../tools/prepare-runtime.mjs && node ../../tools/check-assets.mjs && wxt build --mode audio-debug
+
+onnx: 21,640,503 local runtime bytes
+mediapipe: 12,205,698 local runtime bytes
+Verified 14 local model/license assets against SHA-256 receipts.
+
+WXT 0.21.5
+i Building chrome-mv3 for audio-debug with Vite 8.3.5
+[?25l
+⠋ Preparing...[K
+⠋ [1/5] audio-worklet[K
+⠋ [2/5] background[K
+⠙ [2/5] background[K
+⠹ [2/5] background[K
+⠹ [3/5] debug, offscreen, popup, recap, welcome[K
+⠸ [3/5] debug, offscreen, popup, recap, welcome[K
+⠼ [3/5] debug, offscreen, popup, recap, welcome[K
+⠴ [3/5] debug, offscreen, popup, recap, welcome[K
+⠦ [3/5] debug, offscreen, popup, recap, welcome[K
+⠧ [3/5] debug, offscreen, popup, recap, welcome[K
+⠇ [3/5] debug, offscreen, popup, recap, welcome[K
+⠇ [4/5] inference-worker[K
+⠏ [4/5] inference-worker[K
+⠋ [4/5] inference-worker[K
+⠙ [4/5] inference-worker[K
+⠹ [4/5] inference-worker[K
+⠸ [4/5] inference-worker[K
+⠼ [4/5] inference-worker[K
+⠴ [4/5] inference-worker[K
+[EMPTY_IMPORT_META] `import.meta` may not be a valid syntax with the `iife` output format.
+      ╭─[ ../../node_modules/.pnpm/@huggingface+transformers@3.8.1/node_modules/@huggingface/transformers/dist/transformers.web.js:5101:37 ]
+      │
+ 5101 │     const _import_meta_url = Object(import.meta).url;
+      │                                     ─────┬─────  
+      │                                          ╰─────── This `import.meta` will be replaced with an empty object (`{}`) automatically. If this is desired, you can suppress this warning by adding `transform.define: { 'import.meta': {} }`. If `import.meta` needs to be kept as-is, you need to set the output format to `esm`.
+──────╯
+
+⠦ [4/5] inference-worker[K
+⠦ [5/5] twitch[K
+⠧ [5/5] twitch[K
+⠇ [5/5] twitch[K
+⠏ [5/5] twitch[K
+⠋ [5/5] twitch[K
+⠙ [5/5] twitch[K
+⠹ [5/5] twitch[K
+⠸ [5/5] twitch[K
+⠼ [5/5] twitch[K
+⠴ [5/5] twitch[K
+⠦ [5/5] twitch[K
+⠧ [5/5] twitch[K
+⠇ [5/5] twitch[K
+⠏ [5/5] twitch[K
+[K[?25h
+[K[?25h√ Built extension in 5.038 s
+  ├─ .output\chrome-mv3-audio-debug\manifest.json                                                    1.43 kB  
+  ├─ .output\chrome-mv3-audio-debug\models\manifest.json                                             4.69 kB  
+  ├─ .output\chrome-mv3-audio-debug\debug.html                                                       442 B    
+  ├─ .output\chrome-mv3-audio-debug\offscreen.html                                                   352 B    
+  ├─ .output\chrome-mv3-audio-debug\popup.html                                                       570 B    
+  ├─ .output\chrome-mv3-audio-debug\recap.html                                                       581 B    
+  ├─ .output\chrome-mv3-audio-debug\welcome.html                                                     585 B    
+  ├─ .output\chrome-mv3-audio-debug\audio-worklet.js                                                 3.09 kB  
+  ├─ .output\chrome-mv3-audio-debug\background.js                                                    214.89 kB
+  ├─ .output\chrome-mv3-audio-debug\chunks\config-DJUTNp74.js                                        91 B     
+  ├─ .output\chrome-mv3-audio-debug\chunks\debug-DTMdVn_0.js                                         7.00 kB  
+  ├─ .output\chrome-mv3-audio-debug\chunks\offscreen-CzbJ_Ivn.js                                     12.01 kB 
+  ├─ .output\chrome-mv3-audio-debug\chunks\play-CuxmbfLz.js                                          124 B    
+  ├─ .output\chrome-mv3-audio-debug\chunks\popup-CSrbV3R2.js                                         10.95 kB 
+  ├─ .output\chrome-mv3-audio-debug\chunks\recap-Bt054QvG.js                                         110.72 kB
+  ├─ .output\chrome-mv3-audio-debug\chunks\src-B8IHTX5_.js                                           95.99 kB 
+  ├─ .output\chrome-mv3-audio-debug\chunks\styles-B0dLXJYd.js                                        438.28 kB
+  ├─ .output\chrome-mv3-audio-debug\chunks\welcome-C9nnRBpn.js                                       5.03 kB  
+  ├─ .output\chrome-mv3-audio-debug\content-scripts\twitch.js                                        575.44 kB
+  ├─ .output\chrome-mv3-audio-debug\inference-worker.js                                              1.32 MB  
+  ├─ .output\chrome-mv3-audio-debug\runtime\mediapipe\audio_wasm_internal.js                         161.73 kB
+  ├─ .output\chrome-mv3-audio-debug\runtime\mediapipe\audio_wasm_nosimd_internal.js                  161.59 kB
+  ├─ .output\chrome-mv3-audio-debug\assets\styles-DjdH-Eiu.css                                       33.91 kB 
+  ├─ .output\chrome-mv3-audio-debug\fonts\bricolage-grotesque-LICENSE.txt                            4.40 kB  
+  ├─ .output\chrome-mv3-audio-debug\fonts\bricolage-grotesque.woff2                                  41.34 kB 
+  ├─ .output\chrome-mv3-audio-debug\fonts\inter-LICENSE.txt                                          4.48 kB  
+  ├─ .output\chrome-mv3-audio-debug\fonts\inter.woff2                                                48.26 kB 
+  ├─ .output\chrome-mv3-audio-debug\fonts\jetbrains-mono-LICENSE.txt                                 4.52 kB  
+  ├─ .output\chrome-mv3-audio-debug\fonts\jetbrains-mono.woff2                                       40.40 kB 
+  ├─ .output\chrome-mv3-audio-debug\icon\128.png                                                     5.04 kB  
+  ├─ .output\chrome-mv3-audio-debug\icon\16.png                                                      514 B    
+  ├─ .output\chrome-mv3-audio-debug\icon\32.png                                                      1.12 kB  
+  ├─ .output\chrome-mv3-audio-debug\icon\48.png                                                      1.64 kB  
+  ├─ .output\chrome-mv3-audio-debug\models\licenses\silero-MIT.txt                                   1.07 kB  
+  ├─ .output\chrome-mv3-audio-debug\models\licenses\Transformers-Apache-2.0.txt                      11.36 kB 
+  ├─ .output\chrome-mv3-audio-debug\models\licenses\Whisper-MIT.txt                                  1.06 kB  
+  ├─ .output\chrome-mv3-audio-debug\models\licenses\Whisper-model-card.md                            14.86 kB 
+  ├─ .output\chrome-mv3-audio-debug\models\licenses\YAMNet-Apache-2.0.txt                            11.51 kB 
+  ├─ .output\chrome-mv3-audio-debug\models\silero-v5.onnx                                            2.33 MB  
+  ├─ .output\chrome-mv3-audio-debug\models\whisper-tiny.en\config.json                               2.20 kB  
+  ├─ .output\chrome-mv3-audio-debug\models\whisper-tiny.en\generation_config.json                    1.65 kB  
+  ├─ .output\chrome-mv3-audio-debug\models\whisper-tiny.en\onnx\decoder_model_merged_quantized.onnx  30.72 MB 
+  ├─ .output\chrome-mv3-audio-debug\models\whisper-tiny.en\onnx\encoder_model_quantized.onnx         10.12 MB 
+  ├─ .output\chrome-mv3-audio-debug\models\whisper-tiny.en\preprocessor_config.json                  339 B    
+  ├─ .output\chrome-mv3-audio-debug\models\whisper-tiny.en\special_tokens_map.json                   2.17 kB  
+  ├─ .output\chrome-mv3-audio-debug\models\whisper-tiny.en\tokenizer_config.json                     282.66 kB
+  ├─ .output\chrome-mv3-audio-debug\models\whisper-tiny.en\tokenizer.json                            2.41 MB  
+  ├─ .output\chrome-mv3-audio-debug\models\yamnet.tflite                                             4.13 MB  
+  ├─ .output\chrome-mv3-audio-debug\runtime\mediapipe\audio_wasm_internal.wasm                       6.00 MB  
+  ├─ .output\chrome-mv3-audio-debug\runtime\mediapipe\audio_wasm_nosimd_internal.wasm                5.88 MB  
+  ├─ .output\chrome-mv3-audio-debug\runtime\mediapipe\LICENSE.txt                                    11.51 kB 
+  ├─ .output\chrome-mv3-audio-debug\runtime\onnx\LICENSE.txt                                         1.07 kB  
+  ├─ .output\chrome-mv3-audio-debug\runtime\onnx\ort-wasm-simd-threaded.jsep.mjs                     44.48 kB 
+  └─ .output\chrome-mv3-audio-debug\runtime\onnx\ort-wasm-simd-threaded.jsep.wasm                    21.60 MB 
+Σ Total size: 86.88 MB                                                                             
+√ Finished in 5.360 s
+Exit code: 0
+
+> pnpm --filter extension build:edge
+
+> extension@0.4.0 build:edge C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline\apps\extension
+> node ../../tools/prepare-runtime.mjs && node ../../tools/check-assets.mjs && wxt build -b edge
+
+onnx: 21,640,503 local runtime bytes
+mediapipe: 12,205,698 local runtime bytes
+Verified 14 local model/license assets against SHA-256 receipts.
+
+WXT 0.21.5
+i Building edge-mv3 for production with Vite 8.3.5
+[?25l
+⠋ Preparing...[K
+⠋ [1/5] audio-worklet[K
+⠋ [2/5] background[K
+⠙ [2/5] background[K
+⠹ [2/5] background[K
+⠹ [3/5] debug, offscreen, popup, recap, welcome[K
+⠸ [3/5] debug, offscreen, popup, recap, welcome[K
+⠼ [3/5] debug, offscreen, popup, recap, welcome[K
+⠴ [3/5] debug, offscreen, popup, recap, welcome[K
+⠦ [3/5] debug, offscreen, popup, recap, welcome[K
+⠧ [3/5] debug, offscreen, popup, recap, welcome[K
+⠧ [4/5] inference-worker[K
+⠇ [4/5] inference-worker[K
+⠏ [4/5] inference-worker[K
+⠋ [4/5] inference-worker[K
+⠙ [4/5] inference-worker[K
+[EMPTY_IMPORT_META] `import.meta` may not be a valid syntax with the `iife` output format.
+      ╭─[ ../../node_modules/.pnpm/@huggingface+transformers@3.8.1/node_modules/@huggingface/transformers/dist/transformers.web.js:5101:37 ]
+      │
+ 5101 │     const _import_meta_url = Object(import.meta).url;
+      │                                     ─────┬─────  
+      │                                          ╰─────── This `import.meta` will be replaced with an empty object (`{}`) automatically. If this is desired, you can suppress this warning by adding `transform.define: { 'import.meta': {} }`. If `import.meta` needs to be kept as-is, you need to set the output format to `esm`.
+──────╯
+
+⠹ [4/5] inference-worker[K
+⠹ [5/5] twitch[K
+⠸ [5/5] twitch[K
+⠼ [5/5] twitch[K
+⠴ [5/5] twitch[K
+⠦ [5/5] twitch[K
+⠧ [5/5] twitch[K
+⠇ [5/5] twitch[K
+⠏ [5/5] twitch[K
+⠋ [5/5] twitch[K
+[K[?25h
+[K[?25h√ Built extension in 4.268 s
+  ├─ .output\edge-mv3\manifest.json                                                    1.09 kB  
+  ├─ .output\edge-mv3\models\manifest.json                                             4.69 kB  
+  ├─ .output\edge-mv3\debug.html                                                       442 B    
+  ├─ .output\edge-mv3\offscreen.html                                                   352 B    
+  ├─ .output\edge-mv3\popup.html                                                       570 B    
+  ├─ .output\edge-mv3\recap.html                                                       581 B    
+  ├─ .output\edge-mv3\welcome.html                                                     585 B    
+  ├─ .output\edge-mv3\audio-worklet.js                                                 2.98 kB  
+  ├─ .output\edge-mv3\background.js                                                    213.53 kB
+  ├─ .output\edge-mv3\chunks\config-DJUTNp74.js                                        91 B     
+  ├─ .output\edge-mv3\chunks\debug-BanAubEv.js                                         508 B    
+  ├─ .output\edge-mv3\chunks\offscreen-B0Q7lFrW.js                                     11.93 kB 
+  ├─ .output\edge-mv3\chunks\play-va70OeH4.js                                          124 B    
+  ├─ .output\edge-mv3\chunks\popup-qpgvjxai.js                                         6.82 kB  
+  ├─ .output\edge-mv3\chunks\recap-Ch4ZBxNx.js                                         106.14 kB
+  ├─ .output\edge-mv3\chunks\src-B8IHTX5_.js                                           95.99 kB 
+  ├─ .output\edge-mv3\chunks\styles-BHRWk2sP.js                                        228.42 kB
+  ├─ .output\edge-mv3\chunks\welcome-aPiWQZ6i.js                                       3.08 kB  
+  ├─ .output\edge-mv3\content-scripts\twitch.js                                        365.04 kB
+  ├─ .output\edge-mv3\inference-worker.js                                              1.32 MB  
+  ├─ .output\edge-mv3\runtime\mediapipe\audio_wasm_internal.js                         161.73 kB
+  ├─ .output\edge-mv3\runtime\mediapipe\audio_wasm_nosimd_internal.js                  161.59 kB
+  ├─ .output\edge-mv3\assets\styles-DjdH-Eiu.css                                       33.91 kB 
+  ├─ .output\edge-mv3\fonts\bricolage-grotesque-LICENSE.txt                            4.40 kB  
+  ├─ .output\edge-mv3\fonts\bricolage-grotesque.woff2                                  41.34 kB 
+  ├─ .output\edge-mv3\fonts\inter-LICENSE.txt                                          4.48 kB  
+  ├─ .output\edge-mv3\fonts\inter.woff2                                                48.26 kB 
+  ├─ .output\edge-mv3\fonts\jetbrains-mono-LICENSE.txt                                 4.52 kB  
+  ├─ .output\edge-mv3\fonts\jetbrains-mono.woff2                                       40.40 kB 
+  ├─ .output\edge-mv3\icon\128.png                                                     5.04 kB  
+  ├─ .output\edge-mv3\icon\16.png                                                      514 B    
+  ├─ .output\edge-mv3\icon\32.png                                                      1.12 kB  
+  ├─ .output\edge-mv3\icon\48.png                                                      1.64 kB  
+  ├─ .output\edge-mv3\models\licenses\silero-MIT.txt                                   1.07 kB  
+  ├─ .output\edge-mv3\models\licenses\Transformers-Apache-2.0.txt                      11.36 kB 
+  ├─ .output\edge-mv3\models\licenses\Whisper-MIT.txt                                  1.06 kB  
+  ├─ .output\edge-mv3\models\licenses\Whisper-model-card.md                            14.86 kB 
+  ├─ .output\edge-mv3\models\licenses\YAMNet-Apache-2.0.txt                            11.51 kB 
+  ├─ .output\edge-mv3\models\silero-v5.onnx                                            2.33 MB  
+  ├─ .output\edge-mv3\models\whisper-tiny.en\config.json                               2.20 kB  
+  ├─ .output\edge-mv3\models\whisper-tiny.en\generation_config.json                    1.65 kB  
+  ├─ .output\edge-mv3\models\whisper-tiny.en\onnx\decoder_model_merged_quantized.onnx  30.72 MB 
+  ├─ .output\edge-mv3\models\whisper-tiny.en\onnx\encoder_model_quantized.onnx         10.12 MB 
+  ├─ .output\edge-mv3\models\whisper-tiny.en\preprocessor_config.json                  339 B    
+  ├─ .output\edge-mv3\models\whisper-tiny.en\special_tokens_map.json                   2.17 kB  
+  ├─ .output\edge-mv3\models\whisper-tiny.en\tokenizer_config.json                     282.66 kB
+  ├─ .output\edge-mv3\models\whisper-tiny.en\tokenizer.json                            2.41 MB  
+  ├─ .output\edge-mv3\models\yamnet.tflite                                             4.13 MB  
+  ├─ .output\edge-mv3\runtime\mediapipe\audio_wasm_internal.wasm                       6.00 MB  
+  ├─ .output\edge-mv3\runtime\mediapipe\audio_wasm_nosimd_internal.wasm                5.88 MB  
+  ├─ .output\edge-mv3\runtime\mediapipe\LICENSE.txt                                    11.51 kB 
+  ├─ .output\edge-mv3\runtime\onnx\LICENSE.txt                                         1.07 kB  
+  ├─ .output\edge-mv3\runtime\onnx\ort-wasm-simd-threaded.jsep.mjs                     44.48 kB 
+  └─ .output\edge-mv3\runtime\onnx\ort-wasm-simd-threaded.jsep.wasm                    21.60 MB 
+Σ Total size: 86.44 MB                                                               
+√ Finished in 4.519 s
+Exit code: 0
+
+> pnpm --filter extension build:test-ui
+
+> extension@0.4.0 build:test-ui C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline\apps\extension
+> node ../../tools/prepare-runtime.mjs && node ../../tools/check-assets.mjs && wxt build --mode ui-test
+
+onnx: 21,640,503 local runtime bytes
+mediapipe: 12,205,698 local runtime bytes
+Verified 14 local model/license assets against SHA-256 receipts.
+
+WXT 0.21.5
+i Building chrome-mv3 for ui-test with Vite 8.3.5
+[?25l
+⠋ Preparing...[K
+⠋ [1/5] audio-worklet[K
+⠋ [2/5] background[K
+⠙ [2/5] background[K
+⠹ [2/5] background[K
+⠹ [3/5] debug, offscreen, popup, recap, welcome[K
+⠸ [3/5] debug, offscreen, popup, recap, welcome[K
+⠼ [3/5] debug, offscreen, popup, recap, welcome[K
+⠴ [3/5] debug, offscreen, popup, recap, welcome[K
+⠦ [3/5] debug, offscreen, popup, recap, welcome[K
+⠧ [3/5] debug, offscreen, popup, recap, welcome[K
+⠧ [4/5] inference-worker[K
+⠇ [4/5] inference-worker[K
+⠏ [4/5] inference-worker[K
+⠋ [4/5] inference-worker[K
+⠙ [4/5] inference-worker[K
+⠹ [4/5] inference-worker[K
+⠸ [4/5] inference-worker[K
+[EMPTY_IMPORT_META] `import.meta` may not be a valid syntax with the `iife` output format.
+      ╭─[ ../../node_modules/.pnpm/@huggingface+transformers@3.8.1/node_modules/@huggingface/transformers/dist/transformers.web.js:5101:37 ]
+      │
+ 5101 │     const _import_meta_url = Object(import.meta).url;
+      │                                     ─────┬─────  
+      │                                          ╰─────── This `import.meta` will be replaced with an empty object (`{}`) automatically. If this is desired, you can suppress this warning by adding `transform.define: { 'import.meta': {} }`. If `import.meta` needs to be kept as-is, you need to set the output format to `esm`.
+──────╯
+
+⠼ [4/5] inference-worker[K
+⠼ [5/5] twitch[K
+⠴ [5/5] twitch[K
+⠦ [5/5] twitch[K
+⠧ [5/5] twitch[K
+⠇ [5/5] twitch[K
+⠏ [5/5] twitch[K
+⠋ [5/5] twitch[K
+⠙ [5/5] twitch[K
+⠹ [5/5] twitch[K
+⠸ [5/5] twitch[K
+⠼ [5/5] twitch[K
+⠴ [5/5] twitch[K
+⠦ [5/5] twitch[K
+⠧ [5/5] twitch[K
+[K[?25h
+[K[?25h√ Built extension in 5.093 s
+  ├─ .output\chrome-mv3-ui-test\manifest.json                                                    1.43 kB  
+  ├─ .output\chrome-mv3-ui-test\models\manifest.json                                             4.69 kB  
+  ├─ .output\chrome-mv3-ui-test\debug.html                                                       442 B    
+  ├─ .output\chrome-mv3-ui-test\offscreen.html                                                   352 B    
+  ├─ .output\chrome-mv3-ui-test\popup.html                                                       570 B    
+  ├─ .output\chrome-mv3-ui-test\recap.html                                                       581 B    
+  ├─ .output\chrome-mv3-ui-test\welcome.html                                                     585 B    
+  ├─ .output\chrome-mv3-ui-test\audio-worklet.js                                                 3.09 kB  
+  ├─ .output\chrome-mv3-ui-test\background.js                                                    214.88 kB
+  ├─ .output\chrome-mv3-ui-test\chunks\config-DJUTNp74.js                                        91 B     
+  ├─ .output\chrome-mv3-ui-test\chunks\debug-DTMdVn_0.js                                         7.00 kB  
+  ├─ .output\chrome-mv3-ui-test\chunks\offscreen-CzbJ_Ivn.js                                     12.01 kB 
+  ├─ .output\chrome-mv3-ui-test\chunks\play-CuxmbfLz.js                                          124 B    
+  ├─ .output\chrome-mv3-ui-test\chunks\popup-CSrbV3R2.js                                         10.95 kB 
+  ├─ .output\chrome-mv3-ui-test\chunks\recap-Bt054QvG.js                                         110.72 kB
+  ├─ .output\chrome-mv3-ui-test\chunks\src-B8IHTX5_.js                                           95.99 kB 
+  ├─ .output\chrome-mv3-ui-test\chunks\styles-B0dLXJYd.js                                        438.28 kB
+  ├─ .output\chrome-mv3-ui-test\chunks\welcome-C9nnRBpn.js                                       5.03 kB  
+  ├─ .output\chrome-mv3-ui-test\content-scripts\twitch.js                                        575.44 kB
+  ├─ .output\chrome-mv3-ui-test\inference-worker.js                                              1.32 MB  
+  ├─ .output\chrome-mv3-ui-test\runtime\mediapipe\audio_wasm_internal.js                         161.73 kB
+  ├─ .output\chrome-mv3-ui-test\runtime\mediapipe\audio_wasm_nosimd_internal.js                  161.59 kB
+  ├─ .output\chrome-mv3-ui-test\assets\styles-DjdH-Eiu.css                                       33.91 kB 
+  ├─ .output\chrome-mv3-ui-test\fonts\bricolage-grotesque-LICENSE.txt                            4.40 kB  
+  ├─ .output\chrome-mv3-ui-test\fonts\bricolage-grotesque.woff2                                  41.34 kB 
+  ├─ .output\chrome-mv3-ui-test\fonts\inter-LICENSE.txt                                          4.48 kB  
+  ├─ .output\chrome-mv3-ui-test\fonts\inter.woff2                                                48.26 kB 
+  ├─ .output\chrome-mv3-ui-test\fonts\jetbrains-mono-LICENSE.txt                                 4.52 kB  
+  ├─ .output\chrome-mv3-ui-test\fonts\jetbrains-mono.woff2                                       40.40 kB 
+  ├─ .output\chrome-mv3-ui-test\icon\128.png                                                     5.04 kB  
+  ├─ .output\chrome-mv3-ui-test\icon\16.png                                                      514 B    
+  ├─ .output\chrome-mv3-ui-test\icon\32.png                                                      1.12 kB  
+  ├─ .output\chrome-mv3-ui-test\icon\48.png                                                      1.64 kB  
+  ├─ .output\chrome-mv3-ui-test\models\licenses\silero-MIT.txt                                   1.07 kB  
+  ├─ .output\chrome-mv3-ui-test\models\licenses\Transformers-Apache-2.0.txt                      11.36 kB 
+  ├─ .output\chrome-mv3-ui-test\models\licenses\Whisper-MIT.txt                                  1.06 kB  
+  ├─ .output\chrome-mv3-ui-test\models\licenses\Whisper-model-card.md                            14.86 kB 
+  ├─ .output\chrome-mv3-ui-test\models\licenses\YAMNet-Apache-2.0.txt                            11.51 kB 
+  ├─ .output\chrome-mv3-ui-test\models\silero-v5.onnx                                            2.33 MB  
+  ├─ .output\chrome-mv3-ui-test\models\whisper-tiny.en\config.json                               2.20 kB  
+  ├─ .output\chrome-mv3-ui-test\models\whisper-tiny.en\generation_config.json                    1.65 kB  
+  ├─ .output\chrome-mv3-ui-test\models\whisper-tiny.en\onnx\decoder_model_merged_quantized.onnx  30.72 MB 
+  ├─ .output\chrome-mv3-ui-test\models\whisper-tiny.en\onnx\encoder_model_quantized.onnx         10.12 MB 
+  ├─ .output\chrome-mv3-ui-test\models\whisper-tiny.en\preprocessor_config.json                  339 B    
+  ├─ .output\chrome-mv3-ui-test\models\whisper-tiny.en\special_tokens_map.json                   2.17 kB  
+  ├─ .output\chrome-mv3-ui-test\models\whisper-tiny.en\tokenizer_config.json                     282.66 kB
+  ├─ .output\chrome-mv3-ui-test\models\whisper-tiny.en\tokenizer.json                            2.41 MB  
+  ├─ .output\chrome-mv3-ui-test\models\yamnet.tflite                                             4.13 MB  
+  ├─ .output\chrome-mv3-ui-test\runtime\mediapipe\audio_wasm_internal.wasm                       6.00 MB  
+  ├─ .output\chrome-mv3-ui-test\runtime\mediapipe\audio_wasm_nosimd_internal.wasm                5.88 MB  
+  ├─ .output\chrome-mv3-ui-test\runtime\mediapipe\LICENSE.txt                                    11.51 kB 
+  ├─ .output\chrome-mv3-ui-test\runtime\onnx\LICENSE.txt                                         1.07 kB  
+  ├─ .output\chrome-mv3-ui-test\runtime\onnx\ort-wasm-simd-threaded.jsep.mjs                     44.48 kB 
+  └─ .output\chrome-mv3-ui-test\runtime\onnx\ort-wasm-simd-threaded.jsep.wasm                    21.60 MB 
+Σ Total size: 86.88 MB                                                                         
+√ Finished in 5.374 s
+Exit code: 0
+
+> VITE_CROWD_API_URL=http://127.0.0.1:8787 pnpm --filter extension build:test-crowd
+
+> extension@0.4.0 build:test-crowd C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline\apps\extension
+> node ../../tools/prepare-runtime.mjs && node ../../tools/check-assets.mjs && wxt build --mode crowd-test
+
+onnx: 21,640,503 local runtime bytes
+mediapipe: 12,205,698 local runtime bytes
+Verified 14 local model/license assets against SHA-256 receipts.
+
+WXT 0.21.5
+i Building chrome-mv3 for crowd-test with Vite 8.3.5
+[?25l
+⠋ Preparing...[K
+⠋ [1/5] audio-worklet[K
+⠋ [2/5] background[K
+⠙ [2/5] background[K
+⠹ [2/5] background[K
+⠹ [3/5] debug, offscreen, popup, recap, welcome[K
+⠸ [3/5] debug, offscreen, popup, recap, welcome[K
+⠼ [3/5] debug, offscreen, popup, recap, welcome[K
+⠴ [3/5] debug, offscreen, popup, recap, welcome[K
+⠦ [3/5] debug, offscreen, popup, recap, welcome[K
+⠧ [3/5] debug, offscreen, popup, recap, welcome[K
+⠇ [3/5] debug, offscreen, popup, recap, welcome[K
+⠏ [3/5] debug, offscreen, popup, recap, welcome[K
+⠋ [3/5] debug, offscreen, popup, recap, welcome[K
+⠋ [4/5] inference-worker[K
+⠙ [4/5] inference-worker[K
+⠹ [4/5] inference-worker[K
+⠸ [4/5] inference-worker[K
+⠼ [4/5] inference-worker[K
+⠴ [4/5] inference-worker[K
+⠦ [4/5] inference-worker[K
+⠧ [4/5] inference-worker[K
+⠇ [4/5] inference-worker[K
+⠏ [4/5] inference-worker[K
+⠋ [4/5] inference-worker[K
+[EMPTY_IMPORT_META] `import.meta` may not be a valid syntax with the `iife` output format.
+      ╭─[ ../../node_modules/.pnpm/@huggingface+transformers@3.8.1/node_modules/@huggingface/transformers/dist/transformers.web.js:5101:37 ]
+      │
+ 5101 │     const _import_meta_url = Object(import.meta).url;
+      │                                     ─────┬─────  
+      │                                          ╰─────── This `import.meta` will be replaced with an empty object (`{}`) automatically. If this is desired, you can suppress this warning by adding `transform.define: { 'import.meta': {} }`. If `import.meta` needs to be kept as-is, you need to set the output format to `esm`.
+──────╯
+
+⠙ [4/5] inference-worker[K
+⠙ [5/5] twitch[K
+⠹ [5/5] twitch[K
+⠸ [5/5] twitch[K
+⠼ [5/5] twitch[K
+⠴ [5/5] twitch[K
+⠦ [5/5] twitch[K
+⠧ [5/5] twitch[K
+⠇ [5/5] twitch[K
+⠏ [5/5] twitch[K
+⠋ [5/5] twitch[K
+⠙ [5/5] twitch[K
+[K[?25h
+[K[?25h√ Built extension in 5.864 s
+  ├─ .output\chrome-mv3-crowd-test\manifest.json                                                    1.48 kB  
+  ├─ .output\chrome-mv3-crowd-test\models\manifest.json                                             4.69 kB  
+  ├─ .output\chrome-mv3-crowd-test\debug.html                                                       442 B    
+  ├─ .output\chrome-mv3-crowd-test\offscreen.html                                                   352 B    
+  ├─ .output\chrome-mv3-crowd-test\popup.html                                                       570 B    
+  ├─ .output\chrome-mv3-crowd-test\recap.html                                                       581 B    
+  ├─ .output\chrome-mv3-crowd-test\welcome.html                                                     585 B    
+  ├─ .output\chrome-mv3-crowd-test\audio-worklet.js                                                 3.09 kB  
+  ├─ .output\chrome-mv3-crowd-test\background.js                                                    214.91 kB
+  ├─ .output\chrome-mv3-crowd-test\chunks\config-DJUTNp74.js                                        91 B     
+  ├─ .output\chrome-mv3-crowd-test\chunks\debug-DTMdVn_0.js                                         7.00 kB  
+  ├─ .output\chrome-mv3-crowd-test\chunks\offscreen-CzbJ_Ivn.js                                     12.01 kB 
+  ├─ .output\chrome-mv3-crowd-test\chunks\play-CuxmbfLz.js                                          124 B    
+  ├─ .output\chrome-mv3-crowd-test\chunks\popup-CSrbV3R2.js                                         10.95 kB 
+  ├─ .output\chrome-mv3-crowd-test\chunks\recap-Bt054QvG.js                                         110.72 kB
+  ├─ .output\chrome-mv3-crowd-test\chunks\src-B8IHTX5_.js                                           95.99 kB 
+  ├─ .output\chrome-mv3-crowd-test\chunks\styles-B0dLXJYd.js                                        438.28 kB
+  ├─ .output\chrome-mv3-crowd-test\chunks\welcome-C9nnRBpn.js                                       5.03 kB  
+  ├─ .output\chrome-mv3-crowd-test\content-scripts\twitch.js                                        575.44 kB
+  ├─ .output\chrome-mv3-crowd-test\inference-worker.js                                              1.32 MB  
+  ├─ .output\chrome-mv3-crowd-test\runtime\mediapipe\audio_wasm_internal.js                         161.73 kB
+  ├─ .output\chrome-mv3-crowd-test\runtime\mediapipe\audio_wasm_nosimd_internal.js                  161.59 kB
+  ├─ .output\chrome-mv3-crowd-test\assets\styles-DjdH-Eiu.css                                       33.91 kB 
+  ├─ .output\chrome-mv3-crowd-test\fonts\bricolage-grotesque-LICENSE.txt                            4.40 kB  
+  ├─ .output\chrome-mv3-crowd-test\fonts\bricolage-grotesque.woff2                                  41.34 kB 
+  ├─ .output\chrome-mv3-crowd-test\fonts\inter-LICENSE.txt                                          4.48 kB  
+  ├─ .output\chrome-mv3-crowd-test\fonts\inter.woff2                                                48.26 kB 
+  ├─ .output\chrome-mv3-crowd-test\fonts\jetbrains-mono-LICENSE.txt                                 4.52 kB  
+  ├─ .output\chrome-mv3-crowd-test\fonts\jetbrains-mono.woff2                                       40.40 kB 
+  ├─ .output\chrome-mv3-crowd-test\icon\128.png                                                     5.04 kB  
+  ├─ .output\chrome-mv3-crowd-test\icon\16.png                                                      514 B    
+  ├─ .output\chrome-mv3-crowd-test\icon\32.png                                                      1.12 kB  
+  ├─ .output\chrome-mv3-crowd-test\icon\48.png                                                      1.64 kB  
+  ├─ .output\chrome-mv3-crowd-test\models\licenses\silero-MIT.txt                                   1.07 kB  
+  ├─ .output\chrome-mv3-crowd-test\models\licenses\Transformers-Apache-2.0.txt                      11.36 kB 
+  ├─ .output\chrome-mv3-crowd-test\models\licenses\Whisper-MIT.txt                                  1.06 kB  
+  ├─ .output\chrome-mv3-crowd-test\models\licenses\Whisper-model-card.md                            14.86 kB 
+  ├─ .output\chrome-mv3-crowd-test\models\licenses\YAMNet-Apache-2.0.txt                            11.51 kB 
+  ├─ .output\chrome-mv3-crowd-test\models\silero-v5.onnx                                            2.33 MB  
+  ├─ .output\chrome-mv3-crowd-test\models\whisper-tiny.en\config.json                               2.20 kB  
+  ├─ .output\chrome-mv3-crowd-test\models\whisper-tiny.en\generation_config.json                    1.65 kB  
+  ├─ .output\chrome-mv3-crowd-test\models\whisper-tiny.en\onnx\decoder_model_merged_quantized.onnx  30.72 MB 
+  ├─ .output\chrome-mv3-crowd-test\models\whisper-tiny.en\onnx\encoder_model_quantized.onnx         10.12 MB 
+  ├─ .output\chrome-mv3-crowd-test\models\whisper-tiny.en\preprocessor_config.json                  339 B    
+  ├─ .output\chrome-mv3-crowd-test\models\whisper-tiny.en\special_tokens_map.json                   2.17 kB  
+  ├─ .output\chrome-mv3-crowd-test\models\whisper-tiny.en\tokenizer_config.json                     282.66 kB
+  ├─ .output\chrome-mv3-crowd-test\models\whisper-tiny.en\tokenizer.json                            2.41 MB  
+  ├─ .output\chrome-mv3-crowd-test\models\yamnet.tflite                                             4.13 MB  
+  ├─ .output\chrome-mv3-crowd-test\runtime\mediapipe\audio_wasm_internal.wasm                       6.00 MB  
+  ├─ .output\chrome-mv3-crowd-test\runtime\mediapipe\audio_wasm_nosimd_internal.wasm                5.88 MB  
+  ├─ .output\chrome-mv3-crowd-test\runtime\mediapipe\LICENSE.txt                                    11.51 kB 
+  ├─ .output\chrome-mv3-crowd-test\runtime\onnx\LICENSE.txt                                         1.07 kB  
+  ├─ .output\chrome-mv3-crowd-test\runtime\onnx\ort-wasm-simd-threaded.jsep.mjs                     44.48 kB 
+  └─ .output\chrome-mv3-crowd-test\runtime\onnx\ort-wasm-simd-threaded.jsep.wasm                    21.60 MB 
+Σ Total size: 86.88 MB                                                                            
+√ Finished in 6.183 s
+Exit code: 0
+
+> pnpm exec playwright test --trace off (positive WAV supplied; real local Wrangler + simulator)
+[WebServer] (node:22908) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 5 tests using 1 worker
+
+(node:18408) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 tests\audio.spec.ts:13:1 › real mic permission, worklet frames, numeric status, pause, worker restart and teardown with Chromium fake devices (6.2s)
+  ok 2 tests\audio.spec.ts:196:1 › production hides diagnostics and missing microphone permission opens Welcome at the mic step (5.2s)
+  ok 3 tests\crowd.spec.ts:38:1 › real Worker + simulator: few → live, approved words, watch-only zero sends and immediate opt-out (35.8s)
+  ok 4 tests\extension.spec.ts:10:1 › built MV3 extension: dot, popup, sync, drag, privacy, persistence, recap and welcome (55.8s)
+  ok 5 tests\inference.spec.ts:5:1 › real bundled YAMNet laugh updates the dot box, popup, checkpoint and recap (1.3m)
+
+  5 passed (3.0m)
+Exit code: 0
+
+> pnpm exec biome check .
+Checked 125 files in 202ms. No fixes applied.
+Exit code: 0
+
+All gates passed. Real Twitch tabCapture/replay, physical Edge/audio, two-PC/long soak and deployed Cloudflare behavior remain manual.

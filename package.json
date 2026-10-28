@@ -1,0 +1,26 @@
+{
+  "name": "laughline-monorepo",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.33.2",
+  "scripts": {
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "test:e2e": "playwright test",
+    "test:e2e:web": "playwright test --config playwright.web.config.ts",
+    "build": "pnpm --filter api build && pnpm --filter web build && pnpm --filter extension build && pnpm --filter extension build:edge",
+    "check": "biome check .",
+    "format": "biome format --write .",
+    "release:version": "node tools/release/version.mjs",
+    "release:check": "node tools/release/pack.mjs --check",
+    "release:zip": "node tools/release/pack.mjs",
+    "release:preview": "node tools/release/offline-preview.mjs"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.0",
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.0"
+  }
+}

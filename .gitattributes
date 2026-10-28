@@ -1,0 +1,7 @@
+* text=auto eol=lf
+
+# Preserve checksum-verified bundled assets byte for byte on every platform.
+apps/extension/public/models/** -text
+apps/extension/public/runtime/** -text
+apps/extension/public/fonts/** -text
+apps/web/public/fonts/** -text

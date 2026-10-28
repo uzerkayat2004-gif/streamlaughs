@@ -1,0 +1,5 @@
+# Local only. Copy to .dev.vars.dev and set your unpacked extension origins.
+HMAC_KEY="local-development-only-signing-key-00000000000000000000"
+WORKER_OWNER_KEY="local-development-only-owner-key-00000000000000000000"
+EXTENSION_ORIGINS="chrome-extension://fkocldgggcmhihelohiicoakcfomhepg"
+SITE_ORIGINS="http://localhost:3000,http://127.0.0.1:3000"

@@ -1,0 +1,64 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.6.3/schema.json",
+  "files": {
+    "includes": [
+      "**",
+      "!design",
+      "!**/.output",
+      "!**/.wxt",
+      "!**/.next",
+      "!releases",
+      "!docs/verification-part6.txt",
+      "!docs/verification-rename.txt",
+      "!**/.secrets",
+      "!**/next-env.d.ts",
+      "!**/*.tsbuildinfo",
+      "!docs/verification-part5.txt",
+      "!pnpm-lock.yaml",
+      "!docs/verification.txt",
+      "!docs/verification-part2.txt",
+      "!docs/verification-part3.txt",
+      "!docs/verification-part4.txt",
+      "!docs/verification-part3-drag-investigation.txt",
+      "!apps/extension/public/models",
+      "!apps/extension/public/runtime",
+      "!eval/local",
+      "!docs/screenshots",
+      "!test-results",
+      "!**/.wrangler",
+      "!.test-runtime",
+      "!playwright-report"
+    ]
+  },
+  "formatter": { "indentStyle": "space", "indentWidth": 2 },
+  "javascript": {
+    "formatter": { "quoteStyle": "single", "semicolons": "always" }
+  },
+  "css": { "parser": { "tailwindDirectives": true } },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "style": {
+        "noNonNullAssertion": "off",
+        "noDescendingSpecificity": "off"
+      },
+      "complexity": { "noImportantStyles": "off" },
+      "suspicious": { "noArrayIndexKey": "off" }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["apps/extension/src/Recap.tsx"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "noNoninteractiveTabindex": "off",
+            "useSemanticElements": "off",
+            "useKeyWithClickEvents": "off"
+          }
+        }
+      }
+    }
+  ]
+}
