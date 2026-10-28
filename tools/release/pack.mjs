@@ -1,15 +1,10 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import {
-  copyFileSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  writeFileSync,
-} from 'node:fs';
+import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { assertPublicBrand } from './branding.mjs';
 import { notes, readProduct, releaseConfig, root } from './config.mjs';
+import { dependencyNotices } from './dependency-notices.mjs';
 import { verifyProduction } from './verify-production.mjs';
 
 const offline = process.argv.includes('--offline-preview');
@@ -31,34 +26,15 @@ assert(
   pnpm,
   'Run this command through pnpm release:zip or pnpm release:preview',
 );
-const inventory = JSON.parse(
-  execFileSync(
-    process.execPath,
-    [pnpm, 'licenses', 'list', '--prod', '--json'],
-    {
-      cwd: root,
-      encoding: 'utf8',
-      maxBuffer: 16 * 1024 * 1024,
-      windowsHide: true,
-    },
-  ),
+const notices = dependencyNotices(
+  [
+    'apps/extension',
+    'apps/web',
+    'packages/shared',
+    'workers/api',
+    'tools/crowd-sim',
+  ].map((folder) => path.join(root, folder)),
 );
-let notices =
-  'Installed production dependency inventory and available upstream license texts. Original project code: root MIT LICENSE.\n';
-for (const packages of Object.values(inventory))
-  for (const pkg of packages) {
-    notices += `\n--- ${pkg.name} ${pkg.versions.join(', ')} (${pkg.license}) ---\n${pkg.homepage || ''}\n`;
-    const folder = pkg.paths[0];
-    for (const name of readdirSync(folder).filter((name) =>
-      /^(licen[cs]e|copying|notice)([.-].*)?$/i.test(name),
-    )) {
-      try {
-        notices += `\n${name}\n${readFileSync(path.join(folder, name), 'utf8')}\n`;
-      } catch {
-        /* License directories are represented by the inventory. */
-      }
-    }
-  }
 const noticePath = path.join(output, 'dependency-notices.txt'),
   notesPath = path.join(output, 'release-notes.md');
 writeFileSync(noticePath, notices);
