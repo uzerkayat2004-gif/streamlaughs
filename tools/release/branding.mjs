@@ -39,16 +39,19 @@ export function assertPublicBrand(text, context, allowInternals = true) {
   }
   assert(!/laughline/i.test(publicText), `Old public branding in ${context}`);
 }
-function files(directory) {
+function files(directory, includeBuildDirectories = false) {
   if (!existsSync(directory)) return [];
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     if (
-      entry.name.startsWith('.') ||
+      (entry.name.startsWith('.') &&
+        !(includeBuildDirectories && entry.name === '.next')) ||
       ['node_modules', 'public'].includes(entry.name)
     )
       return [];
     const target = path.join(directory, entry.name);
-    return entry.isDirectory() ? files(target) : [target];
+    return entry.isDirectory()
+      ? files(target, includeBuildDirectories)
+      : [target];
   });
 }
 export function checkBrandSources() {
@@ -84,17 +87,25 @@ export function checkBrandSources() {
   }
 }
 export function checkWebsiteBrand(directory) {
-  assert(
-    existsSync(path.join(directory, 'server/app/index.html')),
-    'Build the website before checking output',
-  );
-  for (const file of [
-    ...files(path.join(directory, 'server/app')),
-    ...files(path.join(directory, 'static/chunks')),
-  ]) {
-    if (/\.(html|rsc|body|js)$/.test(file))
-      assertPublicBrand(readFileSync(file, 'utf8'), file);
-  }
+  // Vercel's onBuildComplete adapter can relocate the prerendered HTML before
+  // this post-build command runs. Inspect both actual output formats.
+  const hosted = [
+    path.resolve(directory, '../.vercel/output'),
+    path.join(root, '.vercel/output'),
+  ].filter((folder) => existsSync(path.join(folder, 'config.json')));
+  const outputs = [
+    ...new Set([
+      ...files(path.join(directory, 'server/app')),
+      ...files(path.join(directory, 'static/chunks')),
+      ...hosted.flatMap((folder) => [
+        ...files(path.join(folder, 'static'), true),
+        ...files(path.join(folder, 'functions'), true),
+      ]),
+    ]),
+  ].filter((file) => /\.(html|rsc|body|js|mjs)$/.test(file));
+  assert(outputs.length > 0, 'Build the website before checking output');
+  for (const file of outputs)
+    assertPublicBrand(readFileSync(file, 'utf8'), file);
 }
 if (
   process.argv[1] &&

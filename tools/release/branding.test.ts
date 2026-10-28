@@ -40,3 +40,16 @@ it('every current application and documentation source is free of the previous p
   writeFileSync(html, '<h1>LaughLine</h1>');
   expect(() => checkWebsiteBrand(build)).toThrow('Old public branding');
 });
+it('checks adapter output after Vercel relocates prerendered HTML', () => {
+  const build = mkdtempSync(path.join(os.tmpdir(), 'website-adapter-brand-'));
+  const output = path.join(build, '.vercel/output');
+  mkdirSync(path.join(output, 'static'), { recursive: true });
+  writeFileSync(path.join(output, 'config.json'), '{"version":3}');
+  const html = path.join(output, 'static/index.html');
+  writeFileSync(html, '<h1>streamlaughs</h1>');
+  expect(() => checkWebsiteBrand(path.join(build, '.next'))).not.toThrow();
+  writeFileSync(html, '<h1>LaughLine</h1>');
+  expect(() => checkWebsiteBrand(path.join(build, '.next'))).toThrow(
+    'Old public branding',
+  );
+});
