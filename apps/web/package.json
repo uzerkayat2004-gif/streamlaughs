@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "node ../../tools/next-local.mjs dev --webpack --hostname 127.0.0.1",
-    "build": "node ../../tools/next-local.mjs build --webpack && node ../../tools/release/branding.mjs --website",
+    "build": "node ../../tools/build-web.mjs",
     "start": "node ../../tools/next-local.mjs start --hostname 127.0.0.1",
     "typecheck": "node ../../tools/next-local.mjs typegen && tsc --noEmit",
     "test": "vitest run"

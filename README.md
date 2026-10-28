@@ -8,11 +8,11 @@ A little crowd for Twitch: your local laughs, everyone’s anonymous reactions, 
 
 ## Install in three steps
 
-1. Once published, download the **Chrome** or **Edge** ZIP from `https://github.com/uzerkayat2004-gif/streamlaughs/releases/latest` and extract it somewhere permanent. The repository is public; the first release has not been published yet. Offline-preview ZIPs supplied locally are labelled as previews.
-2. Open `chrome://extensions` (Edge: `edge://extensions`), enable **Developer mode**, choose **Load unpacked**, and select the extracted folder containing `manifest.json`.
+1. [Download StreamLaughs](https://streamlaughs.vercel.app/download) and unzip it into a permanent folder. One ZIP contains the same extension for Windows, Mac and Linux. Mac: double-click in Finder. Linux: choose Extract here in your file manager.
+2. Open `chrome://extensions` (Edge: `edge://extensions`, Brave: `brave://extensions`), enable **Developer mode**, choose **Load unpacked**, and select the extracted folder containing `manifest.json`. [Illustrated install guide](https://streamlaughs.vercel.app/install).
 3. Pin the icon. Finish **Welcome → allow mic → sharing choice**, open a Twitch stream and press **start** in the toolbar popup, or **Alt+Shift+L**. “watch without mic” keeps the crowd view without opening either audio input.
 
-To update, replace the contents of the same extracted folder, reload the extension and refresh Twitch. The fixed unpacked ID is **fkocldgggcmhihelohiicoakcfomhepg** on Chrome and Edge. Parts 1–4 installs change origin once; [migration details](docs/extension-identity.md). No Chrome Web Store listing is claimed.
+To update, download again, replace the contents of the same extracted folder, reload the extension and refresh Twitch. Every successful main deployment rebuilds the download; no release or manual upload is needed. The fixed unpacked ID is **fkocldgggcmhihelohiicoakcfomhepg**. Parts 1–4 installs change origin once; [migration details](docs/extension-identity.md). No Chrome Web Store listing is claimed. [Download/checksum build and browser verification limits](docs/website-downloads-part8.md).
 
 **Live services:** [streamlaughs.vercel.app](https://streamlaughs.vercel.app) and [streamlaughs-crowd.streamlaughs.workers.dev](https://streamlaughs-crowd.streamlaughs.workers.dev/health) are connected. Twitch login works, and the owner dashboard loads live crowd and eligible aggregate history. The Cloudflare Worker uses free-plan-compatible SQLite Durable Objects; production simulator traffic stays disabled. [Deployment, connected ZIPs and safe demo instructions](docs/production-part7.md). The repository is `uzerkayat2004-gif/streamlaughs`; env overrides remain supported. Nothing has been tagged or released. Connected ZIPs are in local `releases/production/`; offline previews remain separate. Follow the [release handoff](docs/release-part6.md) before publishing. [Internal compatibility identifiers](docs/internal-identifiers.md) remain unchanged.
 
@@ -48,6 +48,8 @@ pnpm install --frozen-lockfile
 python tools/fetch-models.py
 pnpm -r typecheck
 pnpm -r test
+$env:SITE_URL='https://streamlaughs.vercel.app'
+$env:VITE_CROWD_API_URL='https://streamlaughs-crowd.streamlaughs.workers.dev'
 pnpm build
 pnpm --filter extension build:debug
 pnpm release:preview

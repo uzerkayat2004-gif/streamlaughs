@@ -1,6 +1,5 @@
-import { PRODUCT } from '@laughline/shared';
 import identity from '../../../extension/extension-identity.json';
-import { releaseUrl, siteUrl } from '../../lib/config';
+import { downloadMetadata } from '../../lib/download';
 export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   const origin = request.headers.get('Origin');
@@ -11,17 +10,10 @@ export async function GET(request: Request) {
       .filter((id) => /^[a-p]{32}$/.test(id)),
   ];
   const headers = new Headers({
-    'Cache-Control': 'public, max-age=3600',
+    'Cache-Control': 'public, max-age=0, must-revalidate',
     Vary: 'Origin',
   });
   if (origin && ids.some((id) => origin === `chrome-extension://${id}`))
     headers.set('Access-Control-Allow-Origin', origin);
-  return Response.json(
-    {
-      version: PRODUCT.version,
-      installUrl: `${siteUrl()}/install`,
-      releaseUrl: releaseUrl(),
-    },
-    { headers },
-  );
+  return Response.json(downloadMetadata(), { headers });
 }

@@ -1,5 +1,6 @@
 node_modules/
 releases/
+apps/web/public/downloads/
 __pycache__/
 .secrets/
 *.pem

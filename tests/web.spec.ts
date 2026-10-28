@@ -111,16 +111,19 @@ test('public pages, responsive Night Crowd, privacy, configurable links and reco
     path: path.join(shots, 'home-desktop.png'),
     fullPage: true,
   });
-  await page.getByRole('link', { name: 'add to chrome', exact: true }).click();
+  await page
+    .getByRole('link', { name: 'get the extension ↗', exact: true })
+    .click();
   await expect(
     page.getByRole('heading', { name: 'make room for the crowd.' }),
   ).toBeVisible();
   await expect(
-    page.getByRole('link', { name: /download the ZIP/ }),
-  ).toHaveAttribute(
-    'href',
-    'https://github.com/uzerkayat2004-gif/test-only-release/releases/latest',
-  );
+    page.getByRole('link', { name: `Download ${product.name}`, exact: true }),
+  ).toHaveAttribute('href', '/download');
+  await page.getByRole('tab', { name: 'Brave', exact: true }).click();
+  await expect(
+    page.getByText('brave://extensions', { exact: false }),
+  ).toBeVisible();
   await page.getByRole('tab', { name: 'Edge', exact: true }).click();
   await expect(
     page.getByRole('button', { name: /edge:\/\/extensions/ }),

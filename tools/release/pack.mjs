@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import path from 'node:path';
 import { assertPublicBrand } from './branding.mjs';
 import { notes, readProduct, releaseConfig, root } from './config.mjs';
@@ -84,6 +90,21 @@ for (const browser of ['chrome', 'edge']) {
   assert(/^[a-f0-9]{64}$/.test(digest));
   sums.push(`${digest}  ${filename}`);
   console.log(`Verified flat ${browser} ZIP: ${filename}`);
+}
+assert.equal(
+  sums[0].split(' ')[0],
+  sums[1].split(' ')[0],
+  'Browser packages differ; cannot merge',
+);
+for (const filename of [
+  `${config.slug}.zip`,
+  `${config.slug}-v${config.version}.zip`,
+]) {
+  copyFileSync(
+    path.join(output, `${config.slug}-chrome-v${config.version}.zip`),
+    path.join(output, filename),
+  );
+  sums.push(`${sums[0].split(' ')[0]}  ${filename}`);
 }
 writeFileSync(path.join(output, 'SHA256SUMS.txt'), `${sums.join('\n')}\n`);
 console.log(

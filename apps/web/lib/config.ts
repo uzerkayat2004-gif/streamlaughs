@@ -17,13 +17,13 @@ export function origin(value: string | undefined, fallback?: string) {
 export function siteUrl() {
   return origin(process.env.SITE_URL, PRODUCT.siteUrl);
 }
-export function releaseUrl() {
+export function sourceUrl() {
   const owner = process.env.RELEASE_REPO_OWNER || PRODUCT.releaseRepoOwner,
     name = process.env.RELEASE_REPO_NAME ?? PRODUCT.releaseRepoName;
   return /^[A-Za-z0-9_-]+$/.test(owner) &&
     name &&
     /^[A-Za-z0-9_.-]+$/.test(name)
-    ? `https://github.com/${owner}/${name}/releases/latest`
+    ? `https://github.com/${owner}/${name}`
     : null;
 }
 export function workerUrl() {

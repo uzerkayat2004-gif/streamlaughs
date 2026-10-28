@@ -8,7 +8,7 @@
     "test": "pnpm -r test",
     "test:e2e": "playwright test",
     "test:e2e:web": "playwright test --config playwright.web.config.ts",
-    "build": "pnpm --filter api build && pnpm --filter web build && pnpm --filter extension build && pnpm --filter extension build:edge",
+    "build": "pnpm --filter api build && pnpm --filter web build",
     "check": "biome check .",
     "format": "biome format --write .",
     "release:version": "node tools/release/version.mjs",

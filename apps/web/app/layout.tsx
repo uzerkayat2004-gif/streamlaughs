@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import Link from 'next/link';
 import { Brand } from '../components/brand';
-import { siteUrl } from '../lib/config';
+import { siteUrl, sourceUrl } from '../lib/config';
 import './globals.css';
 
 const display = localFont({
@@ -63,6 +63,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div>
             <Link href="/privacy">privacy</Link>
             <Link href="/demo">try the demo ↗</Link>
+            {sourceUrl() && (
+              <a href={sourceUrl()!} target="_blank" rel="noreferrer">
+                source code ↗
+              </a>
+            )}
           </div>
         </footer>
       </body>

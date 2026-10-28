@@ -539,6 +539,15 @@ p {
   border-radius: 99px;
   margin-bottom: 45px;
 }
+.install-download {
+  margin-top: 24px;
+}
+.page-intro .download-browser-note,
+.install-step .os-note {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 14px;
+}
 .browser-tabs button {
   background: transparent;
   border: 0;

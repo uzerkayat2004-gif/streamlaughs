@@ -1,11 +1,9 @@
 'use client';
 import { useState } from 'react';
-import { Arrow } from './brand';
-export function InstallGuide({ releaseUrl }: { releaseUrl: string | null }) {
-  const [browser, setBrowser] = useState<'chrome' | 'edge'>('chrome'),
+export function InstallGuide() {
+  const [browser, setBrowser] = useState<'chrome' | 'edge' | 'brave'>('chrome'),
     [copied, setCopied] = useState(false);
-  const address =
-    browser === 'chrome' ? 'chrome://extensions' : 'edge://extensions';
+  const address = `${browser}://extensions`;
   return (
     <>
       <div className="browser-tabs" role="tablist" aria-label="browser">
@@ -31,6 +29,17 @@ export function InstallGuide({ releaseUrl }: { releaseUrl: string | null }) {
         >
           Edge
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={browser === 'brave'}
+          onClick={() => {
+            setBrowser('brave');
+            setCopied(false);
+          }}
+        >
+          Brave
+        </button>
       </div>
       <div className="install-steps">
         <article className="install-step">
@@ -43,26 +52,16 @@ export function InstallGuide({ releaseUrl }: { releaseUrl: string | null }) {
             </div>
             <span>↙ yours to keep</span>
           </div>
-          <p className="eyebrow">01 · get the little thing</p>
-          <h2>download. unzip.</h2>
+          <p className="eyebrow">01 · give it a home</p>
+          <h2>unzip the download.</h2>
           <p>
-            Grab the {browser === 'edge' ? 'Edge' : 'Chrome'} extension ZIP from
-            GitHub Releases. Extract it somewhere you’ll keep it.
+            Extract the ZIP into a folder you’ll keep. The same download works
+            in every supported browser.
           </p>
-          {releaseUrl ? (
-            <a
-              className="text-link"
-              href={releaseUrl}
-              target="_blank"
-              rel="noreferrer"
-            >
-              download the ZIP <Arrow />
-            </a>
-          ) : (
-            <p className="release-note">
-              Release link coming soon. The repository hasn’t been chosen yet.
-            </p>
-          )}
+          <p className="os-note">
+            Mac: double-click in Finder. Linux: use Extract here in your file
+            manager.
+          </p>
         </article>
         <article className="install-step">
           <div className="step-art art-browser" aria-hidden="true">
@@ -104,11 +103,11 @@ export function InstallGuide({ releaseUrl }: { releaseUrl: string | null }) {
             <span>hello, crowd.</span>
           </div>
           <p className="eyebrow">03 · let us in</p>
-          <h2>load. pin. laugh.</h2>
+          <h2>load unpacked.</h2>
           <p>
             Choose <strong>Load unpacked</strong>, then select the extracted{' '}
-            {browser === 'edge' ? 'Edge' : 'Chrome'} folder containing{' '}
-            <code>manifest.json</code>. Pin the icon and open a Twitch stream.
+            folder containing <code>manifest.json</code>. Pin the icon and open
+            a Twitch stream.
           </p>
         </article>
       </div>

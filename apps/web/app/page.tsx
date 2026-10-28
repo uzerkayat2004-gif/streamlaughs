@@ -19,9 +19,9 @@ export default function Home() {
           <br />A little more together, wherever you watch.
         </p>
         <div className="hero-actions">
-          <Link className="button yellow" href="/install">
-            add to chrome <Arrow />
-          </Link>
+          <a className="button yellow" href="/download" download>
+            Download {PRODUCT.name} <Arrow />
+          </a>
           <Link href="/demo" className="text-link">
             take a peek first ↗
           </Link>

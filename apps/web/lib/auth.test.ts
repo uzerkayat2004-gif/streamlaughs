@@ -3,8 +3,8 @@ import {
   callbackUrl,
   crowdConfigured,
   dashboardConfigured,
-  releaseUrl,
   siteUrl,
+  sourceUrl,
   twitchOrigin,
 } from './config';
 import { ownsChannel, seal, unseal } from './session-crypto';
@@ -45,16 +45,12 @@ it('uses the selected public defaults while keeping site and repository configur
   vi.stubEnv('RELEASE_REPO_NAME', undefined);
   expect(siteUrl()).toBe('https://streamlaughs.vercel.app');
   expect(callbackUrl()).toBe('https://streamlaughs.vercel.app/auth/callback');
-  expect(releaseUrl()).toBe(
-    'https://github.com/uzerkayat2004-gif/streamlaughs/releases/latest',
-  );
+  expect(sourceUrl()).toBe('https://github.com/uzerkayat2004-gif/streamlaughs');
   vi.stubEnv('SITE_URL', 'https://renamed.vercel.app');
   vi.stubEnv('RELEASE_REPO_OWNER', 'another-owner');
   vi.stubEnv('RELEASE_REPO_NAME', 'another-name');
   expect(callbackUrl()).toBe('https://renamed.vercel.app/auth/callback');
-  expect(releaseUrl()).toBe(
-    'https://github.com/another-owner/another-name/releases/latest',
-  );
+  expect(sourceUrl()).toBe('https://github.com/another-owner/another-name');
 });
 it('permits only the validated identity’s exact channel', () => {
   expect(ownsChannel({ login: 'mychannel' }, 'mychannel')).toBe(true);
@@ -95,9 +91,9 @@ it('never enables a mock provider in production, and builds configured release/c
   expect(twitchOrigin()).toBe('https://id.twitch.tv');
   expect(callbackUrl()).toBe('https://my-project.vercel.app/auth/callback');
   vi.stubEnv('RELEASE_REPO_NAME', 'my-future-app');
-  expect(releaseUrl()).toBe(
-    'https://github.com/uzerkayat2004-gif/my-future-app/releases/latest',
+  expect(sourceUrl()).toBe(
+    'https://github.com/uzerkayat2004-gif/my-future-app',
   );
   vi.stubEnv('RELEASE_REPO_NAME', '');
-  expect(releaseUrl()).toBeNull();
+  expect(sourceUrl()).toBeNull();
 });
