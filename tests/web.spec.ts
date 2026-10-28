@@ -24,11 +24,10 @@ test('Twitch redirect mismatch shows setup help instead of silently landing on h
   await expect(page).toHaveURL(
     `${SITE}/streamers?login=retry&reason=redirect_mismatch`,
   );
-  await expect(page.getByRole('alert')).toContainText(
-    'Twitch rejected this app’s callback URL',
-  );
-  await expect(page.getByRole('alert')).toContainText(`${SITE}/auth/callback`);
-  await expect(page.getByRole('alert')).toContainText('OAuth Redirect URLs');
+  const alert = page.getByRole('main').getByRole('alert');
+  await expect(alert).toContainText('Twitch rejected this app’s callback URL');
+  await expect(alert).toContainText(`${SITE}/auth/callback`);
+  await expect(alert).toContainText('OAuth Redirect URLs');
   await expect(
     page.getByRole('link', { name: 'try Twitch again' }),
   ).toHaveAttribute('href', '/auth/login');
