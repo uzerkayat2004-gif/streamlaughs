@@ -2,6 +2,7 @@ export type OAuthFailureCode =
   | 'credentials_whitespace'
   | 'credentials_rejected'
   | 'provider_denied'
+  | 'redirect_mismatch'
   | 'state_missing'
   | 'state_invalid'
   | 'state_mismatch'
@@ -49,6 +50,8 @@ export function logOAuthFailure(error: unknown) {
 }
 
 export function loginErrorMessage(reason?: string) {
+  if (reason === 'redirect_mismatch')
+    return 'Twitch rejected this app’s callback URL. the app owner needs to update its Twitch login settings.';
   if (reason === 'credentials_whitespace' || reason === 'credentials_rejected')
     return 'Twitch couldn’t verify this app. its login settings need updating before you can sign in.';
   if (

@@ -15,6 +15,34 @@ const product = JSON.parse(
   readFileSync(new URL('../product.config.json', import.meta.url), 'utf8'),
 ) as { version: string; name: string; pitch: string };
 const shots = path.resolve('docs/screenshots/part5');
+test('Twitch redirect mismatch shows setup help instead of silently landing on home', async ({
+  page,
+}) => {
+  await page.goto(
+    `${SITE}/?error=redirect_mismatch&state=regression-fixture&error_description=untrusted-provider-text`,
+  );
+  await expect(page).toHaveURL(
+    `${SITE}/streamers?login=retry&reason=redirect_mismatch`,
+  );
+  await expect(page.getByRole('alert')).toContainText(
+    'Twitch rejected this app’s callback URL',
+  );
+  await expect(page.getByRole('alert')).toContainText(`${SITE}/auth/callback`);
+  await expect(page.getByRole('alert')).toContainText('OAuth Redirect URLs');
+  await expect(
+    page.getByRole('link', { name: 'try Twitch again' }),
+  ).toHaveAttribute('href', '/auth/login');
+  await expect(page.locator('body')).not.toContainText(
+    'untrusted-provider-text',
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
+
 test.beforeEach(async ({ page }) => {
   if (!process.env.WEB_TEST_DIAGNOSTICS) return;
   page.on('framenavigated', (frame) => {

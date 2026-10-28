@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Arrow } from '../../components/brand';
 import { CrowdArt } from '../../components/crowd-art';
-import { dashboardConfigured } from '../../lib/config';
+import { callbackUrl, dashboardConfigured } from '../../lib/config';
 import { loginErrorMessage } from '../../lib/oauth-errors';
 export default async function Streamers({
   searchParams,
@@ -17,6 +17,13 @@ export default async function Streamers({
             <p className="eyebrow">let’s get you back to your crowd.</p>
             <h1>your sign-in didn’t finish.</h1>
             <p className="auth-note">{loginErrorMessage(query.reason)}</p>
+            {query.reason === 'redirect_mismatch' && (
+              <p>
+                app owner: add <code>{callbackUrl()}</code> to{' '}
+                <strong>OAuth Redirect URLs</strong> in the Twitch Developer
+                Console, then save.
+              </p>
+            )}
             <a className="button yellow" href="/auth/login">
               try Twitch again <Arrow />
             </a>
