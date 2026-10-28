@@ -2,12 +2,34 @@ import Link from 'next/link';
 import { Arrow } from '../../components/brand';
 import { CrowdArt } from '../../components/crowd-art';
 import { dashboardConfigured } from '../../lib/config';
+import { loginErrorMessage } from '../../lib/oauth-errors';
 export default async function Streamers({
   searchParams,
 }: {
-  searchParams: Promise<{ login?: string }>;
+  searchParams: Promise<{ login?: string; reason?: string }>;
 }) {
   const query = await searchParams;
+  if (query.login === 'retry')
+    return (
+      <main className="standard-page streamer-page">
+        <section className="streamer-hero auth-retry" role="alert">
+          <div>
+            <p className="eyebrow">let’s get you back to your crowd.</p>
+            <h1>your sign-in didn’t finish.</h1>
+            <p className="auth-note">{loginErrorMessage(query.reason)}</p>
+            <a className="button yellow" href="/auth/login">
+              try Twitch again <Arrow />
+            </a>
+            <p>
+              <Link className="text-link" href="/demo">
+                explore the demo while you wait ↗
+              </Link>
+            </p>
+          </div>
+          <CrowdArt illustration calm />
+        </section>
+      </main>
+    );
   const configured = dashboardConfigured();
   return (
     <main className="standard-page streamer-page">

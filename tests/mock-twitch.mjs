@@ -93,6 +93,16 @@ createServer(async (request, response) => {
       expires_in: 3600,
     });
   }
+  if (url.pathname === '/helix/users') {
+    const user = tokens.get(
+      (request.headers.authorization ?? '').replace(/^Bearer /, ''),
+    );
+    if (!user || request.headers['client-id'] !== 'local-twitch-client')
+      return json({}, 401);
+    return json({
+      data: [{ id: user === 'nightowl_tv' ? '12345' : '54321', login: user }],
+    });
+  }
   if (url.pathname === '/helix/videos') {
     if (
       request.headers.authorization !== 'Bearer local-app-token' ||

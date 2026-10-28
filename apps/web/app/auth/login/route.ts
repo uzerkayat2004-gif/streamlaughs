@@ -8,11 +8,14 @@ import {
   siteUrl,
   twitchOrigin,
 } from '../../../lib/config';
+import { logOAuthFailure } from '../../../lib/oauth-errors';
 import { seal } from '../../../lib/session-crypto';
+import { checkClientCredentials } from '../../../lib/twitch';
 export async function GET() {
   try {
     if (!dashboardConfigured())
       return NextResponse.redirect(`${siteUrl()}/streamers?login=unconfigured`);
+    await checkClientCredentials();
     const state = randomBytes(32).toString('hex');
     const authorize = new URL(`${twitchOrigin()}/oauth2/authorize`);
     authorize.search = new URLSearchParams({
@@ -31,7 +34,13 @@ export async function GET() {
       cookieOptions(600),
     );
     return response;
-  } catch {
-    return NextResponse.redirect(`${siteUrl()}/streamers?login=unconfigured`);
+  } catch (error) {
+    const failure = logOAuthFailure(error);
+    const response = NextResponse.redirect(
+      `${siteUrl()}/streamers?login=retry&reason=${failure.code}`,
+    );
+    response.headers.set('Cache-Control', 'no-store');
+    response.headers.set('Referrer-Policy', 'no-referrer');
+    return response;
   }
 }

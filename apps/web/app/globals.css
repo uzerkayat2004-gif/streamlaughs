@@ -821,6 +821,10 @@ p {
   border-left: 2px solid var(--yellow);
   margin: 20px 0 !important;
 }
+.auth-retry .auth-note {
+  border-left-color: var(--coral);
+  background: #ff5c5c0c;
+}
 .dashboard-page {
   max-width: 1160px;
   margin: 0 auto;
