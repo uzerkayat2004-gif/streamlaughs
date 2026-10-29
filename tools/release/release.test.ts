@@ -139,7 +139,12 @@ it('writes flat reproducible ZIPs with notices and rejects signing material', ()
   mkdirSync(source);
   writeFileSync(
     path.join(source, 'manifest.json'),
-    JSON.stringify({ key: 'public test key', version: '0.6.3' }),
+    JSON.stringify({
+      key: 'public test key',
+      version: '0.6.4',
+      permissions: ['storage', 'downloads'],
+      optional_permissions: ['downloads', 'tabs'],
+    }),
   );
   writeFileSync(path.join(folder, 'notice'), 'public license');
   const inputs = path.join(folder, 'extras.json');
@@ -177,7 +182,9 @@ it('writes flat reproducible ZIPs with notices and rejects signing material', ()
       `import zipfile,json,sys
 with zipfile.ZipFile(sys.argv[1]) as normal, zipfile.ZipFile(sys.argv[2]) as store:
  a=json.loads(normal.read('manifest.json'));b=json.loads(store.read('manifest.json'));a.pop('key')
- assert a==b and 'key' not in b
+ assert 'downloads' in a['permissions']
+ for field in ('permissions', 'optional_permissions'): a[field]=[p for p in a[field] if p!='downloads']
+ assert a==b and 'key' not in b and 'downloads' not in b['permissions'] and 'downloads' not in b['optional_permissions']
  assert normal.namelist()==store.namelist()
  assert all(normal.read(n)==store.read(n) for n in normal.namelist() if n!='manifest.json')
  assert [n for n in store.namelist() if n.split('/')[-1].lower()=='manifest.json']==['manifest.json']
@@ -188,6 +195,40 @@ with zipfile.ZipFile(sys.argv[1]) as normal, zipfile.ZipFile(sys.argv[2]) as sto
     { encoding: 'utf8', windowsHide: true },
   );
   expect(comparison.trim()).toBe('verified');
+  const verifier = path.join(root, 'tools/release/verify-store.py');
+  expect(
+    execFileSync(python, [verifier, path.join(folder, 'store.zip')], {
+      encoding: 'utf8',
+      windowsHide: true,
+    }),
+  ).toContain('no downloads');
+  expect(() =>
+    execFileSync(python, [verifier, path.join(folder, 'first.zip')], {
+      stdio: 'pipe',
+      windowsHide: true,
+    }),
+  ).toThrow();
+  for (const field of ['permissions', 'optional_permissions']) {
+    const invalid = path.join(folder, `bad-${field}.zip`);
+    execFileSync(
+      python,
+      [
+        '-c',
+        `import json,sys,zipfile
+with zipfile.ZipFile(sys.argv[1], 'w') as archive:
+ archive.writestr('manifest.json', json.dumps({sys.argv[2]: ['downloads']}))`,
+        invalid,
+        field,
+      ],
+      { windowsHide: true },
+    );
+    expect(() =>
+      execFileSync(python, [verifier, invalid], {
+        stdio: 'pipe',
+        windowsHide: true,
+      }),
+    ).toThrow();
+  }
   mkdirSync(path.join(source, 'models'));
   writeFileSync(path.join(source, 'models/manifest.json'), '{}');
   expect(() => pack('nested.zip', true)).toThrow();

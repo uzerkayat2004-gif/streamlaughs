@@ -20,11 +20,13 @@ pnpm --filter extension build:edge
 pnpm release:edge-store
 ```
 
-The result is `releases/edge-store/streamlaughs-edge-store-vVERSION.zip` plus SHA256SUMS.txt. It uses the same verified Edge build and notices; only the root manifest's public `key` is removed. The input build remains keyed. No private key is read or needed. The store signs the package and supplies the store ID; loading this keyless ZIP unpacked locally does **not** reproduce the store ID.
+The result is `releases/edge-store/streamlaughs-edge-store-vVERSION.zip` plus SHA256SUMS.txt. It uses the same verified Edge build and notices. From v0.6.4, its root manifest removes the public `key` and the unneeded `downloads` permission, including optional permissions if present. The website/ZIP input build keeps both its key and downloads permission. No private key is read or needed. The store signs the package and supplies the store ID; loading this keyless ZIP unpacked locally does **not** reproduce the store ID.
 
 Store ZIPs are ignored and stay outside releases/production, so website downloads and the existing tag-release ZIP glob cannot pick them up. The **Edge store package** workflow runs on main pushes (or manual dispatch), builds with public production configuration and uploads a seven-day GitHub Actions artifact. It creates no tag, release or store publication. The existing version-tag release workflow also builds/uploads this artifact, separately from its ordinary release assets. Standard public-repository GitHub-hosted runners are used; no paid runner, account creation or store API credentials are needed.
 
-Download the Actions artifact, unzip its wrapper, and select the **inner** `streamlaughs-edge-store-vVERSION.zip` in Partner Center. Do not submit the Actions wrapper ZIP. Updating an existing store package requires an increased manifest version; product.config.json is the version source. This work prepares v0.6.3 but does not upload or publish it to Microsoft.
+Download the Actions artifact, unzip its wrapper, and select the **inner** `streamlaughs-edge-store-vVERSION.zip` in Partner Center. Do not submit the Actions wrapper ZIP. Updating an existing store package requires an increased manifest version; product.config.json is the version source. Store support began in v0.6.3; the current permissions fix prepares v0.6.4 without uploading or publishing it to Microsoft.
+
+Both CI workflows run `python3 tools/release/verify-store.py releases/edge-store/*.zip` before upload. It checks the finished archive for exactly one root manifest.json, no key and no downloads in required or optional permissions. The downloads API boundary itself also checks the ZIP runtime ID before accessing the namespace. Unit tests use a throwing namespace getter, and the store-ID browser regression removes the permission entirely to exercise that absence.
 
 ## Popup and website
 

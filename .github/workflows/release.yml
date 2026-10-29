@@ -53,6 +53,8 @@ jobs:
           sha256sum --check SHA256SUMS.txt
       - name: build Edge store submission package
         run: pnpm release:edge-store
+      - name: verify store manifest and permissions before upload
+        run: python3 tools/release/verify-store.py releases/edge-store/*.zip
       - name: keep Edge store package as a CI artifact only
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

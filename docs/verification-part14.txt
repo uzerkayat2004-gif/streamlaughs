@@ -1,0 +1,92 @@
+StreamLaughs Part 14 verification · 2026-10-29
+Version: 0.6.4
+
+Store manifest: exactly one root manifest.json; no key; no downloads in required or optional permissions.
+Website ZIP: fixed key retained; downloads permission retained. All other archive files byte-identical.
+
+188 unit/integration tests passed. The two relevant headed update browser regressions passed: store mode without downloads permission/API, and the native ZIP download/replacement/reload path with saved data retained. Audio/Worker behavior was not changed; this task did not redeploy the Worker.
+
+$ pnpm --filter extension build:test-site
+exit: 0; elapsed: 97.6 s
+Verified 14 local model/license assets against SHA-256 receipts.
+√ Finished in 71 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (chrome-mv3-site-test)
+
+$ pnpm build
+exit: 0; elapsed: 134.1 s
+Verified 14 local model/license assets against SHA-256 receipts.
+√ Finished in 9.944 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (chrome-mv3)
+Verified 14 local model/license assets against SHA-256 receipts.
+√ Finished in 10.2 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (edge-mv3)
+Verified flat chrome ZIP: streamlaughs-chrome-v0.6.4.zip
+Verified flat edge ZIP: streamlaughs-edge-v0.6.4.zip
+Prepared production-configured assets in releases/production; no tag, release or deployment created.
+Universal download: 40393653 bytes; SHA-256 30dadf6669fcb574460e23f9437641dd9d0dd67d38ec89998920de5f6f64bc50
+✓ Compiled successfully in 16.7s
+  Finished TypeScript in 5.2s ...
+StreamLaughs source, docs and requested website output branding checks passed.
+
+$ pnpm release:edge-store
+exit: 0; elapsed: 4.8 s
+Verified flat edge ZIP: streamlaughs-edge-store-v0.6.4.zip
+Prepared Edge store CI artifact in releases/edge-store; no publication performed.
+
+$ pnpm exec python tools/release/verify-store.py releases/edge-store/streamlaughs-edge-store-v0.6.4.zip
+exit: 0; elapsed: 0.6 s
+Verified store ZIP: streamlaughs-edge-store-v0.6.4.zip; one manifest, no key, no downloads
+
+$ pnpm -r typecheck
+exit: 0; elapsed: 24.3 s
+tools/crowd-sim typecheck: Done
+tools/eval typecheck: Done
+tools/release typecheck: Done
+packages/shared typecheck: Done
+apps/extension typecheck: √ Finished in 890 ms
+apps/web typecheck: Done
+workers/api typecheck: Done
+apps/extension typecheck: Done
+
+$ pnpm check
+exit: 0; elapsed: 0.8 s
+Checked 256 files in 294ms. No fixes applied.
+
+$ pnpm -r test
+exit: 0; elapsed: 37.7 s
+tools/eval test:  Test Files  1 passed (1)
+tools/eval test:       Tests  2 passed (2)
+tools/eval test:    Duration  982ms (transform 133ms, setup 0ms, import 209ms, tests 15ms, environment 0ms)
+tools/crowd-sim test:  Test Files  1 passed (1)
+tools/crowd-sim test:       Tests  2 passed (2)
+tools/crowd-sim test:    Duration  1.43s (transform 128ms, setup 0ms, import 573ms, tests 62ms, environment 0ms)
+packages/shared test:  Test Files  4 passed (4)
+packages/shared test:       Tests  21 passed (21)
+packages/shared test:    Duration  1.51s (transform 694ms, setup 0ms, import 2.15s, tests 198ms, environment 1ms)
+tools/release test:  Test Files  4 passed (4)
+tools/release test:       Tests  11 passed (11)
+tools/release test:    Duration  3.91s (transform 818ms, setup 0ms, import 1.29s, tests 3.05s, environment 1ms)
+apps/extension test:  Test Files  19 passed (19)
+apps/extension test:       Tests  110 passed (110)
+apps/extension test:    Duration  4.36s (transform 2.22s, setup 0ms, import 11.06s, tests 4.42s, environment 13ms)
+apps/web test:  Test Files  7 passed (7)
+apps/web test:       Tests  28 passed (28)
+apps/web test:    Duration  7.08s (transform 1.58s, setup 0ms, import 18.14s, tests 2.44s, environment 2ms)
+workers/api test:  Test Files  3 passed (3)
+workers/api test:       Tests  14 passed (14)
+workers/api test:    Duration  26.75s (transform 5.29s, setup 0ms, import 11.76s, tests 14.71s, environment 1ms)
+
+$ pnpm exec playwright test tests/update.spec.ts --config playwright.web.config.ts
+exit: 0; elapsed: 70.5 s
+Running 2 tests using 1 worker
+  ok 1 tests\update.spec.ts:13:1 › Edge store runtime ID keeps both normal idle buttons and never offers a ZIP update (8.5s)
+  ok 2 tests\update.spec.ts:120:1 › ZIP update: both idle CTAs, later, verified download, safe stop, wrong folder, real file replacement/reload preserves recaps and settings (19.4s)
+  2 passed (1.2m)
+
+Store ZIP: 40,393,326 bytes
+SHA-256: ac5900f1f1fe790e7c91586db9361ff030a3e43f0a3d054b1f4883053f1f3214
+Permissions: storage, tabs, tabCapture, offscreen
+
+The downloads API boundary rejects non-ZIP IDs before accessing chrome.downloads or creating a blob URL. Tests supply a throwing downloads getter to prove there is no access. The website ZIP path still calls the real API in Chromium.
+
+The independent verify-store.py runs in both artifact workflows before upload and rejects duplicate/nested manifests, key fields, required downloads and optional downloads. The main workflow uploads the generated store ZIP only as an Actions artifact. Its outcome is reported after push. No tags, releases or Microsoft store upload/publication.

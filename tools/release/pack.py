@@ -28,6 +28,9 @@ def pack(source, target, extras, edge_store=False):
             if edge_store and name == 'manifest.json':
                 manifest = json.loads(data)
                 manifest.pop('key', None)
+                for field in ('permissions', 'optional_permissions'):
+                    if field in manifest:
+                        manifest[field] = [permission for permission in manifest[field] if permission != 'downloads']
                 data = (json.dumps(manifest, indent=2) + '\n').encode('utf-8')
             out.writestr(info, data)
     with zipfile.ZipFile(target) as out:
@@ -36,7 +39,10 @@ def pack(source, target, extras, edge_store=False):
         assert 'LICENSE' in out.namelist() and 'THIRD_PARTY_NOTICES.md' in out.namelist()
         assert sum(Path(name).name.lower() == 'manifest.json' for name in out.namelist()) == 1
         if edge_store:
-            assert 'key' not in json.loads(out.read('manifest.json'))
+            manifest = json.loads(out.read('manifest.json'))
+            assert 'key' not in manifest
+            assert 'downloads' not in manifest.get('permissions', [])
+            assert 'downloads' not in manifest.get('optional_permissions', [])
     return hashlib.sha256(target.read_bytes()).hexdigest()
 
 if __name__ == '__main__':

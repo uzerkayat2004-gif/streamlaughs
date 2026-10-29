@@ -1,9 +1,9 @@
-# StreamLaughs v0.6.3
+# StreamLaughs v0.6.4
 
 see who's laughing with you.
 
 - Edge Add-ons support: separate store identity and automatic browser updates; ZIP installs retain the popup update flow.
-- Store submission ZIP contains one manifest.json and no manifest key; bundled model receipts use model-files.json.
+- Store submission ZIP contains one manifest.json, no manifest key and no downloads permission; ZIP installs keep self-updates.
 - Recaps and settings stay in your browser. Microphone diagnostics and all local models remain bundled.
 - Audio is processed on your PC and never saved or sent. Sharing is optional.
 

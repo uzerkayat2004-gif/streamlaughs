@@ -16,6 +16,12 @@ test('Edge store runtime ID keeps both normal idle buttons and never offers a ZI
   await cp(path.resolve('apps/extension/.output/chrome-mv3-site-test'), build, {
     recursive: true,
   });
+  const storeManifestPath = path.join(build, 'manifest.json');
+  const storeManifest = JSON.parse(await readFile(storeManifestPath, 'utf8'));
+  storeManifest.permissions = storeManifest.permissions.filter(
+    (permission: string) => permission !== 'downloads',
+  );
+  await writeFile(storeManifestPath, JSON.stringify(storeManifest));
   // A classic script provides a lexical chrome binding before app modules.
   // Mutating the native runtime.id property does not change Chrome's ID getter.
   await writeFile(
@@ -54,6 +60,12 @@ test('Edge store runtime ID keeps both normal idle buttons and never offers a ZI
     await popup.goto(`${origin}/popup.html`);
     expect(await popup.evaluate(() => chrome.runtime.id)).toBe(
       PRODUCT.edgeStoreExtensionId,
+    );
+    expect(
+      await popup.evaluate(() => chrome.runtime.getManifest().permissions),
+    ).not.toContain('downloads');
+    expect(await popup.evaluate(() => typeof globalThis.chrome.downloads)).toBe(
+      'undefined',
     );
     await worker.evaluate(async () => {
       await chrome.storage.local.set({

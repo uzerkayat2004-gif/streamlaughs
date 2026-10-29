@@ -13,7 +13,9 @@ import {
 } from './update-flow';
 import { checkVersion } from './version-check';
 
-async function saveDownload(blob: Blob, filename: string) {
+export async function saveDownload(blob: Blob, filename: string) {
+  if (!isZipInstall(chrome.runtime.id))
+    throw new Error('updates come from your browser’s store');
   const url = URL.createObjectURL(blob);
   let downloadId: number | undefined;
   try {
