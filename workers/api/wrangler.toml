@@ -10,7 +10,7 @@ enabled = false
 ENVIRONMENT = "production"
 CROWD_ENABLED = "true"
 ALLOW_TEST_TRAFFIC = "false"
-EXTENSION_ORIGINS = "chrome-extension://fkocldgggcmhihelohiicoakcfomhepg,chrome-extension://fkdfjgnhifofdjpbenlkhpfhmmhglmkb"
+EXTENSION_ORIGINS = "chrome-extension://fkocldgggcmhihelohiicoakcfomhepg,chrome-extension://fkdfjgnhifofdjpbenlkhpfhmmhglmkb,chrome-extension://lofdkbfimkjjfglhhnpkiljocbikmkej"
 SITE_ORIGINS = "https://streamlaughs.vercel.app"
 
 [[durable_objects.bindings]]
@@ -27,7 +27,7 @@ name = "streamlaughs-crowd-dev"
 ENVIRONMENT = "development"
 CROWD_ENABLED = "true"
 ALLOW_TEST_TRAFFIC = "true"
-EXTENSION_ORIGINS = "chrome-extension://fkocldgggcmhihelohiicoakcfomhepg,chrome-extension://fkdfjgnhifofdjpbenlkhpfhmmhglmkb"
+EXTENSION_ORIGINS = "chrome-extension://fkocldgggcmhihelohiicoakcfomhepg,chrome-extension://fkdfjgnhifofdjpbenlkhpfhmmhglmkb,chrome-extension://lofdkbfimkjjfglhhnpkiljocbikmkej"
 SITE_ORIGINS = "http://localhost:3000,http://127.0.0.1:3000"
 
 [[env.dev.durable_objects.bindings]]
