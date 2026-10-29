@@ -10,6 +10,101 @@ const id = 'fkocldgggcmhihelohiicoakcfomhepg';
 const origin = `chrome-extension://${id}`;
 const site = process.env.WEB_TEST_URL ?? 'http://127.0.0.1:3000';
 
+test('Edge store runtime ID keeps both normal idle buttons and never offers a ZIP update', async () => {
+  await mkdir('.test-runtime', { recursive: true });
+  const build = await mkdtemp(path.resolve('.test-runtime/store-id-fixture-'));
+  await cp(path.resolve('apps/extension/.output/chrome-mv3-site-test'), build, {
+    recursive: true,
+  });
+  // A classic script provides a lexical chrome binding before app modules.
+  // Mutating the native runtime.id property does not change Chrome's ID getter.
+  await writeFile(
+    path.join(build, 'store-id-fixture.js'),
+    `const chrome = { ...globalThis.chrome, runtime: { ...globalThis.chrome.runtime, id: ${JSON.stringify(PRODUCT.edgeStoreExtensionId)} } };`,
+  );
+  for (const name of ['popup.html', 'update.html']) {
+    const file = path.join(build, name);
+    await writeFile(
+      file,
+      (await readFile(file, 'utf8')).replace(
+        '<head>',
+        '<head><script src="/store-id-fixture.js"></script>',
+      ),
+    );
+  }
+  const context = await chromium.launchPersistentContext('', {
+    channel: 'chromium',
+    headless: false,
+    ignoreDefaultArgs: ['--disable-extensions'],
+    args: [`--disable-extensions-except=${build}`, `--load-extension=${build}`],
+  });
+  try {
+    // The store is not public yet. This temporary fixture changes only the
+    // page-visible runtime ID; message APIs and the background stay native.
+    await context.route('https://www.twitch.tv/**', (route) =>
+      route.fulfill({
+        contentType: 'text/html',
+        body: '<title>Twitch fixture</title><main>controlled stream</main>',
+      }),
+    );
+    const worker =
+      context.serviceWorkers()[0] ??
+      (await context.waitForEvent('serviceworker'));
+    const popup = await context.newPage();
+    await popup.goto(`${origin}/popup.html`);
+    expect(await popup.evaluate(() => chrome.runtime.id)).toBe(
+      PRODUCT.edgeStoreExtensionId,
+    );
+    await worker.evaluate(async () => {
+      await chrome.storage.local.set({
+        'laughline:update': {
+          checkedAt: Date.now(),
+          latest: '99.0.0',
+          available: true,
+        },
+      });
+    });
+    await expect(
+      popup.getByRole('link', { name: 'open Twitch', exact: true }),
+    ).toBeVisible();
+    await expect(
+      popup.getByRole('button', { name: /^update to v/ }),
+    ).toHaveCount(0);
+    const stream = await context.newPage();
+    await stream.goto('https://www.twitch.tv/store_fixture');
+    await stream.bringToFront();
+    await popup.reload();
+    await expect(
+      popup.getByRole('button', { name: 'start', exact: true }),
+    ).toBeEnabled();
+    await popup.evaluate(() =>
+      chrome.runtime.sendMessage({
+        type: 'SETTINGS',
+        settings: { listen: false, share: false },
+      }),
+    );
+    await popup.getByRole('button', { name: 'start', exact: true }).click();
+    await expect(
+      popup.getByRole('button', { name: 'stop', exact: true }),
+    ).toBeVisible();
+    await expect(popup.locator('.gear-update-dot')).toHaveCount(0);
+    await popup.getByRole('button', { name: 'settings', exact: true }).click();
+    await expect(
+      popup.getByRole('button', { name: /^update to v/ }),
+    ).toHaveCount(0);
+    const update = await context.newPage();
+    await update.goto(`${origin}/update.html?download=1`);
+    await expect(
+      update.getByRole('heading', { name: 'your browser handles updates.' }),
+    ).toBeVisible();
+    await expect(
+      update.getByRole('button', { name: 'finish update' }),
+    ).toHaveCount(0);
+  } finally {
+    await context.close();
+  }
+});
+
 test('ZIP update: both idle CTAs, later, verified download, safe stop, wrong folder, real file replacement/reload preserves recaps and settings', async ({
   request,
 }) => {
@@ -197,7 +292,10 @@ test('ZIP update: both idle CTAs, later, verified download, safe stop, wrong fol
     async function finishUpdate(expected: string) {
       await update
         .getByRole('button', { name: 'finish update', exact: true })
-        .click();
+        .click()
+        .catch((error) => {
+          if (!update.isClosed()) throw error;
+        });
       // runtime.reload closes extension tabs on Chromium. Follow the fresh
       // result document restored by onInstalled, also allowing in-place reload.
       await expect

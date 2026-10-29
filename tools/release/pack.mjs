@@ -8,7 +8,16 @@ import { dependencyNotices } from './dependency-notices.mjs';
 import { verifyProduction } from './verify-production.mjs';
 
 const offline = process.argv.includes('--offline-preview');
-const config = releaseConfig(readProduct(), process.env, offline);
+const edgeStore = process.argv.includes('--edge-store');
+assert(
+  !(offline && edgeStore),
+  'Store submissions require production configuration',
+);
+const environment =
+  edgeStore && process.env.GITHUB_REF_TYPE !== 'tag'
+    ? { ...process.env, GITHUB_REF_NAME: '' }
+    : process.env;
+const config = releaseConfig(readProduct(), environment, offline);
 if (process.argv.includes('--check')) {
   console.log(
     `Release configuration matches v${config.version}; no publication performed.`,
@@ -18,7 +27,7 @@ if (process.argv.includes('--check')) {
 const output = path.join(
   root,
   'releases',
-  offline ? 'offline-preview' : 'production',
+  edgeStore ? 'edge-store' : offline ? 'offline-preview' : 'production',
 );
 mkdirSync(output, { recursive: true });
 const pnpm = process.env.npm_execpath;
@@ -48,10 +57,10 @@ const extras = {
 const extrasPath = path.join(output, 'pack-inputs.json');
 writeFileSync(extrasPath, JSON.stringify(extras));
 const sums = [];
-for (const browser of ['chrome', 'edge']) {
+for (const browser of edgeStore ? ['edge'] : ['chrome', 'edge']) {
   const source = path.join(root, `apps/extension/.output/${browser}-mv3`);
   verifyProduction(source, config, config);
-  const filename = `${config.slug}-${browser}-v${config.version}.zip`;
+  const filename = `${config.slug}-${browser}${edgeStore ? '-store' : ''}-v${config.version}.zip`;
   assertPublicBrand(filename, 'release asset name', false);
   const digest = execFileSync(
     process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3'),
@@ -60,12 +69,20 @@ for (const browser of ['chrome', 'edge']) {
       source,
       path.join(output, filename),
       extrasPath,
+      ...(edgeStore ? ['--edge-store'] : []),
     ],
     { encoding: 'utf8', windowsHide: true },
   ).trim();
   assert(/^[a-f0-9]{64}$/.test(digest));
   sums.push(`${digest}  ${filename}`);
   console.log(`Verified flat ${browser} ZIP: ${filename}`);
+}
+if (edgeStore) {
+  writeFileSync(path.join(output, 'SHA256SUMS.txt'), `${sums.join('\n')}\n`);
+  console.log(
+    'Prepared Edge store CI artifact in releases/edge-store; no publication performed.',
+  );
+  process.exit();
 }
 assert.equal(
   sums[0].split(' ')[0],

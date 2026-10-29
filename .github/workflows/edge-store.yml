@@ -1,0 +1,49 @@
+name: Edge store package
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: edge-store-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      WRANGLER_SEND_METRICS: "false"
+      SITE_URL: ${{ vars.SITE_URL || 'https://streamlaughs.vercel.app' }}
+      VITE_CROWD_API_URL: ${{ vars.VITE_CROWD_API_URL || 'https://streamlaughs-crowd.streamlaughs.workers.dev' }}
+      RELEASE_REPO_OWNER: ${{ vars.RELEASE_REPO_OWNER || 'uzerkayat2004-gif' }}
+      RELEASE_REPO_NAME: ${{ vars.RELEASE_REPO_NAME || 'streamlaughs' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24.11.1"
+          package-manager-cache: false
+      - name: install pinned dependencies
+        run: |
+          npm install --global pnpm@10.33.2 --ignore-scripts
+          pnpm install --frozen-lockfile
+      - name: verify models and build the production Edge package
+        run: |
+          node tools/check-assets.mjs
+          pnpm --filter extension build:edge
+          pnpm release:edge-store
+          cd releases/edge-store
+          sha256sum --check SHA256SUMS.txt
+      - name: upload store submission artifact without publishing
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: streamlaughs-edge-store-${{ github.sha }}
+          path: |
+            releases/edge-store/*.zip
+            releases/edge-store/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7

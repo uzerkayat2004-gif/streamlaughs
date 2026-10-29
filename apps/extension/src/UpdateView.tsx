@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Mark } from './components';
 import { SITE_URL, UPDATE_KEY } from './site';
 import {
+  isZipInstall,
   UPDATE_ATTEMPT_KEY,
   UpdateAttemptSchema,
   updateFilename,
@@ -56,7 +57,9 @@ export function UpdateView() {
   const [downloaded, setDownloaded] = useState(false);
   const [error, setError] = useState('');
   const current = chrome.runtime.getManifest().version;
+  const zipInstall = isZipInstall(chrome.runtime.id);
   const download = useCallback(async () => {
+    if (!zipInstall) return;
     setBusy(true);
     setDownloaded(false);
     setError('');
@@ -111,8 +114,9 @@ export function UpdateView() {
     } finally {
       setBusy(false);
     }
-  }, [current]);
+  }, [current, zipInstall]);
   useEffect(() => {
+    if (!zipInstall) return;
     void (async () => {
       const attempt = UpdateAttemptSchema.safeParse(
         (await chrome.storage.local.get(UPDATE_ATTEMPT_KEY))[
@@ -134,7 +138,18 @@ export function UpdateView() {
       );
       setDownloaded(current !== attempt.data.version);
     })();
-  }, [current, download]);
+  }, [current, download, zipInstall]);
+  if (!zipInstall)
+    return (
+      <main className="update-page">
+        <Mark />
+        <h1>your browser handles updates.</h1>
+        <p>
+          Microsoft Edge updates the store version automatically. no ZIP or
+          folder replacement needed.
+        </p>
+      </main>
+    );
   const success = message === `you're on v${current}`;
   return (
     <main className="update-page">

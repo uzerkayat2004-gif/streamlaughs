@@ -1,3 +1,4 @@
+import { PRODUCT } from '@laughline/shared';
 import type { Metadata } from 'next';
 import { InstallDownload } from '../../components/install-download';
 import { InstallGuide } from '../../components/install-guide';
@@ -20,6 +21,11 @@ export default async function Install({
         <p>one ZIP for Windows, Mac and Linux. your audio stays on your PC.</p>
         <InstallDownload automatic={automatic} />
         <p className="download-browser-note">also works in Edge / Brave</p>
+        {PRODUCT.edgeStoreUrl && (
+          <a className="text-link" href={PRODUCT.edgeStoreUrl}>
+            Get it on Edge
+          </a>
+        )}
       </header>
       <InstallGuide />
     </main>

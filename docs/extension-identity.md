@@ -8,7 +8,7 @@ chrome-extension://fkocldgggcmhihelohiicoakcfomhepg
 
 `apps/extension/extension-identity.json` contains the public RSA SPKI key and expected ID. WXT writes its base64 public key to manifest `key` in every build. Chromium hashes that key to determine identity, instead of deriving it from a folder path. A browser test copies a complete build to a new folder and verifies the runtime ID; post-build checks verify Chrome, Edge and test manifests. [Chrome's key documentation](https://developer.chrome.com/docs/extensions/reference/manifest/key).
 
-Set Worker `EXTENSION_ORIGINS` to that one origin. Edge uses the same chrome-extension scheme. Users can extract the ZIP in different folders and still have the same product ID; their browser-local data remains separate in each profile/PC. A public key is not an authentication secret: anyone can copy it into an unpacked extension. Exact CORS/Origin checks do not replace anonymous token validation, floors or abuse limits.
+Worker `EXTENSION_ORIGINS` includes that ZIP origin and the confirmed Edge store origin `chrome-extension://fkdfjgnhifofdjpbenlkhpfhmmhglmkb`. Edge uses the same chrome-extension scheme. Users can extract the ZIP in different folders and still have the same ZIP product ID; their browser-local data remains separate in each profile/PC. The store artifact removes only the public key from its manifest; Microsoft supplies its separate identity when signing. [Store packaging and review status](edge-store-part13.md). A public key is not an authentication secret: anyone can copy it into an unpacked extension. Exact CORS/Origin checks do not replace anonymous token validation, floors or abuse limits.
 
 ## Private key and backups
 
@@ -45,7 +45,7 @@ The store assigns an ID which may differ from this unpacked ID. Inspect the actu
 During migration, allow both verified origins:
 
 ```toml
-EXTENSION_ORIGINS = "chrome-extension://fkocldgggcmhihelohiicoakcfomhepg,chrome-extension://ACTUAL_STORE_ID"
+EXTENSION_ORIGINS = "chrome-extension://fkocldgggcmhihelohiicoakcfomhepg,chrome-extension://fkdfjgnhifofdjpbenlkhpfhmmhglmkb"
 ```
 
-Set website `STORE_EXTENSION_IDS=ACTUAL_STORE_ID` (comma-separated if Chrome/Edge stores differ) so version metadata CORS supports them too. Keep the fixed unpacked ID in place; no wildcard. Rebuild store artifacts and verify their actual runtime IDs before publication. No store upload or account creation occurred in Part 5.
+The known Edge store ID is included in website version/download CORS by default. `STORE_EXTENSION_IDS=ACTUAL_STORE_ID` remains available for additional verified future store IDs (comma-separated). Keep the fixed unpacked ID in place; no wildcard. Rebuild store artifacts and verify their actual runtime IDs before publication. No store upload or account creation occurred in Part 5; the owner submitted the Edge listing separately and it is in review.

@@ -7,7 +7,7 @@ import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = ROOT / 'apps/extension/public/models'
-MANIFEST = BASE / 'manifest.json'
+MANIFEST = BASE / 'model-files.json'
 EXPECTED = {entry['path']: entry for entry in json.loads(MANIFEST.read_text(encoding='utf-8'))['files']} if MANIFEST.exists() else {}
 REVISION = '2575352d61be1bf7225cf8f8b268a4678025fc58'
 SOURCES = [
@@ -41,5 +41,5 @@ def download(item):
 
 if __name__ == '__main__':
     with ThreadPoolExecutor(max_workers=4) as pool: receipts = list(pool.map(download, SOURCES))
-    (BASE / 'manifest.json').write_text(json.dumps({'whisperRevision': REVISION, 'files': receipts}, indent=2) + '\n', encoding='utf-8')
+    MANIFEST.write_text(json.dumps({'whisperRevision': REVISION, 'files': receipts}, indent=2) + '\n', encoding='utf-8')
     print(f'Models and notices: {sum(x["bytes"] for x in receipts):,} bytes; SHA-256 manifest written.', flush=True)

@@ -32,7 +32,7 @@ const config: NextConfig = {
           {
             type: 'header',
             key: 'origin',
-            value: `(?<extensionOrigin>chrome-extension://(?:${[identity.id, ...(process.env.STORE_EXTENSION_IDS ?? '').split(',').filter((id) => /^[a-p]{32}$/.test(id))].join('|')}))`,
+            value: `(?<extensionOrigin>chrome-extension://(?:${[identity.id, product.edgeStoreExtensionId, ...(process.env.STORE_EXTENSION_IDS ?? '').split(',').filter((id) => /^[a-p]{32}$/.test(id))].join('|')}))`,
           },
         ],
         headers: [

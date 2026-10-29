@@ -62,6 +62,58 @@ const counts = JSON.stringify({
   swears: 0,
   phrases: ['bro'],
 });
+it('admits ZIP and Edge store origins for sessions and sockets; rejects random origins', async () => {
+  for (const extensionId of [
+    'fkocldgggcmhihelohiicoakcfomhepg',
+    'fkdfjgnhifofdjpbenlkhpfhmmhglmkb',
+  ]) {
+    const allowed = `chrome-extension://${extensionId}`;
+    const response = await SELF.fetch('https://api.test/v1/session', {
+      method: 'POST',
+      headers: { Origin: allowed, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channel: 'store_origin' }),
+    });
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe(allowed);
+    const { token } = SessionResponseSchema.parse(await response.json());
+    const upgrade = await SELF.fetch(
+      'https://api.test/v1/channels/store_origin/live?mode=watch',
+      {
+        headers: {
+          Origin: allowed,
+          Upgrade: 'websocket',
+          'Sec-WebSocket-Protocol': `laughline.v1, auth.${token}`,
+        },
+      },
+    );
+    expect(upgrade.status).toBe(101);
+    upgrade.webSocket!.accept();
+    opened.push(upgrade.webSocket!);
+    const denied = await SELF.fetch(
+      'https://api.test/v1/channels/store_origin/live?mode=watch',
+      {
+        headers: {
+          Origin: 'https://random.example',
+          Upgrade: 'websocket',
+          'Sec-WebSocket-Protocol': `laughline.v1, auth.${token}`,
+        },
+      },
+    );
+    expect(denied.status).toBe(403);
+  }
+  expect(
+    (
+      await SELF.fetch('https://api.test/v1/session', {
+        method: 'POST',
+        headers: {
+          Origin: 'https://random.example',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ channel: 'store_origin' }),
+      })
+    ).status,
+  ).toBe(403);
+});
 it('caps actual channel connections at 200 without treating watchers as contributors', async () => {
   for (let i = 0; i < CROWD_LIMITS.sockets; i++) await socket('capacity');
   const auth = await session('capacity');

@@ -58,6 +58,11 @@ export function verifyProduction(directory, product = readProduct(), origins) {
         `Development/private artifact: ${entry.name}`,
       );
       const file = path.join(folder, entry.name);
+      assert(
+        entry.name.toLowerCase() !== 'manifest.json' ||
+          file === path.join(directory, 'manifest.json'),
+        'Only the root manifest.json may be packaged',
+      );
       if (entry.isDirectory()) walk(file);
       else if (/\.(html|js|mjs|json)$/.test(entry.name)) {
         const text = readFileSync(file, 'utf8');

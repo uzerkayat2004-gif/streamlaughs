@@ -1,9 +1,9 @@
-# StreamLaughs v0.6.2
+# StreamLaughs v0.6.3
 
 see who's laughing with you.
 
-- Popup updates: hourly public version checks, an idle update button and a quiet gear dot during recording.
-- Verified ZIP downloads and three illustrated in-extension replacement steps; finish update saves your session and reloads.
+- Edge Add-ons support: separate store identity and automatic browser updates; ZIP installs retain the popup update flow.
+- Store submission ZIP contains one manifest.json and no manifest key; bundled model receipts use model-files.json.
 - Recaps and settings stay in your browser. Microphone diagnostics and all local models remain bundled.
 - Audio is processed on your PC and never saved or sent. Sharing is optional.
 
@@ -11,4 +11,4 @@ First install: download the universal ZIP from the website, extract it, enable D
 
 Fixed unpacked ID: fkocldgggcmhihelohiicoakcfomhepg. The manifest public key is sufficient; no private signing key is used or included. SHA256SUMS.txt verifies the ZIP downloads. Models, runtimes and third-party notices are included.
 
-Chrome/Edge store installation is not available; use Load unpacked. Microphone consent is requested locally. Physical Twitch audio, real OAuth and the manual acceptance checklist still require the release owner’s verification.
+Edge Add-ons submission is in review. The website lists ZIP installation until the owner provides the approved store URL. Microphone consent is requested locally. Physical Twitch audio, real OAuth and the manual acceptance checklist still require the release owner’s verification.

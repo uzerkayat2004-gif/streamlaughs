@@ -14,7 +14,7 @@ A little crowd for Twitch: your local laughs, everyone’s anonymous reactions, 
 
 To update from v0.6.2 onward, open the popup and choose **update to v…**. The extension checks and downloads the ZIP, then shows three illustrated steps: unzip, copy its contents into your **same existing folder** and replace files, then press **finish update**. It saves any active recording before reloading; recaps and settings stay saved. Refresh Twitch afterwards. Earlier installs need one manual download, same-folder replacement and reload to get this flow. [Update details and troubleshooting](docs/popup-updates-part12.md).
 
-The **downloads** permission saves and monitors your requested update ZIP. Public version checks are cached for up to one hour and send no account, channel or installation identifier.
+The **downloads** permission saves and monitors your requested ZIP-install update. Public version checks for ZIP installs are cached for up to one hour and send no account, channel or installation identifier. **Edge Add-ons is in review:** store installs use a separate ID and Edge's automatic updates, with no ZIP update button. The Install page will show its store link only after the approved URL is configured. [Store package and CI artifacts](docs/edge-store-part13.md).
 
 Every successful main deployment rebuilds the download; no release or manual upload is needed. The fixed unpacked ID is **fkocldgggcmhihelohiicoakcfomhepg**. Parts 1–4 installs change origin once; [migration details](docs/extension-identity.md). No Chrome Web Store listing is claimed. [Download/checksum build and browser verification limits](docs/website-downloads-part8.md).
 

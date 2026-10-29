@@ -1,6 +1,11 @@
 import { PRODUCT } from '@laughline/shared';
 import { z } from 'zod';
+import identity from '../extension-identity.json';
 import { Version } from './version-check';
+
+export function isZipInstall(extensionId: string) {
+  return extensionId === identity.id;
+}
 
 // Compatibility namespace; separate from saved preferences and Dexie recaps.
 export const UPDATE_ATTEMPT_KEY = 'laughline:update-attempt';

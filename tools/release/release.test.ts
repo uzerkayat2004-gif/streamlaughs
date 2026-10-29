@@ -4,6 +4,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  unlinkSync,
   writeFileSync,
 } from 'node:fs';
 import os from 'node:os';
@@ -136,7 +137,10 @@ it('writes flat reproducible ZIPs with notices and rejects signing material', ()
   const folder = mkdtempSync(path.join(os.tmpdir(), 'release-zip-')),
     source = path.join(folder, 'extension');
   mkdirSync(source);
-  writeFileSync(path.join(source, 'manifest.json'), '{}');
+  writeFileSync(
+    path.join(source, 'manifest.json'),
+    JSON.stringify({ key: 'public test key', version: '0.6.3' }),
+  );
   writeFileSync(path.join(folder, 'notice'), 'public license');
   const inputs = path.join(folder, 'extras.json');
   writeFileSync(
@@ -148,7 +152,7 @@ it('writes flat reproducible ZIPs with notices and rejects signing material', ()
   );
   const python =
     process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
-  const pack = (file: string) =>
+  const pack = (file: string, store = false) =>
     execFileSync(
       python,
       [
@@ -156,6 +160,7 @@ it('writes flat reproducible ZIPs with notices and rejects signing material', ()
         source,
         path.join(folder, file),
         inputs,
+        ...(store ? ['--edge-store'] : []),
       ],
       {
         encoding: 'utf8',
@@ -164,6 +169,29 @@ it('writes flat reproducible ZIPs with notices and rejects signing material', ()
       },
     );
   expect(pack('first.zip')).toBe(pack('second.zip'));
+  pack('store.zip', true);
+  const comparison = execFileSync(
+    python,
+    [
+      '-c',
+      `import zipfile,json,sys
+with zipfile.ZipFile(sys.argv[1]) as normal, zipfile.ZipFile(sys.argv[2]) as store:
+ a=json.loads(normal.read('manifest.json'));b=json.loads(store.read('manifest.json'));a.pop('key')
+ assert a==b and 'key' not in b
+ assert normal.namelist()==store.namelist()
+ assert all(normal.read(n)==store.read(n) for n in normal.namelist() if n!='manifest.json')
+ assert [n for n in store.namelist() if n.split('/')[-1].lower()=='manifest.json']==['manifest.json']
+ print('verified')`,
+      path.join(folder, 'first.zip'),
+      path.join(folder, 'store.zip'),
+    ],
+    { encoding: 'utf8', windowsHide: true },
+  );
+  expect(comparison.trim()).toBe('verified');
+  mkdirSync(path.join(source, 'models'));
+  writeFileSync(path.join(source, 'models/manifest.json'), '{}');
+  expect(() => pack('nested.zip', true)).toThrow();
+  unlinkSync(path.join(source, 'models/manifest.json'));
   writeFileSync(path.join(source, 'signing.pem'), 'private material');
   expect(() => pack('unsafe.zip')).toThrow();
 });

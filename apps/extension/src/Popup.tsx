@@ -23,6 +23,7 @@ import {
 import { SITE_URL, UPDATE_KEY } from './site';
 import { audioNotice, friendlyError } from './ui-status';
 import {
+  isZipInstall,
   UPDATE_ATTEMPT_KEY,
   UPDATE_LATER_KEY,
   UpdateAttemptSchema,
@@ -36,6 +37,7 @@ export function Popup() {
   const [later, setLater] = useState(false);
   const [updateToast, setUpdateToast] = useState('');
   useEffect(() => {
+    if (!isZipInstall(chrome.runtime.id)) return;
     const accept = (value: unknown) => {
       const parsed = UpdateStatusSchema.safeParse(value);
       setUpdate(parsed.success ? parsed.data : undefined);
@@ -100,7 +102,8 @@ export function Popup() {
   const session = snapshot.session,
     activeChannel = session?.channel ?? channel,
     notice = audioNotice(snapshot);
-  const updateAvailable = !!SITE_URL && update?.available === true;
+  const updateAvailable =
+    isZipInstall(chrome.runtime.id) && !!SITE_URL && update?.available === true;
   async function openUpdate() {
     setBusy(true);
     setError('');

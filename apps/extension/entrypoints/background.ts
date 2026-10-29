@@ -33,6 +33,7 @@ import { type CrowdSource, makeCrowdSource } from '../src/crowd-source';
 import { db } from '../src/db';
 import { SITE_URL, UPDATE_KEY } from '../src/site';
 import {
+  isZipInstall,
   prepareUpdateReload,
   UPDATE_ATTEMPT_KEY,
   UpdateAttemptSchema,
@@ -48,7 +49,8 @@ export default defineBackground(() => {
   let queue = Promise.resolve();
   let updateCheck: Promise<void> | null = null;
   const checkUpdate = () => {
-    if (!SITE_URL || updateCheck) return updateCheck;
+    if (!isZipInstall(chrome.runtime.id) || !SITE_URL || updateCheck)
+      return updateCheck;
     updateCheck = checkVersion(
       SITE_URL,
       chrome.runtime.getManifest().version,
@@ -585,6 +587,10 @@ export default defineBackground(() => {
         });
         return;
       }
+      if (!isZipInstall(chrome.runtime.id) && updateType !== 'UPDATE_CHECK') {
+        reply({ ok: false, error: 'updates come from your browser’s store' });
+        return;
+      }
       // Public metadata latency must never queue ahead of pause/stop commands.
       if (updateType === 'UPDATE_CHECK') {
         void Promise.resolve(checkUpdate()).then(() => reply({ ok: true }));
@@ -788,7 +794,7 @@ export default defineBackground(() => {
   chrome.runtime.onInstalled.addListener(({ reason }) => {
     if (reason === 'install')
       void chrome.tabs.create({ url: chrome.runtime.getURL('/welcome.html') });
-    if (reason === 'update')
+    if (reason === 'update' && isZipInstall(chrome.runtime.id))
       void (async () => {
         const attempt = UpdateAttemptSchema.safeParse(
           (await chrome.storage.local.get(UPDATE_ATTEMPT_KEY))[

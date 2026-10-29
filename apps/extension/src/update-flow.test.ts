@@ -1,11 +1,18 @@
 import { expect, it, vi } from 'vitest';
 import {
+  isZipInstall,
   prepareUpdateReload,
   UpdateAttemptSchema,
   updateFilename,
   updateResult,
   verifiedArchive,
 } from './update-flow';
+
+it('offers ZIP updates only to the fixed ZIP ID, never Edge store or unknown store installs', () => {
+  expect(isZipInstall('fkocldgggcmhihelohiicoakcfomhepg')).toBe(true);
+  expect(isZipInstall('fkdfjgnhifofdjpbenlkhpfhmmhglmkb')).toBe(false);
+  expect(isZipInstall('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')).toBe(false);
+});
 
 it('saves the session before persisting reload intent and reloading; a save failure prevents reload', async () => {
   const calls: string[] = [];

@@ -6,12 +6,12 @@ Deployed on 2026-10-28 using the owner's Cloudflare authorization in their own C
 - Worker: https://streamlaughs-crowd.streamlaughs.workers.dev
 - Worker name: `streamlaughs-crowd`
 - Storage: SQLite-backed `ChannelCrowd`, binding `CHANNELS`, migration `v1` with `new_sqlite_classes`. No separate D1 database is needed. Keep these identifiers stable on updates.
-- Fixed Chrome/Edge extension ID: `fkocldgggcmhihelohiicoakcfomhepg`.
+- Fixed Chrome/Edge ZIP extension ID: `fkocldgggcmhihelohiicoakcfomhepg`. Confirmed Edge store ID: `fkdfjgnhifofdjpbenlkhpfhmmhglmkb` (added in Part 13).
 
 ## Production configuration
 
 ```text
-EXTENSION_ORIGINS=chrome-extension://fkocldgggcmhihelohiicoakcfomhepg
+EXTENSION_ORIGINS=chrome-extension://fkocldgggcmhihelohiicoakcfomhepg,chrome-extension://fkdfjgnhifofdjpbenlkhpfhmmhglmkb
 SITE_ORIGINS=https://streamlaughs.vercel.app
 CROWD_ENABLED=true
 ALLOW_TEST_TRAFFIC=false

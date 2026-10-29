@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { OwnerCommand } from './protocol';
 
 const fixture = vi.hoisted(() => ({
+  extensionId: 'fkocldgggcmhihelohiicoakcfomhepg',
   owner: null as AudioReport | null,
   exists: false,
   storage: {} as Record<string, unknown>,
@@ -92,7 +93,8 @@ vi.mock('./offscreen-client', () => ({
     return fixture.owner;
   },
 }));
-const url = (path: string) => `chrome-extension://unit${path}`;
+const url = (path: string) =>
+  `chrome-extension://${fixture.extensionId}${path}`;
 const tab = (id: number) => ({
   id,
   url: `https://www.twitch.tv/${id === 1 ? 'nightowl_tv' : 'second_channel'}`,
@@ -106,7 +108,7 @@ async function dispatch(
     fixture.messages[0]!(
       message,
       {
-        id: 'unit',
+        id: fixture.extensionId,
         url: url(
           offscreen
             ? '/offscreen.html'
@@ -132,6 +134,7 @@ describe('background capture integration with browser ports mocked', () => {
     vi.useFakeTimers();
     vi.resetModules();
     vi.clearAllMocks();
+    fixture.extensionId = 'fkocldgggcmhihelohiicoakcfomhepg';
     fixture.exists = false;
     fixture.owner = null;
     fixture.recaps = [];
@@ -143,7 +146,9 @@ describe('background capture integration with browser ports mocked', () => {
     vi.stubGlobal('defineBackground', (main: () => void) => main());
     vi.stubGlobal('chrome', {
       runtime: {
-        id: 'unit',
+        get id() {
+          return fixture.extensionId;
+        },
         reload: vi.fn(),
         getURL: url,
         sendMessage: async () => {},
@@ -220,6 +225,17 @@ describe('background capture integration with browser ports mocked', () => {
     expect(
       (await dispatch({ type: 'GET_STATE' })).state.session!.crowdSummary,
     ).toMatchObject({ source: 'live', peakLaughingNow: 3 });
+  });
+  it('Edge store cannot open ZIP updates or finish/reload through a forged update command', async () => {
+    fixture.extensionId = 'fkdfjgnhifofdjpbenlkhpfhmmhglmkb';
+    expect((await dispatch({ type: 'UPDATE_CHECK' })).ok).toBe(true);
+    expect((await dispatch({ type: 'OPEN_UPDATE' })).ok).toBe(false);
+    expect((await dispatch({ type: 'FINISH_UPDATE' }, false, true)).ok).toBe(
+      false,
+    );
+    expect(chrome.tabs.create).not.toHaveBeenCalled();
+    expect(chrome.runtime.reload).not.toHaveBeenCalled();
+    expect(fixture.recaps).toHaveLength(0);
   });
   it('finishing an update requires its extension page, closes audio and saves a recap before reload without clearing settings', async () => {
     await dispatch({ type: 'START', tabId: 1 });

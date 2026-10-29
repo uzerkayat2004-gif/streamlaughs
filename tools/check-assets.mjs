@@ -7,7 +7,7 @@ const base = fileURLToPath(
   new URL('../apps/extension/public/models/', import.meta.url),
 );
 const manifest = JSON.parse(
-  await readFile(path.join(base, 'manifest.json'), 'utf8'),
+  await readFile(path.join(base, 'model-files.json'), 'utf8'),
 );
 for (const receipt of manifest.files) {
   const bytes = await readFile(path.join(base, receipt.path));

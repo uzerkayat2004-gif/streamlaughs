@@ -72,7 +72,7 @@ The extension checks SITE_URL/version.json with credentials omitted on popup ope
 | YAMNet             | [Google MediaPipe float32/1 TFLite](https://storage.googleapis.com/mediapipe-models/audio_classifier/yamnet/float32/1/yamnet.tflite)  | [Apache 2.0](https://github.com/tensorflow/models/blob/master/LICENSE)                                                                           |
 | Whisper tiny.en q8 | [pinned ONNX Community revision](https://huggingface.co/onnx-community/whisper-tiny.en/tree/2575352d61be1bf7225cf8f8b268a4678025fc58) | [base model Apache 2.0](https://huggingface.co/openai/whisper-tiny.en), [original code MIT](https://github.com/openai/whisper/blob/main/LICENSE) |
 
-Sources, sizes and SHA-256 receipts are in `public/models/manifest.json`; full notices are in `models/licenses/`. MediaPipe Tasks Audio works in the MV3 **classic worker**, using its local importScripts/WASM loader; no replacement model was needed.
+Sources, sizes and SHA-256 receipts are in `public/models/model-files.json`; full notices are in `models/licenses/`. The receipt filename leaves only the root extension manifest.json in packages, as required by Edge Add-ons. MediaPipe Tasks Audio works in the MV3 **classic worker**, using its local importScripts/WASM loader; no replacement model was needed.
 
 The offscreen owner subscribes to `AudioFrameHub` and owns separate realtime (VAD/YAMNet) and speech (Whisper) workers, so decoding cannot block live frame acknowledgments. Worklets downmix/resample to 16 kHz mono, 320 samples/20 ms. Tab audio independently connects to speakers, including during pause/mic loss. The mic is never played aloud. Mic constraints live in `src/audio/config.ts`: echoCancellation true, noiseSuppression false, autoGainControl false.
 

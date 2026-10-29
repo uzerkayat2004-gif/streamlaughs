@@ -1,0 +1,152 @@
+StreamLaughs Part 13 verification · 2026-10-29
+Version: 0.6.3
+ZIP ID: fkocldgggcmhihelohiicoakcfomhepg
+Edge store ID: fkdfjgnhifofdjpbenlkhpfhmmhglmkb
+Store URL: empty, Install link hidden; listing remains in review (product 0RDCKFR66N3X).
+
+Final local gates: all exit 0; 185 unit/integration tests, 9 website and 11 extension browser cases.
+A prior typecheck was interrupted by the host/user continuation; it was rerun successfully.
+
+$ pnpm --filter extension build:debug
+exit: 0; elapsed: 103.2 s
+Verified 14 local model/license assets against SHA-256 receipts.
+√ Finished in 86 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (chrome-mv3-audio-debug)
+
+$ pnpm --filter extension build:test-ui
+exit: 0; elapsed: 21.2 s
+Verified 14 local model/license assets against SHA-256 receipts.
+√ Finished in 18.7 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (chrome-mv3-ui-test)
+
+$ pnpm --filter extension build:test-crowd
+exit: 0; elapsed: 10.8 s
+Verified 14 local model/license assets against SHA-256 receipts.
+√ Finished in 7.362 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (chrome-mv3-crowd-test)
+
+$ pnpm --filter extension build:test-site
+exit: 0; elapsed: 15.3 s
+Verified 14 local model/license assets against SHA-256 receipts.
+√ Finished in 13.2 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (chrome-mv3-site-test)
+
+$ pnpm release:preview
+exit: 0; elapsed: 63.5 s
+Verified 14 local model/license assets against SHA-256 receipts.
+√ Finished in 31.2 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (chrome-mv3)
+Verified 14 local model/license assets against SHA-256 receipts.
+√ Finished in 12.2 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (edge-mv3)
+Verified flat chrome ZIP: streamlaughs-chrome-v0.6.3.zip
+Verified flat edge ZIP: streamlaughs-edge-v0.6.3.zip
+Prepared OFFLINE PREVIEW assets in releases/offline-preview; no tag, release or deployment created.
+
+$ pnpm build
+exit: 0; elapsed: 211.6 s
+Verified 14 local model/license assets against SHA-256 receipts.
+√ Finished in 15.0 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (chrome-mv3)
+Verified 14 local model/license assets against SHA-256 receipts.
+√ Finished in 16.1 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (edge-mv3)
+Verified flat chrome ZIP: streamlaughs-chrome-v0.6.3.zip
+Verified flat edge ZIP: streamlaughs-edge-v0.6.3.zip
+Prepared production-configured assets in releases/production; no tag, release or deployment created.
+Universal download: 40393608 bytes; SHA-256 e97074a1b1936e69c6d902f4a6ff2163e44e3caba45b59d9342b9dc6250b20c3
+✓ Compiled successfully in 15.5s
+  Finished TypeScript in 11.5s ...
+StreamLaughs source, docs and requested website output branding checks passed.
+
+$ pnpm release:edge-store
+exit: 0; elapsed: 5.3 s
+Verified flat edge ZIP: streamlaughs-edge-store-v0.6.3.zip
+Prepared Edge store CI artifact in releases/edge-store; no publication performed.
+
+$ pnpm -r typecheck
+exit: 0; elapsed: 61.6 s
+tools/crowd-sim typecheck: Done
+tools/eval typecheck: Done
+tools/release typecheck: Done
+packages/shared typecheck: Done
+workers/api typecheck: Done
+apps/extension typecheck: √ Finished in 8.052 s
+apps/web typecheck: Done
+apps/extension typecheck: Done
+
+$ pnpm check
+exit: 0; elapsed: 2.0 s
+Checked 255 files in 1083ms. No fixes applied.
+
+$ pnpm -r test
+exit: 0; elapsed: 71.6 s
+tools/eval test:  Test Files  1 passed (1)
+tools/eval test:       Tests  2 passed (2)
+tools/eval test:    Duration  3.57s (transform 221ms, setup 0ms, import 523ms, tests 33ms, environment 0ms)
+tools/release test:  Test Files  4 passed (4)
+tools/release test:       Tests  11 passed (11)
+tools/release test:    Duration  7.76s (transform 1.55s, setup 0ms, import 2.75s, tests 4.68s, environment 1ms)
+packages/shared test:  Test Files  4 passed (4)
+packages/shared test:       Tests  21 passed (21)
+packages/shared test:    Duration  9.02s (transform 2.08s, setup 0ms, import 23.50s, tests 436ms, environment 2ms)
+tools/crowd-sim test:  Test Files  1 passed (1)
+tools/crowd-sim test:       Tests  2 passed (2)
+tools/crowd-sim test:    Duration  9.69s (transform 410ms, setup 0ms, import 6.67s, tests 111ms, environment 0ms)
+apps/extension test:  Test Files  18 passed (18)
+apps/extension test:       Tests  107 passed (107)
+apps/extension test:    Duration  8.67s (transform 4.04s, setup 0ms, import 15.00s, tests 11.53s, environment 6ms)
+apps/web test:  Test Files  7 passed (7)
+apps/web test:       Tests  28 passed (28)
+apps/web test:    Duration  8.16s (transform 2.39s, setup 0ms, import 27.14s, tests 2.69s, environment 2ms)
+workers/api test:  Test Files  3 passed (3)
+workers/api test:       Tests  14 passed (14)
+workers/api test:    Duration  39.17s (transform 8.28s, setup 0ms, import 15.05s, tests 19.82s, environment 5ms)
+
+$ pnpm test:e2e:web
+exit: 0; elapsed: 392.0 s
+Running 9 tests using 1 worker
+  ok 1 tests\download.spec.ts:20:1 › home opens setup, starts one matching ZIP download and preserves the fixed ID (23.4s)
+  ok 2 tests\download.spec.ts:129:1 › plain setup waits for a click; automatic setup offers a working retry (11.7s)
+  ok 3 tests\download.spec.ts:188:1 › nav, final CTA and demo downloads all open setup and start the attachment (18.3s)
+  ok 4 tests\update.spec.ts:13:1 › Edge store runtime ID keeps both normal idle buttons and never offers a ZIP update (11.1s)
+  ok 5 tests\update.spec.ts:108:1 › ZIP update: both idle CTAs, later, verified download, safe stop, wrong folder, real file replacement/reload preserves recaps and settings (24.3s)
+  ok 6 tests\web.spec.ts:18:1 › Twitch redirect mismatch shows setup help instead of silently landing on home (7.1s)
+  ok 7 tests\web.spec.ts:87:1 › public pages, responsive Night Crowd, privacy, configurable links and recorded demo (1.3m)
+  ok 8 tests\web.spec.ts:180:1 › OAuth state + owner isolation + real Wrangler and crowd-sim live/history/VOD stories (1.5m)
+  ok 9 tests\web.spec.ts:341:1 › fixed ID survives a copied folder; the extension checks public version metadata and shows its update dot (3.5s)
+  9 passed (6.5m)
+
+$ pnpm test:e2e
+exit: 0; elapsed: 314.8 s
+Running 11 tests using 1 worker
+  ok  1 tests\audio.spec.ts:14:1 › real mic permission, worklet frames, numeric status, pause, worker restart and teardown with Chromium fake devices (10.2s)
+  ok  2 tests\audio.spec.ts:197:1 › production excludes developer debug and missing microphone permission opens Welcome at the mic step (7.4s)
+  ok  3 tests\crowd.spec.ts:38:1 › real Worker + simulator: few → live, approved words, watch-only zero sends and immediate opt-out (49.9s)
+  ok  4 tests\extension.spec.ts:11:1 › built MV3 extension: dot, popup, sync, drag, privacy, persistence, recap and welcome (57.6s)
+  ok  5 tests\inference.spec.ts:5:1 › real bundled YAMNet laugh updates the dot box, popup, checkpoint and recap (16.1s)
+  ok  6 tests\polish.spec.ts:24:1 › clean ZIP install: fixed ID, first run, mic choice, zero dev controls, keyboard and touch recap toast (24.1s)
+  ok  7 tests\polish.spec.ts:155:1 › saved stream bubbles select their own stored data; calm and audio states fit with reduced motion (10.9s)
+  ok  8 tests\production-audio.spec.ts:50:1 › production Welcome checks a real fake-device mic, releases it, and hides diagnostics behind Shift-version (17.5s)
+  ok  9 tests\production-audio.spec.ts:133:3 › production ZIP detects real recorded laughs and speech with normal tab playback (35.8s)
+  ok 10 tests\production-audio.spec.ts:133:3 › production ZIP detects real recorded laughs and speech with loud tab playback (40.8s)
+  ok 11 tests\production-audio.spec.ts:133:3 › production ZIP detects real recorded laughs and speech with speech only tab playback (39.0s)
+  11 passed (5.2m)
+
+Actual keyless store ZIP: 40,393,286 bytes
+SHA-256: ff9a18e5ccd042f6accf24ecec50d2f091346d342f929cb41139a812879a54a2
+Verified exactly one root manifest.json, no key, renamed model-files.json receipts, and every other file identical to the normal Edge ZIP. The source build remains keyed. Binaries stay ignored; store artifact is outside the website/release ZIP directory.
+
+Production Worker: https://streamlaughs-crowd.streamlaughs.workers.dev
+Deployment version: b7a7d15f-5e32-43d5-956e-5a76dfddafab
+SQLite ChannelCrowd binding/migration retained; free plan, no paid plan/card. Existing secrets unchanged. Initial short network timeout retried; completed live probe follows. Tokens were neither logged nor saved. Watch-only probes submitted no contributions or audio.
+{"check":"health","pass":true}
+{"origin":"chrome-extension://fkocldgggcmhihelohiicoakcfomhepg","session":200,"socket":101,"state":"few","wordsHidden":true}
+{"origin":"chrome-extension://fkdfjgnhifofdjpbenlkhpfhmmhglmkb","session":200,"socket":101,"state":"few","wordsHidden":true}
+{"origin":"https://random.example","session":403,"socket":403,"blocked":true}
+{"origin":"chrome-extension://bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","session":403,"socket":403,"blocked":true}
+{"check":"production test traffic remains disabled; watch-only probes sent no contributions","pass":true}
+
+Store UI coverage uses only runtime-ID emulation in an isolated Chromium profile; the package is still in Microsoft review. Actual Edge Add-ons installation/signing, automatic delivery timing and hardware audio smoke testing remain manual after approval and the owner-provided listing URL. ZIP update file replacement/reload/storage preservation and existing recorded-audio regressions pass.
+
+Pinned artifact-only CI on main and the future tag release step are prepared. The main push/CI artifact outcome is reported separately. No tag, GitHub Release, Microsoft upload/publication or account creation is performed.

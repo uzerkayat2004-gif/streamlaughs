@@ -13,6 +13,18 @@ it('offers a direct download on plain setup without a GitHub page or a new tab',
   expect(html).toContain(`Download ${PRODUCT.name}`);
   expect(html).toContain('href="/download"');
   expect(html).not.toMatch(/github\.com|GitHub Releases|target="_blank"/);
+  if (!PRODUCT.edgeStoreUrl) expect(html).not.toContain('Get it on Edge');
+  else expect(html).toContain(`href="${PRODUCT.edgeStoreUrl}"`);
+});
+
+it('accepts the confirmed Edge store origin for public version metadata', async () => {
+  const origin = `chrome-extension://${PRODUCT.edgeStoreExtensionId}`;
+  const response = await GET(
+    new Request('https://streamlaughs.vercel.app/version.json', {
+      headers: { Origin: origin },
+    }),
+  );
+  expect(response.headers.get('Access-Control-Allow-Origin')).toBe(origin);
 });
 
 it('shows download confirmation and a direct retry for the automatic setup entry', async () => {
