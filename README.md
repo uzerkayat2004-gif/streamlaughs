@@ -14,6 +14,8 @@ A little crowd for Twitch: your local laughs, everyone’s anonymous reactions, 
 
 To update, download again, replace the contents of the same extracted folder, reload the extension and refresh Twitch. Every successful main deployment rebuilds the download; no release or manual upload is needed. The fixed unpacked ID is **fkocldgggcmhihelohiicoakcfomhepg**. Parts 1–4 installs change origin once; [migration details](docs/extension-identity.md). No Chrome Web Store listing is claimed. [Download/checksum build and browser verification limits](docs/website-downloads-part8.md).
 
+**Mic check and troubleshooting:** Welcome shows a “say something” level bar. For a live local report, open the popup gear and **Shift-click the version**. It shows input levels, track/model errors and frame delivery; copying it includes no audio or transcripts. [v0.6.1 investigation, production regression and exact update/retest steps](docs/microphone-part11.md).
+
 **Live services:** [streamlaughs.vercel.app](https://streamlaughs.vercel.app) and [streamlaughs-crowd.streamlaughs.workers.dev](https://streamlaughs-crowd.streamlaughs.workers.dev/health) are connected. Twitch login works, and the owner dashboard loads live crowd and eligible aggregate history. The Cloudflare Worker uses free-plan-compatible SQLite Durable Objects; production simulator traffic stays disabled. [Deployment, connected ZIPs and safe demo instructions](docs/production-part7.md). The repository is `uzerkayat2004-gif/streamlaughs`; env overrides remain supported. Nothing has been tagged or released. Connected ZIPs are in local `releases/production/`; offline previews remain separate. Follow the [release handoff](docs/release-part6.md) before publishing. [Internal compatibility identifiers](docs/internal-identifiers.md) remain unchanged.
 
 ## Privacy in three bullets
@@ -59,7 +61,7 @@ pnpm release:preview
 
 For the local website: `pnpm --filter web dev`. Public pages and the clearly labelled recorded `/demo` need no Twitch credentials. [Provider/env setup and exact redirect URLs](docs/deploy-part5.md).
 
-Browser tests need separate debug/ui-test/crowd-test/site-test builds and a positive local laugh fixture for the real-model test. [Exact reproduction commands](docs/release-part6.md#reproduce-final-verification). Fake media tests mic plumbing; real Twitch tabCapture/replay, physical audio, hosted OAuth and multiple profiles need the [one final 30-minute checklist](docs/manual-part6.md). We do not claim a bug-free release or unmeasured detection accuracy.
+Browser tests need separate debug/ui-test/crowd-test/site-test builds; a licensed recorded human laugh/speech fixture is committed for the real-model tests. [Exact reproduction commands](docs/release-part6.md#reproduce-final-verification). The production ZIP suite also exercises actual tab capture with a test invocation grant. Physical audio/AEC, a native toolbar grant, hosted OAuth and multiple profiles need the [one final 30-minute checklist](docs/manual-part6.md). We do not claim a bug-free release or unmeasured detection accuracy.
 
 ## Submission files
 

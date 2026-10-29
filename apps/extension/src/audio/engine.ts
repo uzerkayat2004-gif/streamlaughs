@@ -3,6 +3,7 @@ import {
   type AudioReport,
   emptyAudioMetrics,
 } from '@laughline/shared';
+import { safeError } from '../diagnostics';
 import { AUDIO_DEBUG, AUDIO_STATUS_MS, MICROPHONE_CONSTRAINTS } from './config';
 import { AudioFrameHub, type AudioSource } from './ring-buffer';
 
@@ -70,6 +71,62 @@ export class AudioEngine {
   private permission: PermissionStatus | null = null;
   private timer: ReturnType<typeof setInterval> | undefined;
   private lastReport = 0;
+  private lastError = '';
+  private lastMicTrack: MediaStreamTrack | null = null;
+  private deviceSignature = '';
+  private changingDevice = false;
+  private deviceHandler = () => {
+    const generation = this.generation;
+    if (this.changingDevice || !this.sessionId) return;
+    void (async () => {
+      const signature = await this.inputDevices();
+      if (generation !== this.generation || signature === this.deviceSignature)
+        return;
+      this.deviceSignature = signature;
+      this.changingDevice = true;
+      try {
+        this.loseMic();
+        await this.retryMic();
+      } finally {
+        this.changingDevice = false;
+      }
+    })();
+  };
+  private async inputDevices() {
+    const devices =
+      (await navigator.mediaDevices.enumerateDevices?.().catch(() => [])) ?? [];
+    return devices
+      .filter((device) => device.kind === 'audioinput')
+      .map((device) => `${device.deviceId}:${device.label}`)
+      .sort()
+      .join('|');
+  }
+  diagnostics() {
+    const describe = (
+      stream: MediaStream | null,
+      previous: MediaStreamTrack | null = null,
+    ) => {
+      const track = stream?.getAudioTracks()[0] ?? previous;
+      return {
+        name: track?.label?.slice(0, 256) ?? 'not opened',
+        state: track?.readyState ?? 'none',
+        muted: track?.muted ?? false,
+        enabled: track?.enabled ?? false,
+        sampleRate: track?.getSettings?.().sampleRate ?? 0,
+      };
+    };
+    return {
+      phase: this.phase,
+      context: this.context?.state ?? 'closed',
+      inputSampleRate: this.context?.sampleRate ?? 0,
+      sampleRate: 16000 as const,
+      frameSamples: 320 as const,
+      mic: describe(this.mic, this.lastMicTrack),
+      tab: describe(this.tab),
+      metrics: { ...this.metrics },
+      error: this.lastError,
+    };
+  }
   constructor(
     private readonly emit: (
       report:
@@ -169,6 +226,7 @@ export class AudioEngine {
     this.phase = 'starting';
     this.paused = paused;
     this.micLost = false;
+    this.lastError = '';
     try {
       if (streamId) {
         const audio = {
@@ -203,9 +261,15 @@ export class AudioEngine {
       if (this.tab) this.attach('tab', this.tab, generation);
       try {
         await this.openMic(generation);
-      } catch {
+      } catch (error) {
+        this.lastError = safeError(error);
         this.loseMic();
       }
+      this.deviceSignature = await this.inputDevices();
+      navigator.mediaDevices.addEventListener?.(
+        'devicechange',
+        this.deviceHandler,
+      );
       if (generation !== this.generation) throw new Error('device');
       this.phase = this.paused ? 'paused' : this.micLost ? 'micLost' : 'active';
       this.setProcessing();
@@ -214,6 +278,7 @@ export class AudioEngine {
       this.report();
       return this.status();
     } catch (error) {
+      this.lastError = safeError(error);
       await this.stop();
       throw new Error(
         error instanceof Error && error.message === 'audioContext'
@@ -283,6 +348,7 @@ export class AudioEngine {
       generation,
     );
     this.mic = mic;
+    this.lastMicTrack = mic.getAudioTracks()[0] ?? null;
     for (const track of mic.getAudioTracks()) {
       track.onended = () => {
         if (generation === this.generation) this.loseMic();
@@ -347,17 +413,20 @@ export class AudioEngine {
   }
   async retryMic() {
     if (!this.sessionId || !this.context || !this.micLost) return this.status();
+    const generation = this.generation;
     try {
       this.disconnect('mic');
       stopTracks(this.mic);
       this.mic = null;
       this.stats.mic = emptyStats();
       await this.resumeContext();
-      await this.openMic(this.generation);
+      if (generation !== this.generation || !this.context) return this.status();
+      await this.openMic(generation);
       this.phase = this.paused ? 'paused' : 'active';
       this.setProcessing();
       this.report();
-    } catch {
+    } catch (error) {
+      this.lastError = safeError(error);
       this.loseMic();
     }
     return this.status();
@@ -403,6 +472,10 @@ export class AudioEngine {
   }
   async stop() {
     ++this.generation;
+    navigator.mediaDevices.removeEventListener?.(
+      'devicechange',
+      this.deviceHandler,
+    );
     clearInterval(this.timer);
     this.timer = undefined;
     if (this.permission) this.permission.onchange = null;

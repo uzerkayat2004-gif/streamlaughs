@@ -21,6 +21,7 @@ import {
 } from '@laughline/shared';
 import { AUDIO_DEBUG } from '../src/audio/config';
 import {
+  audioOwnerError,
   closeAudioOwner,
   ensureAudioOwner,
   hasAudioOwner,
@@ -558,6 +559,31 @@ export default defineBackground(() => {
   }
   chrome.runtime.onMessage.addListener((message: unknown, sender, reply) => {
     if (sender.id !== chrome.runtime.id) return;
+    if (
+      sender.url === chrome.runtime.getURL('/diagnostics.html') &&
+      (message as { type?: string })?.type === 'GET_DIAGNOSTICS'
+    ) {
+      void (async () => {
+        await ready;
+        const owner = (await hasAudioOwner())
+          ? await ownerCommand<{ audio: unknown; inference: unknown }>({
+              target: 'offscreen',
+              type: 'AUDIO_DIAGNOSTICS',
+            }).catch(() => null)
+          : null;
+        return {
+          version: chrome.runtime.getManifest().version,
+          listening: state.settings.listen,
+          captureState: state.capture.phase,
+          audio: owner?.audio ?? null,
+          inference: owner?.inference ?? null,
+          error:
+            audioOwnerError() ||
+            (state.capture.error === 'none' ? '' : state.capture.error),
+        };
+      })().then(reply);
+      return true;
+    }
     if (
       AUDIO_DEBUG &&
       sender.url === chrome.runtime.getURL('/debug.html') &&

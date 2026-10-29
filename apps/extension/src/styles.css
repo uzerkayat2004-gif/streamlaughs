@@ -583,3 +583,67 @@ svg {
     display: none;
   }
 }
+
+.diagnostics-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  color: var(--text, #f4f2ed);
+  background: #090b10;
+}
+.diagnostics-page h1 {
+  font-size: 28px;
+  margin-bottom: 12px;
+}
+.diagnostics-page h2 {
+  font-size: 21px;
+  margin: 28px 0 12px;
+}
+.diagnostics-page h3 {
+  font-size: 16px;
+  margin-top: 14px;
+}
+.diagnostics-page p,
+.diagnostics-page li {
+  font-size: 13px;
+  line-height: 1.7;
+}
+.diagnostics-page meter {
+  width: 100%;
+  height: 22px;
+  accent-color: #2ee6c5;
+}
+.diagnostics-page pre {
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: #14181f;
+  border-radius: 12px;
+  padding: 16px;
+}
+.settings-version {
+  font-size: 11px;
+  opacity: 0.65;
+}
+.welcome-mic-check {
+  width: 100%;
+  margin: 10px 0;
+  text-align: center;
+}
+.welcome-mic-check p {
+  font-size: 11px;
+  margin-bottom: 5px;
+}
+.welcome-mic-check meter {
+  width: 85%;
+  height: 12px;
+  accent-color: #ffd23f;
+}
+.welcome-mic-check[data-good="true"],
+.welcome-mic-check meter[data-good="true"] {
+  color: #2ee6c5;
+  accent-color: #2ee6c5;
+}
+.welcome-mic-check meter[data-good="true"]::-webkit-meter-optimum-value {
+  background: #2ee6c5;
+}

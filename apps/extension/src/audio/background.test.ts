@@ -61,6 +61,7 @@ vi.mock('../db', () => ({
   },
 }));
 vi.mock('./offscreen-client', () => ({
+  audioOwnerError: () => '',
   hasAudioOwner: async () => fixture.exists,
   audioOwnerContext: async () =>
     fixture.exists ? { documentId: 'owner-document' } : undefined,

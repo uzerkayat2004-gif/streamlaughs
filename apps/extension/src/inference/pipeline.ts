@@ -1,5 +1,7 @@
 import { emptyInferenceHealth, type PersonalEvent } from '@laughline/shared';
+import { MicNormalizer } from '../audio/mic-normalizer';
 import { AudioRingBuffer, type AudioSource } from '../audio/ring-buffer';
+import { emptyWorkerDiagnostics } from '../diagnostics';
 import { INFERENCE_CONFIG as C, type ClassScores, zeroScores } from './config';
 import type { ModelRunner } from './models';
 import {
@@ -11,6 +13,7 @@ import {
   LowPowerPolicy,
   redactDebugTranscript,
   VadSegmenter,
+  waveformMatch,
 } from './rules';
 
 type VadJob = { samples: Float32Array; start: number; end: number };
@@ -33,6 +36,8 @@ export class InferencePipeline {
     mic: new AudioRingBuffer(16000 * 10),
     tab: new AudioRingBuffer(16000 * 2),
   };
+  private rawMic = new AudioRingBuffer(32000);
+  private normalizer = new MicNormalizer();
   private envelopes: Record<AudioSource, { ts: number; rms: number }[]> = {
     mic: [],
     tab: [],
@@ -56,15 +61,66 @@ export class InferencePipeline {
   private lowCorrelation = 0;
   private comparedAt = -1;
   private vadGeneration = 0;
+  private speechBusy = false;
+  private speechGeneration = 0;
+  private speechTask: Promise<void> | null = null;
+  private frameCounts = { mic: 0, tab: 0 };
+  private frameTimes = { mic: [] as number[], tab: [] as number[] };
+  private guardDecision = {
+    kept: true,
+    reason: 'mic kept: waiting for a candidate segment',
+    correlation: 0,
+  };
+  private recentEvents: ReturnType<typeof emptyWorkerDiagnostics>['events'] =
+    [];
+  private topMicClass = { label: 'waiting', score: 0 };
+  private event(event: PersonalEvent) {
+    this.recentEvents.push({
+      kind: event.kind,
+      ts: event.ts,
+      confidence: event.kind === 'words' ? 1 : event.confidence,
+      count:
+        event.kind === 'words'
+          ? event.phrases.reduce((n, p) => n + p.count, 0)
+          : 1,
+    });
+    if (this.recentEvents.length > 20) this.recentEvents.shift();
+    this.emit(event);
+  }
+  diagnostics() {
+    const cutoff = performance.now() - 1000;
+    return {
+      ...emptyWorkerDiagnostics(),
+      health: { ...this.health },
+      micFrames: this.frameCounts.mic,
+      tabFrames: this.frameCounts.tab,
+      micFps: this.frameTimes.mic.filter((time) => time >= cutoff).length,
+      tabFps: this.frameTimes.tab.filter((time) => time >= cutoff).length,
+      guard: { ...this.guardDecision },
+      events: [...this.recentEvents],
+      gain: this.normalizer.gain,
+      noiseFloor: this.normalizer.noiseFloor,
+      topClass: this.topMicClass,
+    };
+  }
   constructor(
     private models: ModelRunner,
     private emit: (event: PersonalEvent) => void,
     private debug = false,
     private onSpeech?: (segment: { start: number; end: number }) => void,
+    private wake: () => void = () => {},
   ) {
     this.health.phase = 'ready';
   }
   ingest(source: AudioSource, frame: Float32Array, ts: number) {
+    this.frameCounts[source]++;
+    const received = performance.now();
+    this.frameTimes[source].push(received);
+    while (
+      this.frameTimes[source].length > 256 ||
+      this.frameTimes[source][0]! < received - 1000
+    )
+      this.frameTimes[source].shift();
     if (!this.epoch) {
       this.epoch = ts;
       this.period = performance.now();
@@ -78,6 +134,8 @@ export class InferencePipeline {
         delete this.sound[source];
       }
       if (source === 'mic') {
+        this.rawMic.clear();
+        this.normalizer.reset();
         this.vadGeneration++;
         this.pendingLength = 0;
         this.segmenter.reset();
@@ -86,10 +144,14 @@ export class InferencePipeline {
       }
     }
     this.lastFrame[source] = ts;
-    this.buffers[source].write(frame);
     let square = 0;
     for (const value of frame) square += value * value;
     const rms = Math.sqrt(square / frame.length);
+    if (source === 'mic') {
+      this.rawMic.write(frame);
+      frame = this.normalizer.process(frame, this.health.vadProbability >= 0.5);
+    }
+    this.buffers[source].write(frame);
     const envelope = this.envelopes[source];
     envelope.push({ ts, rms });
     while (envelope.length > 96 || envelope[0]!.ts < ts - 1900)
@@ -130,11 +192,13 @@ export class InferencePipeline {
         }
       }
     }
+    if (source === 'mic') frame.fill(0);
   }
+
   get pendingWork() {
     return (
       this.vadQueue.length +
-      this.speechQueue.length +
+      (this.speechBusy || this.health.lowPower ? 0 : this.speechQueue.length) +
       Number(!!this.sound.mic) +
       Number(!!this.sound.tab)
     );
@@ -149,7 +213,7 @@ export class InferencePipeline {
     const result = this.gate.consider(kind, score, rms, ts, contaminated);
     if (result.event) {
       this.health.accepted++;
-      this.emit(result.event);
+      this.event(result.event);
     } else if (score >= C.thresholds[kind]) this.health.rejected++;
     if (this.debug) {
       this.reasons.push({ kind, ts, reason: result.reason });
@@ -189,13 +253,39 @@ export class InferencePipeline {
     return result.correlation;
   }
   private playback(kind: keyof ClassScores, ts: number) {
-    return isPlayback(
+    const envelopeMatched = isPlayback(
       this.compare(ts),
       this.scores.mic[kind],
       this.scores.tab[kind],
       Math.abs(ts - this.scoreTs.tab),
     );
+    let match = { valid: false, correlation: 0, lagMs: 0 };
+    if (envelopeMatched) {
+      const end = Math.min(ts, this.lastFrame.mic, this.lastFrame.tab);
+      const micSkip = Math.max(0, Math.round((this.lastFrame.mic - end) * 16));
+      const tabSkip = Math.max(0, Math.round((this.lastFrame.tab - end) * 16));
+      const mic = this.rawMic.read(2048 + micSkip);
+      const tab = this.buffers.tab.read(2048 + C.maximumLagMs * 16 + tabSkip);
+      match = waveformMatch(
+        mic.subarray(0, Math.max(0, mic.length - micSkip)),
+        tab.subarray(0, Math.max(0, tab.length - tabSkip)),
+      );
+      mic.fill(0);
+      tab.fill(0);
+    }
+    const rejected = envelopeMatched && match.valid && match.correlation >= 0.9;
+    this.guardDecision = {
+      kept: !rejected,
+      reason: rejected
+        ? 'matching raw waveform, timing and tab class'
+        : envelopeMatched
+          ? 'mic kept: rhythm matches but waveform differs'
+          : 'mic kept: no matching playback',
+      correlation: match.correlation,
+    };
+    return rejected;
   }
+
   async step() {
     const start = performance.now();
     // Fair scheduling: sound work first, then one VAD chunk, then at most one speech job.
@@ -204,6 +294,8 @@ export class InferencePipeline {
       if (!job) continue;
       delete this.sound[source];
       this.scores[source] = this.models.sound(job.samples);
+      if (source === 'mic' && this.models.topClass)
+        this.topMicClass = { ...this.models.topClass };
       this.scoreTs[source] = job.ts;
       wipe(job);
       if (source === 'tab') {
@@ -216,7 +308,8 @@ export class InferencePipeline {
             this.scores.mic[kind],
             job.rms,
             job.ts,
-            this.playback(kind, job.ts),
+            this.scores.mic[kind] >= C.thresholds[kind] &&
+              this.playback(kind, job.ts),
           );
     }
     const vad = this.vadQueue.shift();
@@ -254,42 +347,9 @@ export class InferencePipeline {
           this.speechQueue.push({ samples, ts: segment.end, rms, duration });
         else samples.fill(0);
       }
-    } else if (!this.health.lowPower) {
+    } else if (!this.health.lowPower && !this.speechBusy) {
       const speech = this.speechQueue.shift();
-      if (speech) {
-        let text = '';
-        try {
-          text = await this.models.words(speech.samples);
-          const result = extractWords(text);
-          if (this.debug) this.lastTranscript = redactDebugTranscript(text);
-          if (result.phrases.length)
-            this.emit({
-              kind: 'words',
-              ts: speech.ts,
-              phrases: result.phrases,
-            });
-          if (result.hype)
-            this.decision('hype', 0.9, speech.rms, speech.ts, false);
-        } catch {
-          this.health.lowPower = this.power.update(
-            2,
-            this.health.drops,
-            performance.now(),
-          );
-          this.speechQueue.clear();
-          if (this.debug) {
-            this.reasons.push({
-              kind: 'words',
-              ts: speech.ts,
-              reason: 'local transcription unavailable; words paused',
-            });
-            if (this.reasons.length > C.maxDebugEvents) this.reasons.shift();
-          }
-        } finally {
-          text = '';
-          wipe(speech);
-        }
-      }
+      if (speech) this.startSpeech(speech);
     }
     this.busyMs += performance.now() - start;
     this.health.inferenceMs = this.busyMs;
@@ -301,7 +361,7 @@ export class InferencePipeline {
       elapsed = now - this.period;
     this.health.lowPower = this.power.update(
       this.health.realTimeFactor,
-      this.health.drops,
+      this.transportDrops + this.vadQueue.drops,
       now,
     );
     if (this.health.lowPower) this.speechQueue.clear();
@@ -309,7 +369,7 @@ export class InferencePipeline {
       this.health.realTimeFactor = this.busyMs / Math.max(32, this.processedMs);
       this.health.lowPower = this.power.update(
         this.health.realTimeFactor,
-        this.health.drops,
+        this.transportDrops + this.vadQueue.drops,
         now,
       );
       this.busyMs = 0;
@@ -318,11 +378,47 @@ export class InferencePipeline {
       if (this.health.lowPower) this.speechQueue.clear();
     }
   }
+  private startSpeech(speech: SpeechJob) {
+    const generation = this.speechGeneration;
+    this.speechBusy = true;
+    this.speechTask = (async () => {
+      let text = '';
+      try {
+        const value = await this.models.words(speech.samples);
+        if (generation !== this.speechGeneration) return;
+        const result = typeof value === 'string' ? extractWords(value) : value;
+        if (typeof value === 'string') text = value;
+        if (this.debug) this.lastTranscript = redactDebugTranscript(text);
+        if (result.phrases.length)
+          this.event({ kind: 'words', ts: speech.ts, phrases: result.phrases });
+        if (result.hype)
+          this.decision('hype', 0.9, speech.rms, speech.ts, false);
+      } catch {
+        // A slow/unavailable transcription cannot stop the reaction scheduler.
+        this.speechQueue.clear();
+      } finally {
+        text = '';
+        wipe(speech);
+        if (generation === this.speechGeneration) {
+          this.speechBusy = false;
+          this.wake();
+        }
+      }
+    })();
+  }
+  async finishSpeech() {
+    while (this.speechTask) {
+      const task = this.speechTask;
+      await task;
+      if (task === this.speechTask) this.speechTask = null;
+      while (this.pendingWork) await this.step();
+    }
+  }
   addDrops(count: number) {
     this.transportDrops += count;
     this.health.lowPower = this.power.update(
       this.health.realTimeFactor,
-      this.transportDrops + this.vadQueue.drops + this.speechQueue.drops,
+      this.transportDrops + this.vadQueue.drops,
       performance.now(),
     );
   }
@@ -337,6 +433,10 @@ export class InferencePipeline {
     };
   }
   clear() {
+    this.speechGeneration++;
+    this.speechBusy = false;
+    this.rawMic.clear();
+    this.normalizer.reset();
     this.vadQueue.clear();
     this.speechQueue.clear();
     for (const buffer of Object.values(this.buffers)) buffer.clear();

@@ -21,6 +21,8 @@ This is the canonical final checklist. It is a smoke/acceptance pass, not an acc
 
 ## 12:00–18:00 · two profiles and the three-person floor
 
+For the v0.6.1 microphone fix, include the [focused production retest](microphone-part11.md#update-and-check-your-microphone) in the preceding audio checks: green Welcome bar, hidden diagnostics, live/default-device input, ready models, near-50 inference frames/s, voiced words after a pause, independent laughs with headphones and speakers. Capture a report if a check fails; it contains no audio or transcripts.
+
 - [ ] A/B watch the same channel with sharing on. With only these **two** contributors, both show “a few here”, without revealing counts/words. Dashboard/watch-only sockets do not count as sharing contributors.
 - [ ] Add one explicitly labelled third test contributor on local/dev:
 

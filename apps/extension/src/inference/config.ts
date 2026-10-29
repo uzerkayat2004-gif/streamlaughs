@@ -1,5 +1,5 @@
 export const INFERENCE_CONFIG = {
-  preferredBackend: 'auto' as 'auto' | 'wasm' | 'webgpu',
+  preferredBackend: 'wasm' as 'auto' | 'wasm' | 'webgpu',
   sampleRate: 16000,
   frameSize: 320,
   vadWindow: 512,
@@ -8,7 +8,8 @@ export const INFERENCE_CONFIG = {
   mergeGapMs: 300,
   maximumSpeechMs: 8000,
   soundWindow: 15600,
-  soundHopMs: 500,
+  soundHopMs: 250,
+  maximumEvidenceGapMs: 750,
   thresholds: { laugh: 0.5, scream: 0.55, gasp: 0.45, hype: 0.55 },
   cooldownMs: { laugh: 1500, scream: 2200, gasp: 2500, hype: 2000 },
   consecutiveHops: { laugh: 2, scream: 1, gasp: 1, hype: 1 },
@@ -27,7 +28,8 @@ export const INFERENCE_CONFIG = {
   lowPowerRtf: 1,
   recoverRtf: 0.65,
   recoverAfterMs: 20000,
-  whisperBudgetRtf: 1,
+  sustainedDropMs: 1000,
+  whisperBudgetRtf: 2.5,
   hypePhrases: [
     'no way',
     'what',

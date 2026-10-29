@@ -1,7 +1,10 @@
 import type { AudioReport } from '@laughline/shared';
+import { safeError } from '../diagnostics';
 import type { OwnerCommand } from './protocol';
 
 let creating: Promise<void> | undefined;
+let lastOwnerError = '';
+export const audioOwnerError = () => lastOwnerError;
 const url = () => chrome.runtime.getURL('/offscreen.html');
 export async function hasAudioOwner() {
   return !!(await audioOwnerContext());
@@ -32,8 +35,9 @@ export async function ensureAudioOwner() {
 export async function ownerCommand<T = AudioReport | null>(
   message: OwnerCommand,
 ): Promise<T> {
+  if (message.type === 'AUDIO_START') lastOwnerError = '';
   let timer: ReturnType<typeof setTimeout> | undefined;
-  let result: { ok: boolean; value: T; error?: string };
+  let result: { ok: boolean; value: T; error?: string; diagnostic?: string };
   try {
     result = await Promise.race([
       chrome.runtime.sendMessage(message),
@@ -51,10 +55,15 @@ export async function ownerCommand<T = AudioReport | null>(
   } finally {
     clearTimeout(timer);
   }
-  if (!result?.ok)
+  if (!result?.ok) {
+    lastOwnerError =
+      typeof result?.diagnostic === 'string'
+        ? safeError(new Error(result.diagnostic))
+        : 'audio owner unavailable';
     throw new Error(
       'Audio capture could not start. Try the toolbar start button again.',
     );
+  }
   return result.value;
 }
 export async function closeAudioOwner() {

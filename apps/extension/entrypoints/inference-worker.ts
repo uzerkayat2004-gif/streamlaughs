@@ -1,8 +1,13 @@
 import type { PersonalEvent } from '@laughline/shared';
 import { AUDIO_DEBUG } from '../src/audio/config';
+import {
+  emptyWorkerDiagnostics,
+  SpeechResultSchema,
+  safeError,
+} from '../src/diagnostics';
 import { INFERENCE_CONFIG } from '../src/inference/config';
 import { installLocalAssetPolicy } from '../src/inference/local-assets';
-import { LocalModels } from '../src/inference/models';
+import { LocalModels, type SpeechResult } from '../src/inference/models';
 import { InferencePipeline } from '../src/inference/pipeline';
 
 // Classic worker is intentional: MediaPipe's local WASM loader uses importScripts.
@@ -15,25 +20,56 @@ export default defineUnlistedScript(() => {
     stopped = false;
   let events: PersonalEvent[] = [];
   let lastReport = 0;
+  let failure = '';
+  let speechId = 0;
+  const speechRequests = new Map<
+    number,
+    { resolve(value: SpeechResult): void; reject(error: Error): void }
+  >();
+  const requestSpeech = (samples: Float32Array) =>
+    new Promise<SpeechResult>((resolve, reject) => {
+      const id = ++speechId;
+      const copy = samples.slice();
+      speechRequests.set(id, { resolve, reject });
+      self.postMessage(
+        { type: 'speech_request', id, samples: copy },
+        { transfer: [copy.buffer] },
+      );
+    });
   const report = () => {
-    if (!pipeline || !models) return;
+    if (!models) return;
+    const diagnostics = {
+      ...(pipeline?.diagnostics() ?? emptyWorkerDiagnostics()),
+      models: models.status,
+      error: failure,
+    };
+    const health = pipeline
+      ? { ...pipeline.health, backend: models.backend }
+      : {
+          ...diagnostics.health,
+          phase: failure ? ('error' as const) : ('warming' as const),
+        };
+    diagnostics.health = health;
     self.postMessage({
       type: 'status',
-      health: { ...pipeline.health, backend: models.backend },
+      health,
+      diagnostics,
       events,
-      debug: AUDIO_DEBUG
-        ? {
-            ...pipeline.debugState(),
-            loadMs: models.loadMs,
-            times: models.times,
-            calls: models.calls,
-            resources: [...resources],
-          }
-        : undefined,
+      debug:
+        AUDIO_DEBUG && pipeline
+          ? {
+              ...pipeline.debugState(),
+              loadMs: models.loadMs,
+              times: models.times,
+              calls: models.calls,
+              resources: [...resources],
+            }
+          : undefined,
     });
     events = [];
     lastReport = performance.now();
   };
+  const statusTimer = setInterval(report, 250);
   const schedule = () => {
     if (scheduled || running || stopped || !pipeline?.pendingWork) return;
     scheduled = true;
@@ -43,8 +79,10 @@ export default defineUnlistedScript(() => {
       try {
         await pipeline!.step();
         if (performance.now() - lastReport >= 250) report();
-      } catch {
-        self.postMessage({ type: 'error' });
+      } catch (error) {
+        failure = safeError(error);
+        report();
+        self.postMessage({ type: 'error', error: failure });
         stopped = true;
       } finally {
         running = false;
@@ -57,23 +95,57 @@ export default defineUnlistedScript(() => {
       if (models) return;
       models = new LocalModels();
       try {
-        await models.load(
-          data.base,
-          data.backend ?? INFERENCE_CONFIG.preferredBackend,
-        );
+        const evaluation = AUDIO_DEBUG && data.evaluation === true;
+        if (evaluation)
+          await models.load(
+            data.base,
+            data.backend ?? INFERENCE_CONFIG.preferredBackend,
+          );
+        else await models.loadRealtime(data.base);
         if (stopped) return;
         pipeline = new InferencePipeline(
-          models,
+          evaluation
+            ? models
+            : {
+                vad: (samples) => models!.vad(samples),
+                sound: (samples) => models!.sound(samples),
+                resetVad: () => models!.resetVad(),
+                get topClass() {
+                  return models!.topClass;
+                },
+                words: requestSpeech,
+              },
           (event) => {
             if (events.length < 32) events.push(event);
             else pipeline?.addDrops(1);
           },
           AUDIO_DEBUG,
+          undefined,
+          schedule,
         );
         report();
-      } catch {
-        self.postMessage({ type: 'error' });
+      } catch (error) {
+        failure = safeError(error);
+        models.loadFailed(error);
+        report();
+        self.postMessage({ type: 'error', error: failure });
       }
+    } else if (data.type === 'speech_result') {
+      const pending = speechRequests.get(data.id);
+      if (!pending) return;
+      speechRequests.delete(data.id);
+      const result = SpeechResultSchema.safeParse(data.result);
+      if (result.success) pending.resolve(result.data);
+      else
+        pending.reject(
+          new Error(
+            typeof data.error === 'string'
+              ? data.error
+              : 'invalid local speech result',
+          ),
+        );
+    } else if (data.type === 'speech_status' && models) {
+      models.status.whisper = data.model;
     } else if (data.type === 'frame' && pipeline && !stopped) {
       pipeline.ingest(data.source, data.frame, data.ts);
       data.frame.fill(0);
@@ -81,8 +153,12 @@ export default defineUnlistedScript(() => {
       self.postMessage({ type: 'ack' });
       schedule();
     } else if (data.type === 'close') {
+      clearInterval(statusTimer);
       stopped = true;
       pipeline?.clear();
+      for (const pending of speechRequests.values())
+        pending.reject(new Error('stopped'));
+      speechRequests.clear();
       if (!running) await models?.close();
       self.close();
     } else if (data.type === 'evaluate' && AUDIO_DEBUG && models && !running) {
@@ -114,6 +190,7 @@ export default defineUnlistedScript(() => {
         );
         while (p.pendingWork) await p.step();
       }
+      await p.finishSpeech();
       report();
       p.health.backend = models.backend;
       self.postMessage({

@@ -81,6 +81,58 @@ export function isPlayback(
     scoreAgeMs <= 1000
   );
 }
+// Envelope timing alone cannot prove echo: independent viewers can react together.
+export function waveformMatch(mic: Float32Array, tab: Float32Array) {
+  const stride = 4,
+    window = 2048;
+  if (mic.length < window || tab.length < window)
+    return { valid: false, correlation: 0, lagMs: 0 };
+  const downsample = (samples: Float32Array) => {
+    const result = new Float32Array(Math.floor(samples.length / stride));
+    for (let i = 0; i < result.length; i++)
+      for (let j = 0; j < stride; j++)
+        result[i] = result[i]! + samples[i * stride + j]! / stride;
+    return result;
+  };
+  const a = downsample(mic.subarray(mic.length - window)),
+    b = downsample(tab);
+  let sx = 0,
+    xx = 0;
+  for (const value of a) {
+    sx += value;
+    xx += value * value;
+  }
+  const vx = a.length * xx - sx * sx;
+  if (vx < 1e-10) return { valid: false, correlation: 0, lagMs: 0 };
+  let best = 0,
+    lagMs = 0;
+  const maxLag = Math.min(
+    b.length - a.length,
+    Math.floor((C.maximumLagMs * 16) / stride),
+  );
+  for (let lag = 0; lag <= maxLag; lag++) {
+    const start = b.length - a.length - lag;
+    let sy = 0,
+      yy = 0,
+      xy = 0;
+    for (let i = 0; i < a.length; i++) {
+      const value = b[start + i]!;
+      sy += value;
+      yy += value * value;
+      xy += a[i]! * value;
+    }
+    const vy = a.length * yy - sy * sy;
+    if (vy <= 1e-10) continue;
+    const score = Math.abs((a.length * xy - sx * sy) / Math.sqrt(vx * vy));
+    if (score > best) {
+      best = score;
+      lagMs = (lag * stride) / 16;
+    }
+  }
+  a.fill(0);
+  b.fill(0);
+  return { valid: true, correlation: Math.min(1, best), lagMs };
+}
 export class EventGate {
   private consecutive = { laugh: 0, scream: 0, gasp: 0, hype: 0 };
   private last = {
@@ -102,7 +154,8 @@ export class EventGate {
     ts: number,
     contaminated: boolean,
   ): { event?: PersonalEvent; reason: string } {
-    if (ts - this.hop[kind] > C.soundHopMs * 1.5) this.consecutive[kind] = 0;
+    if (ts - this.hop[kind] > C.maximumEvidenceGapMs)
+      this.consecutive[kind] = 0;
     this.hop[kind] = ts;
     if (score < C.thresholds[kind]) {
       this.consecutive[kind] = 0;
@@ -138,8 +191,24 @@ export class LowPowerPolicy {
   active = false;
   private lastDrops = 0;
   private healthySince: number | null = null;
+  private droppingSince: number | null = null;
+  private lastDropAt: number | null = null;
   update(rtf: number, drops: number, now: number) {
-    const overloaded = rtf > C.lowPowerRtf || drops > this.lastDrops;
+    const added = Math.max(0, drops - this.lastDrops);
+    if (this.lastDropAt !== null && now - this.lastDropAt > C.sustainedDropMs)
+      this.droppingSince = null;
+    if (added) {
+      this.droppingSince ??= now;
+      this.lastDropAt = now;
+    }
+    // A scheduler hiccup is not sustained model overload. Keep words available
+    // unless compute is too slow, loss persists, or a whole VAD queue is lost.
+    const overloaded =
+      rtf > C.lowPowerRtf ||
+      added >= C.maxVadJobs ||
+      (added > 0 &&
+        this.droppingSince !== null &&
+        now - this.droppingSince >= C.sustainedDropMs);
     this.lastDrops = drops;
     if (overloaded) {
       this.active = true;

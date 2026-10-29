@@ -141,6 +141,14 @@ describe('word privacy', () => {
   });
 });
 describe('bounded scheduling and overload', () => {
+  it('keeps words available after isolated frame loss but reacts to sustained backpressure', () => {
+    const policy = new LowPowerPolicy();
+    expect(policy.update(0.2, 1, 0)).toBe(false);
+    expect(policy.update(0.2, 1, 2000)).toBe(false);
+    expect(policy.update(0.2, 2, 3000)).toBe(false);
+    expect(policy.update(0.2, 3, 3250)).toBe(false);
+    expect(policy.update(0.2, 4, 4250)).toBe(true);
+  });
   it('drops and wipes oldest pending speech, never exceeds two items', () => {
     const discarded: number[] = [],
       queue = new BoundedQueue<number>(2, (item) => discarded.push(item));
@@ -156,7 +164,7 @@ describe('bounded scheduling and overload', () => {
     expect(policy.update(1.1, 0, 0)).toBe(true);
     expect(policy.update(0.3, 0, 1000)).toBe(true);
     expect(policy.update(0.3, 0, 21000)).toBe(false);
-    expect(policy.update(0.3, 1, 22000)).toBe(true);
+    expect(policy.update(0.3, 1, 22000)).toBe(false);
   });
 });
 describe('Silero segment boundaries', () => {

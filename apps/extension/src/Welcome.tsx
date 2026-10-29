@@ -1,7 +1,8 @@
 import { PRODUCT } from '@laughline/shared';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStore } from 'zustand';
 import { MICROPHONE_CONSTRAINTS } from './audio/config';
+import { checkMicrophone } from './audio/mic-check';
 import { command, connectSurface, surface } from './bridge';
 import { Backdrop, Blob, Mark, Toggle, Wave } from './components';
 import { friendlyError } from './ui-status';
@@ -13,6 +14,20 @@ export function Welcome() {
     [done, setDone] = useState(false),
     [error, setError] = useState('');
   const { snapshot } = useStore(surface.store);
+  const [micLevel, setMicLevel] = useState(0),
+    [micPeak, setMicPeak] = useState<number | null>(null);
+  const permissionStream = useRef<MediaStream | null>(null);
+  const micCheck = useRef<AbortController | null>(null);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      micCheck.current?.abort();
+      for (const track of permissionStream.current?.getTracks() ?? [])
+        track.stop();
+    };
+  }, []);
   useEffect(connectSurface, []);
   return (
     <main className="welcome-page">
@@ -51,6 +66,20 @@ export function Welcome() {
                 <p className="sub">
                   audio stays on your pc. never saved or sent.
                 </p>
+                <div className="welcome-mic-check">
+                  <p>
+                    {busy
+                      ? 'say something'
+                      : 'allow the mic, then say something'}
+                  </p>
+                  <meter
+                    aria-label="welcome mic input"
+                    min="0"
+                    max="1"
+                    value={Math.min(1, micLevel * 20)}
+                    data-good={micLevel >= 0.002}
+                  />
+                </div>
               </>
             )}
             {!done && slide === 2 && (
@@ -70,6 +99,34 @@ export function Welcome() {
                   ))}
                 </div>
                 <h1>share with the crowd?</h1>
+                {micPeak !== null && (
+                  <div
+                    className="welcome-mic-check"
+                    data-good={micPeak >= 0.002}
+                  >
+                    <p>
+                      {micPeak >= 0.002
+                        ? 'mic looks good ✓'
+                        : 'mic is quiet · check your system input'}
+                    </p>
+                    <meter
+                      aria-label="welcome mic check result"
+                      min="0"
+                      max="1"
+                      value={Math.min(1, micPeak * 20)}
+                      data-good={micPeak >= 0.002}
+                    />
+                    {micPeak < 0.002 && (
+                      <button
+                        type="button"
+                        className="textbtn"
+                        onClick={() => setSlide(1)}
+                      >
+                        retry mic check
+                      </button>
+                    )}
+                  </div>
+                )}
                 <Toggle
                   title="share with the crowd"
                   detail="counts + approved phrases · shown with 3+ sharing"
@@ -122,6 +179,17 @@ export function Welcome() {
                       audio: MICROPHONE_CONSTRAINTS,
                       video: false,
                     });
+                    if (!mounted.current) return;
+                    permissionStream.current = stream;
+                    micCheck.current = new AbortController();
+                    setMicLevel(0);
+                    const peak = await checkMicrophone(
+                      stream,
+                      setMicLevel,
+                      micCheck.current.signal,
+                    );
+                    if (!mounted.current) return;
+                    setMicPeak(peak);
                     // Permission belongs to this extension origin. Welcome never retains live tracks.
                     for (const track of stream.getTracks()) track.stop();
                     if (params.get('retry') === snapshot.session?.id)
@@ -132,6 +200,8 @@ export function Welcome() {
                       'mic is blocked · allow it in extension settings, then retry',
                     );
                   } finally {
+                    permissionStream.current = null;
+                    micCheck.current = null;
                     for (const track of stream?.getTracks() ?? []) track.stop();
                     setBusy(false);
                   }
@@ -161,7 +231,7 @@ export function Welcome() {
               }}
             >
               {busy
-                ? 'allowing mic…'
+                ? 'checking mic…'
                 : done
                   ? 'open twitch'
                   : ['let’s go', 'allow mic', 'open twitch'][slide]}

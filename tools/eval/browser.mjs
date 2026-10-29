@@ -46,13 +46,17 @@ export async function openEvaluator(backend = 'wasm') {
             if (data.type === 'error') {
               clearTimeout(timer);
               reject(new Error('Model initialization failed'));
-            } else if (data.type === 'status') {
+            } else if (
+              data.type === 'status' &&
+              data.health.phase === 'ready'
+            ) {
               clearTimeout(timer);
               resolve(true);
             }
           };
           w.postMessage({
             type: 'init',
+            evaluation: true,
             base: chrome.runtime.getURL('').replace(/\/$/, ''),
             backend,
           });

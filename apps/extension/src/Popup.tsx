@@ -342,6 +342,18 @@ export function Popup() {
               >
                 delete my data
               </button>
+              <button
+                type="button"
+                className="textbtn settings-version"
+                onClick={(event) => {
+                  if (event.shiftKey)
+                    void chrome.tabs.create({
+                      url: chrome.runtime.getURL('/diagnostics.html'),
+                    });
+                }}
+              >
+                version {chrome.runtime.getManifest().version}
+              </button>
             </>
           )}
         </Sheet>

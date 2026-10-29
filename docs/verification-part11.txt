@@ -1,0 +1,403 @@
+Part 11 verification — 2026-10-29 (Asia/Calcutta) — StreamLaughs v0.6.1
+
+PASS: pnpm -r typecheck; pnpm -r test (176 tests); pnpm build (Worker dry-run, Chrome, Edge, Next.js and connected universal ZIP); Biome.
+PASS: all 11 extension Playwright tests and seven website/download/dashboard Playwright tests.
+PASS: after the final diagnostics/development compatibility fixes, refreshed all unit/type/build checks and reran the five affected real-model/production capture tests. All five passed.
+
+Latest real production-ZIP observations:
+- normal tab: 1 laugh, 10 word/phrase counts; 50 inference mic frames/s; zero dropped inference frames; all three models ready.
+- maximum-volume tab: 1 laugh, 3 word/phrase counts; 50 frames/s; zero drops; all three models ready.
+- speech/silence-only: zero laughs, 9 word/phrase counts; 50 frames/s; zero drops.
+- Welcome level check turns green and releases tracks; normal version click stays put, Shift-version opens diagnostics; copied reports validate without audio/transcript fields.
+
+Confirmed red-to-green regressions: awaited speech blocked realtime steps; envelope-only playback rejection discarded independent mic sounds; gain pumped brief gaps; short bouts missed two-hop confirmation; one frame loss disabled words for 20 seconds; stale diagnostic FPS; warming development reports became partial objects. Regression tests now pass. Confidence thresholds are unchanged.
+
+Privacy/lifecycle: raw audio and full production transcripts remain local RAM only. Existing numeric/event boundaries, persistence/log/network assertions, pause/stop, worker restart, channel/tab teardown and device retry tests pass. Development redacted text remains bounded in RAM and is excluded from production diagnostics/background messages.
+
+Limits: native toolbar invocation, physical room/speaker AEC, physical unplug/driver mute, accent/noise recall and long hardware soaks remain manual. A separate optional constant-tone microphone noise probe failed recognition; the guard kept its mic and models/frames were healthy. This is documented in microphone-part11.md, not presented as a passing speaker/accuracy test. Standard loud playback varies tab volume with the recorded microphone fixture unchanged. No thresholds were lowered to force the extra noise probe to pass.
+
+No tags, releases, account creation, signing-key use or Cloudflare configuration/deployment changes. The main push triggers the existing Vercel build; hosted ZIP confirmation is reported in the task after push.
+
+Connected universal ZIP: 40,385,865 bytes; SHA-256 efb5ccbdae34b56c0a65ee59e7f1901998f6a6f31dbb1f867030bc9cd8d1bb8b.
+Fixed ID: fkocldgggcmhihelohiicoakcfomhepg. Chrome/Edge packages are byte-identical; models and WASM were receipt-checked; no development debug.html or private keys ship.
+
+=== pnpm -r test — exit 0 (26.3 s) ===
+Scope: 7 of 8 workspace projects
+packages/shared test$ vitest run
+tools/crowd-sim test$ vitest run
+tools/eval test$ vitest run
+tools/release test$ vitest run
+tools/crowd-sim test:  RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/tools/crowd-sim
+tools/release test:  RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/tools/release
+packages/shared test:  RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/packages/shared
+tools/eval test:  RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/tools/eval
+tools/eval test:  Test Files  1 passed (1)
+tools/eval test:       Tests  2 passed (2)
+tools/eval test:    Start at  11:55:32
+tools/eval test:    Duration  669ms (transform 73ms, setup 0ms, import 139ms, tests 11ms, environment 0ms)
+tools/eval test: Done
+tools/crowd-sim test:  Test Files  1 passed (1)
+tools/crowd-sim test:       Tests  2 passed (2)
+tools/crowd-sim test:    Start at  11:55:32
+tools/crowd-sim test:    Duration  970ms (transform 94ms, setup 0ms, import 384ms, tests 58ms, environment 0ms)
+tools/crowd-sim test: Done
+packages/shared test:  Test Files  4 passed (4)
+packages/shared test:       Tests  21 passed (21)
+packages/shared test:    Start at  11:55:32
+packages/shared test:    Duration  999ms (transform 438ms, setup 0ms, import 1.41s, tests 122ms, environment 1ms)
+packages/shared test: Done
+tools/release test:  Test Files  4 passed (4)
+tools/release test:       Tests  11 passed (11)
+tools/release test:    Start at  11:55:32
+tools/release test:    Duration  1.45s (transform 334ms, setup 0ms, import 569ms, tests 938ms, environment 1ms)
+tools/release test: Done
+workers/api test$ vitest run
+apps/extension pretest$ node ../../tools/ensure-built-identity.mjs
+apps/web test$ vitest run
+apps/extension pretest: Done
+apps/extension test$ vitest run
+apps/extension test:  RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/apps/extension
+apps/web test:  RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/apps/web
+workers/api test:  RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/workers/api
+apps/web test:  Test Files  7 passed (7)
+apps/web test:       Tests  27 passed (27)
+apps/web test:    Start at  11:55:34
+apps/web test:    Duration  1.94s (transform 1.35s, setup 0ms, import 4.60s, tests 1.07s, environment 1ms)
+apps/web test: Done
+apps/extension test:  Test Files  17 passed (17)
+apps/extension test:       Tests  100 passed (100)
+apps/extension test:    Start at  11:55:34
+apps/extension test:    Duration  2.41s (transform 3.71s, setup 0ms, import 7.72s, tests 2.30s, environment 3ms)
+apps/extension test: Done
+workers/api test:  Test Files  3 passed (3)
+workers/api test:       Tests  13 passed (13)
+workers/api test:    Start at  11:55:36
+workers/api test:    Duration  21.50s (transform 5.27s, setup 0ms, import 10.56s, tests 13.18s, environment 0ms)
+workers/api test: Done
+
+=== pnpm --filter extension build:debug — exit 0 (6.1 s) ===
+
+> extension@ build:debug C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline\apps\extension
+> node ../../tools/prepare-runtime.mjs && node ../../tools/check-assets.mjs && wxt build --mode audio-debug && node ../../tools/check-extension-identity.mjs .output/chrome-mv3-audio-debug
+
+onnx: 21,640,503 local runtime bytes
+mediapipe: 12,205,698 local runtime bytes
+Verified 14 local model/license assets against SHA-256 receipts.
+
+WXT 0.21.5
+i Building chrome-mv3 for audio-debug with Vite 8.3.5
+
+⠋ Preparing...
+⠋ [1/6] audio-worklet
+⠙ [1/6] audio-worklet
+⠙ [2/6] background
+⠹ [2/6] background
+⠹ [3/6] debug, diagnostics, offscreen, popup, recap, welcome
+⠸ [3/6] debug, diagnostics, offscreen, popup, recap, welcome
+⠼ [3/6] debug, diagnostics, offscreen, popup, recap, welcome
+⠴ [3/6] debug, diagnostics, offscreen, popup, recap, welcome
+⠦ [3/6] debug, diagnostics, offscreen, popup, recap, welcome
+⠧ [3/6] debug, diagnostics, offscreen, popup, recap, welcome
+⠇ [3/6] debug, diagnostics, offscreen, popup, recap, welcome
+⠇ [4/6] inference-worker
+⠏ [4/6] inference-worker
+⠋ [4/6] inference-worker
+⠙ [4/6] inference-worker[EMPTY_IMPORT_META] `import.meta` may not be a valid syntax with the `iife` output format.
+      ╭─[ ../../node_modules/.pnpm/@huggingface+transformers@3.8.1/node_modules/@huggingface/transformers/dist/transformers.web.js:5101:37 ]
+      │
+ 5101 │     const _import_meta_url = Object(import.meta).url;
+      │                                     ─────┬─────
+      │                                          ╰─────── This `import.meta` will be replaced with an empty object (`{}`) automatically. If this is desired, you can suppress this warning by adding `transform.define: { 'import.meta': {} }`. If `import.meta` needs to be kept as-is, you need to set the output format to `esm`.
+──────╯
+
+
+⠙ [5/6] speech-worker
+⠹ [5/6] speech-worker
+⠸ [5/6] speech-worker
+⠼ [5/6] speech-worker
+⠴ [5/6] speech-worker
+⠦ [5/6] speech-worker
+⠧ [5/6] speech-worker
+⠇ [5/6] speech-worker[EMPTY_IMPORT_META] `import.meta` may not be a valid syntax with the `iife` output format.
+      ╭─[ ../../node_modules/.pnpm/@huggingface+transformers@3.8.1/node_modules/@huggingface/transformers/dist/transformers.web.js:5101:37 ]
+      │
+ 5101 │     const _import_meta_url = Object(import.meta).url;
+      │                                     ─────┬─────
+      │                                          ╰─────── This `import.meta` will be replaced with an empty object (`{}`) automatically. If this is desired, you can suppress this warning by adding `transform.define: { 'import.meta': {} }`. If `import.meta` needs to be kept as-is, you need to set the output format to `esm`.
+──────╯
+
+
+⠇ [6/6] twitch
+⠏ [6/6] twitch
+⠋ [6/6] twitch
+⠙ [6/6] twitch
+⠹ [6/6] twitch
+⠸ [6/6] twitch
+⠼ [6/6] twitch
+⠴ [6/6] twitch
+⠦ [6/6] twitch
+
+√ Built extension in 4.570 s
+  ├─ .output\chrome-mv3-audio-debug\manifest.json                                                    2.00 kB
+  ├─ .output\chrome-mv3-audio-debug\models\manifest.json                                             4.69 kB
+  ├─ .output\chrome-mv3-audio-debug\debug.html                                                       524 B
+  ├─ .output\chrome-mv3-audio-debug\diagnostics.html                                                 537 B
+  ├─ .output\chrome-mv3-audio-debug\offscreen.html                                                   435 B
+  ├─ .output\chrome-mv3-audio-debug\popup.html                                                       657 B
+  ├─ .output\chrome-mv3-audio-debug\recap.html                                                       590 B
+  ├─ .output\chrome-mv3-audio-debug\welcome.html                                                     745 B
+  ├─ .output\chrome-mv3-audio-debug\audio-worklet.js                                                 3.09 kB
+  ├─ .output\chrome-mv3-audio-debug\background.js                                                    217.99 kB
+  ├─ .output\chrome-mv3-audio-debug\chunks\components-CfVSipEj.js                                    12.07 kB
+  ├─ .output\chrome-mv3-audio-debug\chunks\config-DJUTNp74.js                                        91 B
+  ├─ .output\chrome-mv3-audio-debug\chunks\debug-CQQQOVNe.js                                         7.03 kB
+  ├─ .output\chrome-mv3-audio-debug\chunks\diagnostics-CkV1iB8_.js                                   6.03 kB
+  ├─ .output\chrome-mv3-audio-debug\chunks\diagnostics-DyVZi_zx.js                                   1.86 kB
+  ├─ .output\chrome-mv3-audio-debug\chunks\offscreen-B9DFBDtN.js                                     17.15 kB
+  ├─ .output\chrome-mv3-audio-debug\chunks\popup-CJjqjcHM.js                                         11.49 kB
+  ├─ .output\chrome-mv3-audio-debug\chunks\recap-DdYpkcKM.js                                         111.24 kB
+  ├─ .output\chrome-mv3-audio-debug\chunks\src-ClXYUyvR.js                                           96.48 kB
+  ├─ .output\chrome-mv3-audio-debug\chunks\styles-DPLsVjL8.js                                        426.19 kB
+  ├─ .output\chrome-mv3-audio-debug\chunks\ui-status-BSSRNNcx.js                                     1.02 kB
+  ├─ .output\chrome-mv3-audio-debug\chunks\welcome-DauuKSNL.js                                       7.86 kB
+  ├─ .output\chrome-mv3-audio-debug\content-scripts\twitch.js                                        579.97 kB
+  ├─ .output\chrome-mv3-audio-debug\inference-worker.js                                              1.33 MB
+  ├─ .output\chrome-mv3-audio-debug\runtime\mediapipe\audio_wasm_internal.js                         161.73 kB
+  ├─ .output\chrome-mv3-audio-debug\runtime\mediapipe\audio_wasm_nosimd_internal.js                  161.59 kB
+  ├─ .output\chrome-mv3-audio-debug\speech-worker.js                                                 1.31 MB
+  ├─ .output\chrome-mv3-audio-debug\assets\styles-CulmTGbO.css                                       36.32 kB
+  ├─ .output\chrome-mv3-audio-debug\fonts\bricolage-grotesque-LICENSE.txt                            4.40 kB
+  ├─ .output\chrome-mv3-audio-debug\fonts\bricolage-grotesque.woff2                                  41.34 kB
+  ├─ .output\chrome-mv3-audio-debug\fonts\inter-LICENSE.txt                                          4.48 kB
+  ├─ .output\chrome-mv3-audio-debug\fonts\inter.woff2                                                48.26 kB
+  ├─ .output\chrome-mv3-audio-debug\fonts\jetbrains-mono-LICENSE.txt                                 4.52 kB
+  ├─ .output\chrome-mv3-audio-debug\fonts\jetbrains-mono.woff2                                       40.40 kB
+  ├─ .output\chrome-mv3-audio-debug\icon\128.png                                                     5.04 kB
+  ├─ .output\chrome-mv3-audio-debug\icon\16.png                                                      514 B
+  ├─ .output\chrome-mv3-audio-debug\icon\32.png                                                      1.12 kB
+  ├─ .output\chrome-mv3-audio-debug\icon\48.png                                                      1.64 kB
+  ├─ .output\chrome-mv3-audio-debug\models\licenses\silero-MIT.txt                                   1.07 kB
+  ├─ .output\chrome-mv3-audio-debug\models\licenses\Transformers-Apache-2.0.txt                      11.36 kB
+  ├─ .output\chrome-mv3-audio-debug\models\licenses\Whisper-MIT.txt                                  1.06 kB
+  ├─ .output\chrome-mv3-audio-debug\models\licenses\Whisper-model-card.md                            14.86 kB
+  ├─ .output\chrome-mv3-audio-debug\models\licenses\YAMNet-Apache-2.0.txt                            11.51 kB
+  ├─ .output\chrome-mv3-audio-debug\models\silero-v5.onnx                                            2.33 MB
+  ├─ .output\chrome-mv3-audio-debug\models\whisper-tiny.en\config.json                               2.20 kB
+  ├─ .output\chrome-mv3-audio-debug\models\whisper-tiny.en\generation_config.json                    1.65 kB
+  ├─ .output\chrome-mv3-audio-debug\models\whisper-tiny.en\onnx\decoder_model_merged_quantized.onnx  30.72 MB
+  ├─ .output\chrome-mv3-audio-debug\models\whisper-tiny.en\onnx\encoder_model_quantized.onnx         10.12 MB
+  ├─ .output\chrome-mv3-audio-debug\models\whisper-tiny.en\preprocessor_config.json                  339 B
+  ├─ .output\chrome-mv3-audio-debug\models\whisper-tiny.en\special_tokens_map.json                   2.17 kB
+  ├─ .output\chrome-mv3-audio-debug\models\whisper-tiny.en\tokenizer_config.json                     282.66 kB
+  ├─ .output\chrome-mv3-audio-debug\models\whisper-tiny.en\tokenizer.json                            2.41 MB
+  ├─ .output\chrome-mv3-audio-debug\models\yamnet.tflite                                             4.13 MB
+  ├─ .output\chrome-mv3-audio-debug\runtime\mediapipe\audio_wasm_internal.wasm                       6.00 MB
+  ├─ .output\chrome-mv3-audio-debug\runtime\mediapipe\audio_wasm_nosimd_internal.wasm                5.88 MB
+  ├─ .output\chrome-mv3-audio-debug\runtime\mediapipe\LICENSE.txt                                    11.51 kB
+  ├─ .output\chrome-mv3-audio-debug\runtime\onnx\LICENSE.txt                                         1.07 kB
+  ├─ .output\chrome-mv3-audio-debug\runtime\onnx\ort-wasm-simd-threaded.jsep.mjs                     44.48 kB
+  └─ .output\chrome-mv3-audio-debug\runtime\onnx\ort-wasm-simd-threaded.jsep.wasm                    21.60 MB
+Σ Total size: 88.23 MB
+√ Finished in 4.844 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (chrome-mv3-audio-debug)
+
+=== pnpm build — exit 0 (69.3 s) ===
+> node ../../tools/wrangler-local.mjs deploy --env= --dry-run --outdir .wrangler/build
+Total Upload: 865.63 KiB / gzip: 143.28 KiB
+--dry-run: exiting now.
+Verified 14 local model/license assets against SHA-256 receipts.
+Σ Total size: 87.78 MB
+√ Finished in 4.862 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (chrome-mv3)
+Verified 14 local model/license assets against SHA-256 receipts.
+Σ Total size: 87.78 MB
+√ Finished in 3.853 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (edge-mv3)
+Verified flat chrome ZIP: streamlaughs-chrome-v0.6.1.zip
+Verified flat edge ZIP: streamlaughs-edge-v0.6.1.zip
+Universal download: 40385865 bytes; SHA-256 efb5ccbdae34b56c0a65ee59e7f1901998f6a6f31dbb1f867030bc9cd8d1bb8b
+✓ Compiled successfully in 3.1s
+  Generating static pages using 11 workers (0/14) ...
+  Generating static pages using 11 workers (3/14)
+  Generating static pages using 11 workers (6/14)
+  Generating static pages using 11 workers (10/14)
+✓ Generating static pages using 11 workers (14/14) in 2.6s
+StreamLaughs source, docs and requested website output branding checks passed.
+
+=== pnpm -r typecheck — exit 0 (9.3 s) ===
+Scope: 7 of 8 workspace projects
+packages/shared typecheck$ tsc --noEmit
+tools/release typecheck$ node --check config.mjs && node --check version.mjs && node --check verify-production.mjs && node --check branding.mjs && node --check offline-preview.mjs && node --check pack.mjs && node --check dependency-notices.mjs && node --check web-download.mjs && node --check ../build-web.mjs && python -m py_compile pack.py
+tools/crowd-sim typecheck$ node --check cli.mjs && node --check record-demo.mjs
+tools/eval typecheck$ node --check cli.mjs && node --check browser.mjs && node --check wav.mjs && node --check metrics.mjs
+tools/crowd-sim typecheck: Done
+tools/eval typecheck: Done
+tools/release typecheck: Done
+packages/shared typecheck: Done
+apps/web typecheck$ node ../../tools/next-local.mjs typegen && tsc --noEmit
+apps/extension typecheck$ wxt prepare && tsc --noEmit
+workers/api typecheck$ tsc --noEmit
+apps/web typecheck: Generating route types...
+apps/web typecheck: ✓ Types generated successfully
+apps/extension typecheck: WXT 0.21.5
+apps/extension typecheck: i Generating types...
+apps/extension typecheck:  WARN  The following entrypoints have been skipped:
+apps/extension typecheck: - debug
+apps/extension typecheck: √ Finished in 567 ms
+workers/api typecheck: Done
+apps/web typecheck: Done
+apps/extension typecheck: Done
+
+=== pnpm check — exit 0 (0.6 s) ===
+
+> laughline-monorepo@ check C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline
+> biome check .
+
+Checked 246 files in 166ms. No fixes applied.
+
+=== pnpm exec playwright test tests/inference.spec.ts tests/production-audio.spec.ts --trace off — exit 0 (160.0 s) ===
+[WebServer] (node:13916) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 5 tests using 1 worker
+
+(node:3840) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 tests\inference.spec.ts:5:1 › real bundled YAMNet laugh updates the dot box, popup, checkpoint and recap (12.9s)
+production mic: extracted
+production mic: launched
+production mic: worker loaded
+production mic: checking input
+production mic: input checked
+production mic: diagnostics opened
+  ok 2 tests\production-audio.spec.ts:50:1 › production Welcome checks a real fake-device mic, releases it, and hides diagnostics behind Shift-version (10.5s)
+production audio: normal capture requested
+production audio: normal local models ready
+{"case":"normal","counts":{"laughs":1,"words":10},"micFrames":2494,"tabFrames":2494,"micFps":50,"drops":0,"lowPower":false,"models":{"vad":{"phase":"ready","error":"","ms":2108.8000000002794},"yamnet":{"phase":"ready","error":"","ms":745.0999999996275},"whisper":{"phase":"ready","error":"","ms":3868.100000000093}},"peakClasses":{"Beep, bleep":0.26171875,"Plop":0.4140625,"Speech":0.98828125,"Silence":0.80078125,"Laughter":0.5859375,"Hiccup":0.66796875,"Cough":0.5859375,"Crying, sobbing":0.19921875,"Wheeze":0.5,"Animal":0.8515625,"Sneeze":0.5859375,"Sound effect":0.109375,"Inside, small room":0.1484375,"Chicken, rooster":0.33203125}}
+  ok 3 tests\production-audio.spec.ts:133:3 › production ZIP detects real recorded laughs and speech with normal tab playback (1.0m)
+production audio: loud capture requested
+production audio: loud local models ready
+{"case":"loud","counts":{"laughs":1,"words":3},"micFrames":1380,"tabFrames":1380,"micFps":50,"drops":0,"lowPower":false,"models":{"vad":{"phase":"ready","error":"","ms":960.6000000000931},"yamnet":{"phase":"ready","error":"","ms":401.29999999981374},"whisper":{"phase":"ready","error":"","ms":2382.8000000002794}},"peakClasses":{"Silence":0.80078125,"Plop":0.5859375,"Speech":0.19921875,"Boing":0.1484375,"Laughter":0.5859375}}
+  ok 4 tests\production-audio.spec.ts:133:3 › production ZIP detects real recorded laughs and speech with loud tab playback (40.7s)
+production audio: speech only capture requested
+production audio: speech only local models ready
+{"case":"speech only","counts":{"laughs":0,"words":9},"micFrames":1047,"tabFrames":1047,"micFps":50,"drops":0,"lowPower":false,"models":{"vad":{"phase":"ready","error":"","ms":1300.3999999999069},"yamnet":{"phase":"ready","error":"","ms":735.5},"whisper":{"phase":"ready","error":"","ms":2757.7999999998137}},"peakClasses":{}}
+  ok 5 tests\production-audio.spec.ts:133:3 › production ZIP detects real recorded laughs and speech with speech only tab playback (32.1s)
+
+  5 passed (2.7m)
+
+=== Complete browser suite: pnpm test:e2e — exit 0 ===
+
+> laughline-monorepo@ test:e2e C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline
+> playwright test
+
+[WebServer] (node:21340) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 11 tests using 1 worker
+
+(node:11748) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 tests\audio.spec.ts:14:1 › real mic permission, worklet frames, numeric status, pause, worker restart and teardown with Chromium fake devices (9.8s)
+  ok  2 tests\audio.spec.ts:197:1 › production excludes developer debug and missing microphone permission opens Welcome at the mic step (6.4s)
+  ok  3 tests\crowd.spec.ts:38:1 › real Worker + simulator: few → live, approved words, watch-only zero sends and immediate opt-out (41.7s)
+  ok  4 tests\extension.spec.ts:11:1 › built MV3 extension: dot, popup, sync, drag, privacy, persistence, recap and welcome (58.7s)
+  ok  5 tests\inference.spec.ts:5:1 › real bundled YAMNet laugh updates the dot box, popup, checkpoint and recap (13.5s)
+
+  ok  6 tests\polish.spec.ts:24:1 › clean ZIP install: fixed ID, first run, mic choice, zero dev controls, keyboard and touch recap toast (25.3s)
+  ok  7 tests\polish.spec.ts:155:1 › saved stream bubbles select their own stored data; calm and audio states fit with reduced motion (6.4s)
+production mic: extracted
+production mic: launched
+production mic: worker loaded
+production mic: checking input
+production mic: input checked
+production mic: diagnostics opened
+  ok  8 tests\production-audio.spec.ts:50:1 › production Welcome checks a real fake-device mic, releases it, and hides diagnostics behind Shift-version (8.8s)
+production audio: normal capture requested
+production audio: normal local models ready
+{"case":"normal","counts":{"laughs":1,"words":3},"micFrames":1295,"tabFrames":1295,"micFps":51,"drops":0,"lowPower":false,"models":{"vad":{"phase":"ready","error":"","ms":2054.899999999907},"yamnet":{"phase":"ready","error":"","ms":731.8999999999069},"whisper":{"phase":"ready","error":"","ms":3967.899999999907}},"peakClasses":{"waiting":0,"Plop":0.33203125,"Speech":0.98828125,"Laughter":0.5,"Sneeze":0.4140625,"Hiccup":0.5,"Cough":0.66796875,"Wheeze":0.19921875,"Inside, small room":0.1484375,"Silence":0.80078125,"Chicken, rooster":0.33203125,"Animal":0.5,"Sound effect":0.08203125}}
+  ok  9 tests\production-audio.spec.ts:133:3 › production ZIP detects real recorded laughs and speech with normal tab playback (40.1s)
+production audio: loud capture requested
+production audio: loud local models ready
+{"case":"loud","counts":{"laughs":1,"words":3},"micFrames":1249,"tabFrames":1248,"micFps":51,"drops":0,"lowPower":false,"models":{"vad":{"phase":"ready","error":"","ms":2692},"yamnet":{"phase":"ready","error":"","ms":1017.5},"whisper":{"phase":"ready","error":"","ms":5357}},"peakClasses":{"Plop":0.19921875,"Hiccup":0.19921875,"Speech":0.19921875,"Laughter":0.5859375}}
+  ok 10 tests\production-audio.spec.ts:133:3 › production ZIP detects real recorded laughs and speech with loud tab playback (42.5s)
+production audio: speech only capture requested
+production audio: speech only local models ready
+{"case":"speech only","counts":{"laughs":0,"words":9},"micFrames":1062,"tabFrames":1062,"micFps":51,"drops":0,"lowPower":false,"models":{"vad":{"phase":"ready","error":"","ms":953.3999999999069},"yamnet":{"phase":"ready","error":"","ms":454.20000000018626},"whisper":{"phase":"ready","error":"","ms":1745.2000000001863}},"peakClasses":{}}
+  ok 11 tests\production-audio.spec.ts:133:3 › production ZIP detects real recorded laughs and speech with speech only tab playback (31.2s)
+
+  11 passed (4.8m)
+
+=== Complete browser suite: pnpm test:e2e:web — exit 0 ===
+
+> laughline-monorepo@ test:e2e:web C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline
+> playwright test --config playwright.web.config.ts
+
+[WebServer] (node:22680) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:23888) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:10996) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:8940) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] [streamlaughs.auth] {"code":"state_missing"}
+[WebServer] (node:23704) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:4640) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 7 tests using 1 worker
+
+(node:9268) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+  ok 1 tests\download.spec.ts:20:1 › home opens setup, starts one matching ZIP download and preserves the fixed ID (7.5s)
+  ok 2 tests\download.spec.ts:129:1 › plain setup waits for a click; automatic setup offers a working retry (8.1s)
+  ok 3 tests\download.spec.ts:188:1 › nav, final CTA and demo downloads all open setup and start the attachment (9.0s)
+[WebServer] [streamlaughs.auth] {"code":"redirect_mismatch"}
+  ok 4 tests\web.spec.ts:18:1 › Twitch redirect mismatch shows setup help instead of silently landing on home (2.0s)
+  ok 5 tests\web.spec.ts:87:1 › public pages, responsive Night Crowd, privacy, configurable links and recorded demo (26.0s)
+[WebServer] [streamlaughs.auth] {"code":"state_missing"}
+[WebServer] (node:20004) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:23744) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:23652) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:10452) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:20472) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:17344) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:21076) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:22648) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:22296) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:17668) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:6272) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:3752) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:18568) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:22384) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:1956) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:13364) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:20160) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:4384) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:14456) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+  ok 6 tests\web.spec.ts:180:1 › OAuth state + owner isolation + real Wrangler and crowd-sim live/history/VOD stories (47.8s)
+  ok 7 tests\web.spec.ts:341:1 › fixed ID survives a copied folder; the extension checks public version metadata and shows its update dot (3.1s)
+
+  7 passed (2.7m)

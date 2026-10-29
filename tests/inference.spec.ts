@@ -5,12 +5,12 @@ import { chromium, expect, test } from '@playwright/test';
 test('real bundled YAMNet laugh updates the dot box, popup, checkpoint and recap', async () => {
   test.setTimeout(180000);
   const wav = path.resolve(
-    process.env.LAUGHLINE_TEST_WAV ?? 'eval/local/laugh.wav',
+    process.env.LAUGHLINE_TEST_WAV ?? 'tests/fixtures/audio/laugh-speech.wav',
   );
-  test.skip(
-    !existsSync(wav),
-    'Provide a local laugh WAV: LAUGHLINE_TEST_WAV or eval/local/laugh.wav. Audio is never bundled in this test.',
-  );
+  expect(
+    existsSync(wav),
+    'The recorded test fixture (or custom LAUGHLINE_TEST_WAV) must exist',
+  ).toBe(true);
   const extension = path.resolve(
     'apps/extension/.output/chrome-mv3-audio-debug',
   );

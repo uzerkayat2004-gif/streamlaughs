@@ -49,13 +49,14 @@ pnpm --filter extension build:test-site
 Remove-Item Env:SITE_URL
 pnpm release:preview
 pnpm exec playwright install chromium
-$env:LAUGHLINE_TEST_WAV = 'C:\path\to\local-laugh-16k-mono.wav'
+# Optional override; the committed human laugh/speech fixture is used by default.
+# $env:LAUGHLINE_TEST_WAV = 'C:\path\to\local-laugh-16k-mono.wav'
 pnpm test:e2e
 pnpm test:e2e:web
 pnpm check
 ```
 
-Run the suites sequentially: both own Wrangler port 8787. Web also uses 3000/4191/4192; extension fixtures use 4179. Tests stop only their own processes. Traces remain off. Without the positive WAV the model-positive test explicitly skips; technical-guide.md contains the public-domain fixture recipe used during verification. Genuine Twitch tabCapture and audible replay are not established by fake-media flags.
+Run the suites sequentially: both own Wrangler port 8787. Web also uses 3000/4191/4192; extension fixtures use 4179. Tests stop only their own processes. Traces remain off. The model-positive tests use the committed human recording by default. The production ZIP regression exercises tab capture with a test invocation grant; a native toolbar gesture, audible hardware playback and room/AEC behavior still need the manual checklist. See microphone-part11.md for the exact fake-UI flag distinction and remaining noise limits.
 
 ## Exact steps for you — stopped here
 

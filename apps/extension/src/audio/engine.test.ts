@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { MICROPHONE_CONSTRAINTS } from './config';
 import { AudioEngine } from './engine';
 
 function track() {
@@ -157,5 +158,71 @@ describe('offscreen audio ownership', () => {
       data: { type: 'frame', frame: new Float32Array(320), ts: 20 },
     });
     expect(engine.frames.size('mic')).toBe(0);
+  });
+  it('opens the default input with the shared constraints and reports its state without device IDs', async () => {
+    Object.assign(mic.item, {
+      label: 'default headset',
+      getSettings: () => ({ sampleRate: 48000, deviceId: 'private-device-id' }),
+    });
+    await engine.start({ sessionId: 'one', streamId: 'opaque' });
+    expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({
+      audio: MICROPHONE_CONSTRAINTS,
+      video: false,
+    });
+    expect(engine.diagnostics().mic).toMatchObject({
+      name: 'default headset',
+      state: 'live',
+      muted: false,
+      sampleRate: 48000,
+    });
+    expect(JSON.stringify(engine.diagnostics())).not.toContain(
+      'private-device-id',
+    );
+  });
+  it('reopens the default microphone on device change and removes the listener on stop', async () => {
+    const devices = navigator.mediaDevices;
+    let name = 'first';
+    Object.assign(devices, {
+      enumerateDevices: vi.fn(async () => [
+        { kind: 'audioinput', deviceId: 'default', label: name },
+      ]),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    });
+    await engine.start({ sessionId: 'one', streamId: 'opaque' });
+    const previous = mic;
+    const callback = vi.mocked(devices.addEventListener).mock
+      .calls[0]![1] as () => void;
+    mic = stream();
+    name = 'second';
+    callback();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(previous.item.stop).toHaveBeenCalledOnce();
+    expect(engine.status()).toMatchObject({ phase: 'active', hasMic: true });
+    expect(tab.item.stop).not.toHaveBeenCalled();
+    await engine.stop();
+    expect(devices.removeEventListener).toHaveBeenCalledWith(
+      'devicechange',
+      callback,
+    );
+  });
+  it('does not reopen a microphone after stop interrupts an async retry', async () => {
+    await engine.start({ sessionId: 'one', streamId: 'opaque' });
+    mic.item.onended?.();
+    let resume!: () => void;
+    context.resume.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resume = resolve;
+        }),
+    );
+    const calls = vi.mocked(navigator.mediaDevices.getUserMedia).mock.calls
+      .length;
+    const retry = engine.retryMic();
+    await engine.stop();
+    resume();
+    await retry;
+    expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledTimes(calls);
+    expect(engine.status()).toBeNull();
   });
 });

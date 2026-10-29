@@ -5,3 +5,5 @@ apps/extension/public/models/** -text
 apps/extension/public/runtime/** -text
 apps/extension/public/fonts/** -text
 apps/web/public/fonts/** -text
+tests/fixtures/audio/*.wav -text
+tests/fixtures/audio/*.mp4 -text

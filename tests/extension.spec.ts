@@ -135,6 +135,7 @@ test('built MV3 extension: dot, popup, sync, drag, privacy, persistence, recap a
       popup.getByRole('button', { name: 'stop', exact: true }),
     ).toBeVisible();
     await other.close();
+    await stream.bringToFront(); // Fullscreen requires the watched tab to own the user gesture.
     await stream.getByRole('button', { name: 'theatre mode' }).click();
     await stream
       .getByRole('button', { name: 'fullscreen', exact: true })

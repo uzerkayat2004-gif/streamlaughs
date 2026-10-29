@@ -7,6 +7,7 @@ import {
 } from '@huggingface/transformers';
 import { AudioClassifier, FilesetResolver } from '@mediapipe/tasks-audio';
 import * as ort from 'onnxruntime-web/webgpu';
+import { modelState, safeError } from '../diagnostics';
 import {
   INFERENCE_CONFIG as C,
   type ClassScores,
@@ -21,10 +22,18 @@ const makeWhisper = (device: 'wasm' | 'webgpu') =>
     { device, dtype: 'q8', local_files_only: true },
   );
 
+export type SpeechResult = {
+  phrases: Extract<
+    import('@laughline/shared').PersonalEvent,
+    { kind: 'words' }
+  >['phrases'];
+  hype: boolean;
+};
 export interface ModelRunner {
+  topClass?: { label: string; score: number };
   vad(samples: Float32Array): Promise<number>;
   sound(samples: Float32Array): ClassScores;
-  words(samples: Float32Array): Promise<string>;
+  words(samples: Float32Array): Promise<string | SpeechResult>;
   resetVad?(): void;
 }
 class Deadline extends StoppingCriteria {
@@ -42,6 +51,8 @@ export class LocalModels implements ModelRunner {
   loadMs = { vad: 0, yamnet: 0, whisper: 0 };
   times = { vad: 0, yamnet: 0, whisper: 0 };
   calls = { vad: 0, yamnet: 0, whisper: 0 };
+  status = { vad: modelState(), yamnet: modelState(), whisper: modelState() };
+  topClass = { label: 'waiting', score: 0 };
   private silero!: ort.InferenceSession;
   private yamnet!: AudioClassifier;
   private whisper!: AutomaticSpeechRecognitionPipeline;
@@ -52,7 +63,7 @@ export class LocalModels implements ModelRunner {
     this.state.fill(0);
     this.context.fill(0);
   }
-  async load(base: string, preference: 'auto' | 'wasm' | 'webgpu' = 'auto') {
+  private configure(base: string) {
     ort.env.wasm.wasmPaths = `${base}/runtime/onnx/`;
     ort.env.wasm.numThreads = 1;
     ort.env.wasm.proxy = false;
@@ -65,13 +76,23 @@ export class LocalModels implements ModelRunner {
     env.backends.onnx.wasm!.wasmPaths = `${base}/runtime/onnx/`;
     env.backends.onnx.wasm!.numThreads = 1;
     env.backends.onnx.wasm!.proxy = false;
+  }
+  async load(base: string, preference: 'auto' | 'wasm' | 'webgpu' = 'auto') {
+    await this.loadRealtime(base);
+    await this.loadSpeech(base, preference);
+  }
+  async loadRealtime(base: string) {
+    this.configure(base);
     let start = performance.now();
+    this.status.vad.phase = 'loading';
     this.silero = await ort.InferenceSession.create(
       `${base}/models/silero-v5.onnx`,
       { executionProviders: ['wasm'] },
     );
     this.loadMs.vad = performance.now() - start;
+    this.status.vad = { phase: 'ready', error: '', ms: this.loadMs.vad };
     start = performance.now();
+    this.status.yamnet.phase = 'loading';
     this.yamnet = await AudioClassifier.createFromOptions(
       await FilesetResolver.forAudioTasks(`${base}/runtime/mediapipe`),
       {
@@ -80,7 +101,20 @@ export class LocalModels implements ModelRunner {
       },
     );
     this.loadMs.yamnet = performance.now() - start;
-    start = performance.now();
+    // Compile kernels before accepting live frames; first-call JIT must not trip overload recovery.
+    await this.vad(new Float32Array(C.vadWindow));
+    this.sound(new Float32Array(C.soundWindow));
+    this.resetVad();
+    this.topClass = { label: 'waiting', score: 0 };
+    this.status.yamnet = { phase: 'ready', error: '', ms: this.loadMs.yamnet };
+  }
+  async loadSpeech(
+    base: string,
+    preference: 'auto' | 'wasm' | 'webgpu' = 'wasm',
+  ) {
+    this.configure(base);
+    const start = performance.now();
+    this.status.whisper.phase = 'loading';
     const gpu =
       preference !== 'wasm' &&
       !!(await (
@@ -103,6 +137,18 @@ export class LocalModels implements ModelRunner {
       }
     } else this.whisper = await makeWhisper('wasm');
     this.loadMs.whisper = performance.now() - start;
+    this.status.whisper = {
+      phase: 'ready',
+      error: '',
+      ms: this.loadMs.whisper,
+    };
+  }
+  loadFailed(error: unknown) {
+    for (const state of Object.values(this.status))
+      if (state.phase === 'loading') {
+        state.phase = 'error';
+        state.error = safeError(error);
+      }
   }
   async vad(samples: Float32Array) {
     const start = performance.now();
@@ -127,6 +173,13 @@ export class LocalModels implements ModelRunner {
   sound(samples: Float32Array) {
     const start = performance.now();
     const result = this.yamnet.classify(samples, 16000);
+    const top = result[0]?.classifications[0]?.categories?.toSorted(
+      (a, b) => b.score - a.score,
+    )[0];
+    this.topClass = {
+      label: (top?.categoryName ?? 'unknown').slice(0, 120),
+      score: top?.score ?? 0,
+    };
     const scores = mapSoundScores(
       result[0]?.classifications[0]?.categories ?? [],
       SOUND_CLASSES,
@@ -145,7 +198,7 @@ export class LocalModels implements ModelRunner {
     const start = performance.now();
     const deadline = new Deadline(
       enforceBudget
-        ? start + (samples.length / 16) * C.whisperBudgetRtf
+        ? start + Math.max(2500, (samples.length / 16) * C.whisperBudgetRtf)
         : Infinity,
     );
     const stopping = new StoppingCriteriaList();

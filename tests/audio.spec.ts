@@ -194,7 +194,7 @@ test('real mic permission, worklet frames, numeric status, pause, worker restart
   }
 });
 
-test('production hides diagnostics and missing microphone permission opens Welcome at the mic step', async () => {
+test('production excludes developer debug and missing microphone permission opens Welcome at the mic step', async () => {
   const context = await chromium.launchPersistentContext('', {
     channel: 'chromium',
     headless: false,
