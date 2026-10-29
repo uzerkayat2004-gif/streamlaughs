@@ -6,7 +6,7 @@ Current release preparation and canonical final acceptance: [Part 6 release guid
 
 Chrome/Edge MV3 extension for Twitch. Personal reactions use **bundled local models**; the crowd uses **Hono + SQLite Durable Objects + hibernatable WebSockets**. Server-side floors, approved phrases, anonymous sessions and 30-day minute aggregates are implemented. The UI, stores, Dexie checkpoints and audio lifecycle remain. **Nothing has been deployed.** Prebuilt release extensions have no API URL and show offline until rebuilt with yours; they never substitute simulated numbers.
 
-Part 5 adds the Night Crowd **Next.js App Router website**, Twitch-owner dashboard, fixed unpacked identity and daily public version check. The unpacked Chrome/Edge ID is **`fkocldgggcmhihelohiicoakcfomhepg`**. Every build contains its public key; the private key stays outside the checkout in `C:\Users\Asus\Documents\StreamLaughs-keys` (configured with `EXTENSION_KEY_PATH`) and never enters a release archive. [Identity, backups and store migration](extension-identity.md).
+Part 5 adds the Night Crowd **Next.js App Router website**, Twitch-owner dashboard and fixed unpacked identity. Part 12 adds hourly version checks and in-extension ZIP update instructions. The unpacked Chrome/Edge ID is **`fkocldgggcmhihelohiicoakcfomhepg`**. Every build contains its public key; the private key stays outside the checkout in `C:\Users\Asus\Documents\StreamLaughs-keys` (configured with `EXTENSION_KEY_PATH`) and never enters a release archive. [Identity, backups and store migration](extension-identity.md).
 
 Start with [Part 5 setup/deployment](deploy-part5.md), [manual acceptance](manual-part5.md), [plan](plan-part5.md) and [verification](verification-part5.txt). Product name/version have one source, `product.config.json`. Set `SITE_URL=https://streamlaughs.vercel.app`, `RELEASE_REPO_OWNER=uzerkayat2004-gif`, and `RELEASE_REPO_NAME=streamlaughs`. These are the selected defaults, not proof of publication. No repository, website domain, Twitch app or account has been created. Offline preview ZIPs explicitly disable service connections.
 
@@ -56,11 +56,13 @@ Parts 3–5 add no extension permissions or extra host permissions. Exact fixed-
 
 Existing storage, tabs and Twitch-only host permissions remain. Mic consent is ordinary getUserMedia permission on the extension origin; no desktop, debugger or extra host permission is requested.
 
+Part 12 adds **downloads** to save and monitor the user-requested, checksum-verified update ZIP. Application code queries only that download ID. It adds no extra host permission. [Update lifecycle and privacy](popup-updates-part12.md).
+
 ## Website privacy and updates
 
 The website has no analytics, trackers or microphone access; its fonts are local. Public visitors and `/demo` get no app cookie. Streamer login uses one encrypted HttpOnly, SameSite=Lax cookie for pending OAuth state/session, with Secure and a __Host prefix on HTTPS. Twitch access tokens/client secrets and Worker owner signing keys stay server-only; the browser receives only approved aggregate stories and a public watch endpoint. Identity is validated on every authenticated request and exact Twitch login must equal the requested channel. No email/resource scopes or viewer database are used. Vercel/Twitch/Cloudflare still see network metadata. [Auth and env details](deploy-part5.md).
 
-The extension checks only SITE_URL/version.json, credentials omitted, at most once per 24 hours on background wake/popup use, including failed checks. It sends no channel, install identifier or version query. The popup shows a small update dot and links only to SITE_URL/install; it never auto-downloads or installs code. Without SITE_URL configured, no version request occurs. Runtime inference retains its separate model-only network guard.
+The extension checks SITE_URL/version.json with credentials omitted on popup open/background wake, cached for at most one hour, including failed checks. It sends no channel, install identifier or version query. A newer version replaces the idle button; later dismisses for the browser session, while active recordings retain their controls and show only a gear dot. Clicking update opens the extension's own page, refreshes metadata and downloads/checks the same-site ZIP before saving via chrome.downloads. Users copy files into the existing folder; finish update saves/stops any session and reloads without deleting storage. The reloaded page and next popup report success or wrong-folder help. Without SITE_URL configured, no version request occurs. Runtime inference retains its separate model-only network guard.
 
 ## Models and pipeline
 

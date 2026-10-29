@@ -83,7 +83,7 @@ it('rejects leaked controls/private files and wrong versions in a built release'
       action: { default_title: product.name },
       version: product.version,
       key: identity.publicKey,
-      permissions: ['storage', 'tabs', 'tabCapture', 'offscreen'],
+      permissions: ['storage', 'tabs', 'tabCapture', 'offscreen', 'downloads'],
       host_permissions: ['https://www.twitch.tv/*'],
       content_security_policy: { extension_pages: "connect-src 'self';" },
     }),

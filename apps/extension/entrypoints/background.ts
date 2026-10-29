@@ -32,6 +32,11 @@ import { captureTransition } from '../src/audio/state-machine';
 import { type CrowdSource, makeCrowdSource } from '../src/crowd-source';
 import { db } from '../src/db';
 import { SITE_URL, UPDATE_KEY } from '../src/site';
+import {
+  prepareUpdateReload,
+  UPDATE_ATTEMPT_KEY,
+  UpdateAttemptSchema,
+} from '../src/update-flow';
 import { checkVersion } from '../src/version-check';
 
 export default defineBackground(() => {
@@ -43,7 +48,7 @@ export default defineBackground(() => {
   let queue = Promise.resolve();
   let updateCheck: Promise<void> | null = null;
   const checkUpdate = () => {
-    if (!SITE_URL || updateCheck) return;
+    if (!SITE_URL || updateCheck) return updateCheck;
     updateCheck = checkVersion(
       SITE_URL,
       chrome.runtime.getManifest().version,
@@ -52,10 +57,12 @@ export default defineBackground(() => {
         await chrome.storage.local.set({ [UPDATE_KEY]: value });
       },
     )
+      .then(() => {})
       .catch(() => {})
       .finally(() => {
         updateCheck = null;
       });
+    return updateCheck;
   };
   checkUpdate();
   const serialize = <T>(task: () => Promise<T>): Promise<T> => {
@@ -559,6 +566,63 @@ export default defineBackground(() => {
   }
   chrome.runtime.onMessage.addListener((message: unknown, sender, reply) => {
     if (sender.id !== chrome.runtime.id) return;
+    const updateType = (message as { type?: string } | null)?.type;
+    if (
+      ['UPDATE_CHECK', 'OPEN_UPDATE', 'FINISH_UPDATE'].includes(
+        updateType ?? '',
+      )
+    ) {
+      const fromPopup = sender.url === chrome.runtime.getURL('/popup.html');
+      const fromUpdate =
+        sender.url?.split('?')[0] === chrome.runtime.getURL('/update.html');
+      if (
+        (!fromPopup && !fromUpdate) ||
+        (updateType === 'FINISH_UPDATE' && !fromUpdate)
+      ) {
+        reply({
+          ok: false,
+          error: 'open the update page from the toolbar icon',
+        });
+        return;
+      }
+      // Public metadata latency must never queue ahead of pause/stop commands.
+      if (updateType === 'UPDATE_CHECK') {
+        void Promise.resolve(checkUpdate()).then(() => reply({ ok: true }));
+        return true;
+      }
+      void serialize(async () => {
+        await ready;
+        if (updateType === 'OPEN_UPDATE') {
+          await chrome.tabs.create({
+            url: chrome.runtime.getURL('/update.html?download=1'),
+          });
+        } else {
+          const attempt = UpdateAttemptSchema.parse(
+            (await chrome.storage.local.get(UPDATE_ATTEMPT_KEY))[
+              UPDATE_ATTEMPT_KEY
+            ],
+          );
+          await prepareUpdateReload(
+            stop,
+            async () => {
+              await chrome.storage.local.set({
+                [UPDATE_ATTEMPT_KEY]: {
+                  ...attempt,
+                  phase: 'reloading',
+                  tabId: sender.tab?.id,
+                },
+              });
+            },
+            () => chrome.runtime.reload(),
+          );
+        }
+      }).then(
+        () => reply({ ok: true }),
+        () =>
+          reply({ ok: false, error: 'update could not finish · try again' }),
+      );
+      return true;
+    }
     if (
       sender.url === chrome.runtime.getURL('/diagnostics.html') &&
       (message as { type?: string })?.type === 'GET_DIAGNOSTICS'
@@ -724,5 +788,28 @@ export default defineBackground(() => {
   chrome.runtime.onInstalled.addListener(({ reason }) => {
     if (reason === 'install')
       void chrome.tabs.create({ url: chrome.runtime.getURL('/welcome.html') });
+    if (reason === 'update')
+      void (async () => {
+        const attempt = UpdateAttemptSchema.safeParse(
+          (await chrome.storage.local.get(UPDATE_ATTEMPT_KEY))[
+            UPDATE_ATTEMPT_KEY
+          ],
+        );
+        if (!attempt.success || attempt.data.phase !== 'reloading') return;
+        await chrome.storage.local.set({
+          [UPDATE_ATTEMPT_KEY]: { ...attempt.data, phase: 'result' },
+        });
+        const url = chrome.runtime.getURL('/update.html?result=1');
+        const tab =
+          attempt.data.tabId === undefined
+            ? null
+            : await chrome.tabs.get(attempt.data.tabId).catch(() => null);
+        if (
+          tab?.id !== undefined &&
+          tab.url?.startsWith(chrome.runtime.getURL('/update.html'))
+        )
+          await chrome.tabs.update(tab.id, { url, active: true });
+        else await chrome.tabs.create({ url });
+      })();
   });
 });

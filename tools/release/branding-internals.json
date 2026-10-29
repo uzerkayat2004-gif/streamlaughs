@@ -5,6 +5,8 @@
     "laughline-monorepo",
     "laughline:state",
     "laughline:update",
+    "laughline:update-attempt",
+    "laughline:update-later",
     "laughline:dock",
     "laughline:onboarded",
     "laughline.v1",

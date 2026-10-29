@@ -384,8 +384,9 @@ test('fixed ID survives a copied folder; the extension checks public version met
     const popup = await context.newPage();
     await popup.goto(`chrome-extension://${identity.id}/popup.html`);
     await expect(
-      popup.getByRole('link', { name: 'new version available' }),
-    ).toHaveAttribute('href', `${SITE}/download`);
+      popup.getByRole('button', { name: `update to v${product.version}` }),
+    ).toBeVisible();
+    await expect(popup.getByText('new version ready')).toBeVisible();
   } finally {
     await context.close();
   }

@@ -12,7 +12,11 @@ A little crowd for Twitch: your local laughs, everyone’s anonymous reactions, 
 2. Open `chrome://extensions` (Edge: `edge://extensions`, Brave: `brave://extensions`), enable **Developer mode**, choose **Load unpacked**, and select the extracted folder containing `manifest.json`. [Illustrated install guide](https://streamlaughs.vercel.app/install).
 3. Pin the icon. Finish **Welcome → allow mic → sharing choice**, open a Twitch stream and press **start** in the toolbar popup, or **Alt+Shift+L**. “watch without mic” keeps the crowd view without opening either audio input.
 
-To update, download again, replace the contents of the same extracted folder, reload the extension and refresh Twitch. Every successful main deployment rebuilds the download; no release or manual upload is needed. The fixed unpacked ID is **fkocldgggcmhihelohiicoakcfomhepg**. Parts 1–4 installs change origin once; [migration details](docs/extension-identity.md). No Chrome Web Store listing is claimed. [Download/checksum build and browser verification limits](docs/website-downloads-part8.md).
+To update from v0.6.2 onward, open the popup and choose **update to v…**. The extension checks and downloads the ZIP, then shows three illustrated steps: unzip, copy its contents into your **same existing folder** and replace files, then press **finish update**. It saves any active recording before reloading; recaps and settings stay saved. Refresh Twitch afterwards. Earlier installs need one manual download, same-folder replacement and reload to get this flow. [Update details and troubleshooting](docs/popup-updates-part12.md).
+
+The **downloads** permission saves and monitors your requested update ZIP. Public version checks are cached for up to one hour and send no account, channel or installation identifier.
+
+Every successful main deployment rebuilds the download; no release or manual upload is needed. The fixed unpacked ID is **fkocldgggcmhihelohiicoakcfomhepg**. Parts 1–4 installs change origin once; [migration details](docs/extension-identity.md). No Chrome Web Store listing is claimed. [Download/checksum build and browser verification limits](docs/website-downloads-part8.md).
 
 **Mic check and troubleshooting:** Welcome shows a “say something” level bar. For a live local report, open the popup gear and **Shift-click the version**. It shows input levels, track/model errors and frame delivery; copying it includes no audio or transcripts. [v0.6.1 investigation, production regression and exact update/retest steps](docs/microphone-part11.md).
 

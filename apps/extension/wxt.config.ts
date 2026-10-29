@@ -115,7 +115,7 @@ export default defineConfig({
     key: identity.publicKey,
     description: `${product.name} — ${product.pitch}. Local audio processing and anonymous crowd counts.`,
     minimum_chrome_version: '120',
-    permissions: ['storage', 'tabs', 'tabCapture', 'offscreen'],
+    permissions: ['storage', 'tabs', 'tabCapture', 'offscreen', 'downloads'],
     host_permissions: ['https://www.twitch.tv/*'],
     icons: {
       16: '/icon/16.png',

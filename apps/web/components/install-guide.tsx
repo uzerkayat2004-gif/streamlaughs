@@ -199,8 +199,21 @@ export function InstallGuide() {
           </p>
           <h3>time for an update?</h3>
           <p>
-            download the new ZIP, replace the contents of the same folder, then
-            click reload on the extensions page. refresh Twitch.
+            open the {PRODUCT.name} toolbar icon and choose “update to v…”.
+            unzip the download, copy everything into the same existing folder
+            and replace its files, then press “finish update” on the update
+            page. your recaps and settings stay saved. refresh Twitch
+            afterwards.
+          </p>
+          <h3>files not replaced yet?</h3>
+          <p>
+            copy into the folder you originally loaded. if the ZIP has a nested
+            folder, open it until you see <code>manifest.json</code> and copy
+            those contents, not the outer folder. keep the original folder.
+          </p>
+          <p>
+            older version without an update button? download here, replace the
+            same folder’s contents and click reload on the extensions page once.
           </p>
         </div>
       </aside>

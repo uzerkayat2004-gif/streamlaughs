@@ -22,21 +22,41 @@ import {
 } from './components';
 import { SITE_URL, UPDATE_KEY } from './site';
 import { audioNotice, friendlyError } from './ui-status';
+import {
+  UPDATE_ATTEMPT_KEY,
+  UPDATE_LATER_KEY,
+  UpdateAttemptSchema,
+  updateResult,
+} from './update-flow';
+import { type UpdateStatus, UpdateStatusSchema } from './version-check';
 
 export function Popup() {
   const { snapshot, ready } = useStore(surface.store);
-  const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [update, setUpdate] = useState<UpdateStatus>();
+  const [later, setLater] = useState(false);
+  const [updateToast, setUpdateToast] = useState('');
   useEffect(() => {
-    const accept = (value: unknown) =>
-      setUpdateAvailable(
-        !!value &&
-          typeof value === 'object' &&
-          'available' in value &&
-          value.available === true,
-      );
+    const accept = (value: unknown) => {
+      const parsed = UpdateStatusSchema.safeParse(value);
+      setUpdate(parsed.success ? parsed.data : undefined);
+    };
+    void chrome.storage.session
+      .get(UPDATE_LATER_KEY)
+      .then((result) => setLater(result[UPDATE_LATER_KEY] === true));
+    void chrome.storage.local.get(UPDATE_ATTEMPT_KEY).then((result) => {
+      const attempt = UpdateAttemptSchema.safeParse(result[UPDATE_ATTEMPT_KEY]);
+      if (attempt.success && attempt.data.phase === 'result')
+        setUpdateToast(
+          updateResult(
+            chrome.runtime.getManifest().version,
+            attempt.data.version,
+          ),
+        );
+    });
     void chrome.storage.local
       .get(UPDATE_KEY)
       .then((result) => accept(result[UPDATE_KEY]));
+    void chrome.runtime.sendMessage({ type: 'UPDATE_CHECK' }).catch(() => {});
     const changed = (
       changes: Record<string, chrome.storage.StorageChange>,
       area: string,
@@ -80,31 +100,39 @@ export function Popup() {
   const session = snapshot.session,
     activeChannel = session?.channel ?? channel,
     notice = audioNotice(snapshot);
+  const updateAvailable = !!SITE_URL && update?.available === true;
+  async function openUpdate() {
+    setBusy(true);
+    setError('');
+    try {
+      const result = await chrome.runtime.sendMessage({ type: 'OPEN_UPDATE' });
+      if (!result?.ok) throw new Error('update unavailable · try again');
+    } catch {
+      setError('update unavailable · try again');
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <main className="popup">
       <Backdrop />
       <section className="screen" aria-label="Live">
         <header className="top">
           <Mark />
-          {SITE_URL && updateAvailable && (
-            <a
-              className="update-dot"
-              href={`${SITE_URL}/download`}
-              target="_blank"
-              rel="noreferrer"
-              aria-label="new version available"
-              title="new version"
-            >
-              <i />
-            </a>
-          )}
           <button
             type="button"
-            className="iconbtn"
+            className="iconbtn settings-gear"
             aria-label="settings"
             onClick={() => setSettingsOpen(true)}
           >
             <Settings size={17} />
+            {updateAvailable && (
+              <i
+                className="gear-update-dot"
+                role="img"
+                aria-label="new version available"
+              />
+            )}
           </button>
         </header>
         {activeChannel && (
@@ -186,7 +214,31 @@ export function Popup() {
                   : 'your people are one stream away.'}
               </p>
             </div>
-            {channel ? (
+            {updateAvailable && !later ? (
+              <div className="popup-update">
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={busy || !ready}
+                  onClick={() => void openUpdate()}
+                >
+                  update to v{update.latest} <ArrowRight size={17} />
+                </button>
+                <p className="sub">new version ready</p>
+                <button
+                  type="button"
+                  className="textbtn"
+                  onClick={() => {
+                    setLater(true);
+                    void chrome.storage.session.set({
+                      [UPDATE_LATER_KEY]: true,
+                    });
+                  }}
+                >
+                  later
+                </button>
+              </div>
+            ) : channel ? (
               <button
                 type="button"
                 className="btn"
@@ -220,6 +272,21 @@ export function Popup() {
           <p className="error" role="alert">
             {error}
           </p>
+        )}
+        {updateToast && !session && (
+          <div className="update-result" role="status">
+            <p>{updateToast}</p>
+            <button
+              type="button"
+              className="textbtn"
+              onClick={() => {
+                setUpdateToast('');
+                void chrome.storage.local.remove(UPDATE_ATTEMPT_KEY);
+              }}
+            >
+              dismiss
+            </button>
+          </div>
         )}
         {notice &&
           (notice.action ? (
@@ -334,6 +401,16 @@ export function Popup() {
                 >
                   privacy ↗
                 </a>
+              )}
+              {updateAvailable && (
+                <button
+                  type="button"
+                  className="textbtn"
+                  disabled={busy}
+                  onClick={() => void openUpdate()}
+                >
+                  update to v{update.latest}
+                </button>
               )}
               <button
                 type="button"

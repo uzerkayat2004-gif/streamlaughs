@@ -7,7 +7,7 @@ it('compares Chrome versions numerically and rejects arbitrary update strings', 
   expect(newerVersion('0.5.0', '0.5.0.0')).toBe(false);
   expect(newerVersion('url', '0.5.0')).toBe(false);
 });
-it('makes one identifier-free check per day, including failures', async () => {
+it('makes one identifier-free check per hour, including failures', async () => {
   let stored: unknown;
   const load = async () => stored,
     save = async (value: unknown) => {
@@ -26,9 +26,36 @@ it('makes one identifier-free check per day, including failures', async () => {
   );
   expect(stored).toMatchObject({ available: true, latest: '0.6.0' });
   fetcher.mockRejectedValue(new Error('offline'));
-  await checkVersion('https://app.vercel.app', '0.5.0', load, save, 86401000);
-  await checkVersion('https://app.vercel.app', '0.5.0', load, save, 86402000);
+  await checkVersion('https://app.vercel.app', '0.5.0', load, save, 3601000);
+  await checkVersion('https://app.vercel.app', '0.5.0', load, save, 3602000);
   expect(fetcher).toHaveBeenCalledTimes(2);
+});
+it('keeps checksum metadata but ignores server download URLs and rechecks future-dated caches', async () => {
+  const save = vi.fn(async () => {});
+  const fetcher = vi.fn(async () =>
+    Response.json({
+      version: '0.7.0',
+      sha256: 'a'.repeat(64),
+      bytes: 41,
+      downloadUrl: 'https://evil.test/archive.zip',
+    }),
+  );
+  vi.stubGlobal('fetch', fetcher);
+  const result = await checkVersion(
+    'https://app.vercel.app',
+    '0.6.1',
+    async () => ({ checkedAt: 9000, latest: '0.6.1', available: false }),
+    save,
+    1000,
+  );
+  expect(fetcher).toHaveBeenCalledOnce();
+  expect(result).toEqual({
+    checkedAt: 1000,
+    latest: '0.7.0',
+    available: true,
+    package: { sha256: 'a'.repeat(64), bytes: 41 },
+  });
+  expect(result).not.toHaveProperty('downloadUrl');
 });
 it('clears a cached update dot after an upgrade without another network request', async () => {
   const fetcher = vi.fn();

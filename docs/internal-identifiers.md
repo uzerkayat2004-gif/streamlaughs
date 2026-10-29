@@ -6,19 +6,20 @@ The fixed extension origin remains **chrome-extension://fkocldgggcmhihelohiicoak
 
 These identifiers stay internal-only to preserve saved data, authentication, protocol compatibility and developer tooling:
 
-| Identifier                                                                     | Reason                                                         |
-| ------------------------------------------------------------------------------ | -------------------------------------------------------------- |
-| `laughline`                                                                    | Existing Dexie database; changing it would orphan local recaps |
-| `laughline:state`, `laughline:update`, `laughline:dock`, `laughline:onboarded` | Existing chrome.storage keys                                   |
-| `laughline.v1`                                                                 | WebSocket subprotocol                                          |
-| `laughline-web`                                                                | Owner-token and encrypted-session issuer                       |
-| `laughline-auth`, `__Host-laughline-auth`                                      | Essential auth-cookie names                                    |
-| `laughline-frames`                                                             | AudioWorklet registration                                      |
-| `laughlineViewers`                                                             | Shared internal crowd-state field                              |
-| `X-Laughline-Timeline`                                                         | Internal Worker-to-Durable-Object header                       |
-| `laughline-overlay`, `laughline-crowd-box`                                     | Custom element and ARIA linkage hooks                          |
-| `@laughline/shared`, `@laughline/eval`, `laughline-monorepo`                   | Private workspace package names                                |
-| `LAUGHLINE_TEST_WAV`                                                           | Existing local-only positive-audio test env variable           |
+| Identifier                                                                     | Reason                                                                                              |
+| ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| `laughline`                                                                    | Existing Dexie database; changing it would orphan local recaps                                      |
+| `laughline:state`, `laughline:update`, `laughline:dock`, `laughline:onboarded` | Existing chrome.storage keys                                                                        |
+| `laughline:update-attempt`, `laughline:update-later`                           | Part 12 update intent/result and browser-session dismissal, kept in the existing internal namespace |
+| `laughline.v1`                                                                 | WebSocket subprotocol                                                                               |
+| `laughline-web`                                                                | Owner-token and encrypted-session issuer                                                            |
+| `laughline-auth`, `__Host-laughline-auth`                                      | Essential auth-cookie names                                                                         |
+| `laughline-frames`                                                             | AudioWorklet registration                                                                           |
+| `laughlineViewers`                                                             | Shared internal crowd-state field                                                                   |
+| `X-Laughline-Timeline`                                                         | Internal Worker-to-Durable-Object header                                                            |
+| `laughline-overlay`, `laughline-crowd-box`                                     | Custom element and ARIA linkage hooks                                                               |
+| `@laughline/shared`, `@laughline/eval`, `laughline-monorepo`                   | Private workspace package names                                                                     |
+| `LAUGHLINE_TEST_WAV`                                                           | Existing local-only positive-audio test env variable                                                |
 
 The checkout folder and historical verification transcripts retain original paths/provenance. The approved design remains reference material; current screenshots use the new public brand. Neither historical transcripts nor reference controls ship as runtime UI.
 

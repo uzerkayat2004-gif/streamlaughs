@@ -1,7 +1,7 @@
 import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: './tests',
-  testIgnore: ['web.spec.ts', 'download.spec.ts'],
+  testIgnore: ['web.spec.ts', 'download.spec.ts', 'update.spec.ts'],
   timeout: 120000,
   expect: { timeout: 15000 },
   workers: 1,

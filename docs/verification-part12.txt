@@ -1,0 +1,139 @@
+StreamLaughs Part 12 verification · 2026-10-29
+Version: 0.6.2
+Fixed ID: fkocldgggcmhihelohiicoakcfomhepg
+
+Environment: Windows, Node 24, pnpm 10.33.2, headed Chromium.
+Production URLs: https://streamlaughs.vercel.app + https://streamlaughs-crowd.streamlaughs.workers.dev
+
+All final gates below exited 0. 181 unit/integration tests; 8 website and 11 extension browser cases.
+The update case uses native download selection and a normal unpacked install with Developer mode enabled in an isolated profile. It calls runtime.reload, follows the restored result page, copies the actual verified ZIP into the same folder and asserts the new version/ID plus unchanged recaps/settings.
+Initial harness failures (CDP UUID filenames; command-line install/Developer mode off becoming disabled on reload) were reproduced and corrected in the test setup. No production API was mocked for download or reload. Public metadata/Twitch pages are controlled fixtures.
+
+$ pnpm --filter extension build:debug
+exit: 0; elapsed: 24.8 s
+Verified 14 local model/license assets against SHA-256 receipts.
+√ Finished in 22.1 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (chrome-mv3-audio-debug)
+
+$ pnpm --filter extension build:test-ui
+exit: 0; elapsed: 19.5 s
+Verified 14 local model/license assets against SHA-256 receipts.
+√ Finished in 16.8 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (chrome-mv3-ui-test)
+
+$ pnpm --filter extension build:test-crowd
+exit: 0; elapsed: 20.3 s
+Verified 14 local model/license assets against SHA-256 receipts.
+√ Finished in 18.1 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (chrome-mv3-crowd-test)
+
+$ pnpm --filter extension build:test-site
+exit: 0; elapsed: 18.8 s
+Verified 14 local model/license assets against SHA-256 receipts.
+√ Finished in 16.8 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (chrome-mv3-site-test)
+
+$ pnpm release:preview
+exit: 0; elapsed: 81.0 s
+Verified 14 local model/license assets against SHA-256 receipts.
+√ Finished in 34.1 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (chrome-mv3)
+Verified 14 local model/license assets against SHA-256 receipts.
+√ Finished in 25.0 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (edge-mv3)
+Verified flat chrome ZIP: streamlaughs-chrome-v0.6.2.zip
+Verified flat edge ZIP: streamlaughs-edge-v0.6.2.zip
+Prepared OFFLINE PREVIEW assets in releases/offline-preview; no tag, release or deployment created.
+
+$ pnpm build
+exit: 0; elapsed: 416.7 s
+Verified 14 local model/license assets against SHA-256 receipts.
+√ Finished in 37.5 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (chrome-mv3)
+Verified 14 local model/license assets against SHA-256 receipts.
+√ Finished in 133 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (edge-mv3)
+Verified flat chrome ZIP: streamlaughs-chrome-v0.6.2.zip
+Verified flat edge ZIP: streamlaughs-edge-v0.6.2.zip
+Prepared production-configured assets in releases/production; no tag, release or deployment created.
+Universal download: 40392295 bytes; SHA-256 74482412ac1ca4541913d2731abf8b0669ee326dde7811289e8c87120d32c024
+✓ Compiled successfully in 20.9s
+  Finished TypeScript in 5.3s ...
+StreamLaughs source, docs and requested website output branding checks passed.
+
+$ pnpm -r typecheck
+exit: 0; elapsed: 64.6 s
+tools/crowd-sim typecheck: Done
+tools/eval typecheck: Done
+tools/release typecheck: Done
+packages/shared typecheck: Done
+apps/web typecheck: Done
+workers/api typecheck: Done
+apps/extension typecheck: √ Finished in 3.358 s
+apps/extension typecheck: Done
+
+$ pnpm check
+exit: 0; elapsed: 0.9 s
+Checked 253 files in 280ms. No fixes applied.
+
+$ pnpm -r test
+exit: 0; elapsed: 59.4 s
+tools/eval test:  Test Files  1 passed (1)
+tools/eval test:       Tests  2 passed (2)
+tools/eval test:    Duration  1.06s (transform 99ms, setup 0ms, import 171ms, tests 12ms, environment 0ms)
+tools/eval test: Done
+tools/crowd-sim test:  Test Files  1 passed (1)
+tools/crowd-sim test:       Tests  2 passed (2)
+tools/crowd-sim test:    Duration  1.46s (transform 136ms, setup 0ms, import 550ms, tests 66ms, environment 0ms)
+tools/crowd-sim test: Done
+packages/shared test:  Test Files  4 passed (4)
+packages/shared test:       Tests  21 passed (21)
+packages/shared test:    Duration  1.49s (transform 486ms, setup 0ms, import 1.96s, tests 207ms, environment 1ms)
+packages/shared test: Done
+tools/release test:  Test Files  4 passed (4)
+tools/release test:       Tests  11 passed (11)
+tools/release test:    Duration  2.22s (transform 537ms, setup 0ms, import 908ms, tests 1.33s, environment 2ms)
+tools/release test: Done
+apps/extension pretest: Done
+apps/extension test:  Test Files  18 passed (18)
+apps/extension test:       Tests  105 passed (105)
+apps/extension test:    Duration  4.40s (transform 3.69s, setup 0ms, import 13.09s, tests 4.83s, environment 6ms)
+apps/extension test: Done
+apps/web test:  Test Files  7 passed (7)
+apps/web test:       Tests  27 passed (27)
+apps/web test:    Duration  5.93s (transform 1.94s, setup 0ms, import 18.14s, tests 1.85s, environment 4ms)
+apps/web test: Done
+workers/api test:  Test Files  3 passed (3)
+workers/api test:       Tests  13 passed (13)
+workers/api test:    Duration  42.80s (transform 12.50s, setup 0ms, import 24.15s, tests 17.84s, environment 3ms)
+workers/api test: Done
+
+$ pnpm test:e2e:web
+exit: 0; elapsed: 279.1 s
+Running 8 tests using 1 worker
+  ok 1 tests\download.spec.ts:20:1 › home opens setup, starts one matching ZIP download and preserves the fixed ID (16.7s)
+  ok 2 tests\download.spec.ts:129:1 › plain setup waits for a click; automatic setup offers a working retry (22.2s)
+  ok 3 tests\download.spec.ts:188:1 › nav, final CTA and demo downloads all open setup and start the attachment (41.9s)
+  ok 4 tests\update.spec.ts:13:1 › ZIP update: both idle CTAs, later, verified download, safe stop, wrong folder, real file replacement/reload preserves recaps and settings (18.8s)
+  ok 5 tests\web.spec.ts:18:1 › Twitch redirect mismatch shows setup help instead of silently landing on home (2.4s)
+  ok 6 tests\web.spec.ts:87:1 › public pages, responsive Night Crowd, privacy, configurable links and recorded demo (27.7s)
+  ok 7 tests\web.spec.ts:180:1 › OAuth state + owner isolation + real Wrangler and crowd-sim live/history/VOD stories (30.6s)
+  ok 8 tests\web.spec.ts:341:1 › fixed ID survives a copied folder; the extension checks public version metadata and shows its update dot (2.9s)
+  8 passed (4.6m)
+
+$ pnpm test:e2e
+exit: 0; elapsed: 288.0 s
+Running 11 tests using 1 worker
+  ok 10 tests\production-audio.spec.ts:133:3 › production ZIP detects real recorded laughs and speech with loud tab playback (33.7s)
+  ok 11 tests\production-audio.spec.ts:133:3 › production ZIP detects real recorded laughs and speech with speech only tab playback (31.9s)
+  11 passed (4.8m)
+
+Local production ZIP: 40,392,295 bytes
+SHA-256: 74482412ac1ca4541913d2731abf8b0669ee326dde7811289e8c87120d32c024
+Flat manifest, fixed public key, bundled models/notices, downloads permission, and absence of debug.html/private PEM files verified.
+Chrome/Edge/universal and offline-preview ZIPs regenerated for v0.6.2; binaries remain ignored.
+
+Safety: staged-file gitleaks scan redacted at 100%, no leaks. Largest staged file: bundled decoder model, 30,718,858 bytes (<100 MB). No private signing key read or used.
+
+Limits: native Windows/Mac file-manager dialogs, physical devices, and native Edge/Brave update smoke checks remain manual. Chromium performs the actual file replacement/download/reload regression; no claim of new physical audio testing. Existing recorded-mic/tab production regressions pass.
+No tags, GitHub releases, accounts, Cloudflare configuration or secrets changed. Push triggers the existing Vercel main build; live verification is reported separately.

@@ -97,13 +97,23 @@ const tab = (id: number) => ({
   id,
   url: `https://www.twitch.tv/${id === 1 ? 'nightowl_tv' : 'second_channel'}`,
 });
-async function dispatch(message: unknown, offscreen = false) {
+async function dispatch(
+  message: unknown,
+  offscreen = false,
+  updatePage = false,
+) {
   return new Promise<{ ok: boolean; state: Snapshot }>((resolve) =>
     fixture.messages[0]!(
       message,
       {
         id: 'unit',
-        url: url(offscreen ? '/offscreen.html' : '/popup.html'),
+        url: url(
+          offscreen
+            ? '/offscreen.html'
+            : updatePage
+              ? '/update.html?download=1'
+              : '/popup.html',
+        ),
         documentId: offscreen ? 'owner-document' : 'popup-document',
       },
       resolve,
@@ -134,6 +144,7 @@ describe('background capture integration with browser ports mocked', () => {
     vi.stubGlobal('chrome', {
       runtime: {
         id: 'unit',
+        reload: vi.fn(),
         getURL: url,
         sendMessage: async () => {},
         onMessage: {
@@ -209,6 +220,34 @@ describe('background capture integration with browser ports mocked', () => {
     expect(
       (await dispatch({ type: 'GET_STATE' })).state.session!.crowdSummary,
     ).toMatchObject({ source: 'live', peakLaughingNow: 3 });
+  });
+  it('finishing an update requires its extension page, closes audio and saves a recap before reload without clearing settings', async () => {
+    await dispatch({ type: 'START', tabId: 1 });
+    const settings = structuredClone(
+      (await dispatch({ type: 'GET_STATE' })).state.settings,
+    );
+    fixture.storage['laughline:update-attempt'] = {
+      version: '0.6.2',
+      phase: 'downloaded',
+    };
+    expect((await dispatch({ type: 'FINISH_UPDATE' })).ok).toBe(false);
+    expect(chrome.runtime.reload).not.toHaveBeenCalled();
+    expect((await dispatch({ type: 'FINISH_UPDATE' }, false, true)).ok).toBe(
+      true,
+    );
+    expect(fixture.closeOwner).toHaveBeenCalled();
+    expect(fixture.recaps).toHaveLength(1);
+    expect(fixture.sessions.at(-1)).toMatchObject({ endedAt: Date.now() });
+    expect(fixture.storage[STATE_KEY]).toMatchObject({
+      status: 'idle',
+      session: null,
+      settings,
+    });
+    expect(fixture.storage['laughline:update-attempt']).toMatchObject({
+      phase: 'reloading',
+      version: '0.6.2',
+    });
+    expect(chrome.runtime.reload).toHaveBeenCalledOnce();
   });
   it('a missing owner retry opens permission onboarding without an automatic retry loop', async () => {
     await dispatch({ type: 'START', tabId: 1 });

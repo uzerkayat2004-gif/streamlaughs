@@ -31,6 +31,7 @@ export function verifyProduction(directory, product = readProduct(), origins) {
     'tabs',
     'tabCapture',
     'offscreen',
+    'downloads',
   ]);
   assert.deepEqual(manifest.host_permissions, ['https://www.twitch.tv/*']);
   const connections = manifest.content_security_policy.extension_pages

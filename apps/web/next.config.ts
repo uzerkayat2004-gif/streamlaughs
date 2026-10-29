@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { NextConfig } from 'next';
 import product from '../../product.config.json';
+import identity from '../extension/extension-identity.json';
 
 const manifestPath = path.join(process.cwd(), 'public/downloads/manifest.json');
 const download = existsSync(manifestPath)
@@ -25,6 +26,20 @@ const config: NextConfig = {
   },
   async headers() {
     return [
+      {
+        source: '/download',
+        has: [
+          {
+            type: 'header',
+            key: 'origin',
+            value: `(?<extensionOrigin>chrome-extension://(?:${[identity.id, ...(process.env.STORE_EXTENSION_IDS ?? '').split(',').filter((id) => /^[a-p]{32}$/.test(id))].join('|')}))`,
+          },
+        ],
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: ':extensionOrigin' },
+          { key: 'Vary', value: 'Origin' },
+        ],
+      },
       {
         source: '/download',
         headers: [
