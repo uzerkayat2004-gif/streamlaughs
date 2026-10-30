@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { useStore } from 'zustand';
 import { command, connectSurface, surface } from './bridge';
 import { Backdrop, crowdLabel, Mark, Sheet, Timer, Toggle } from './components';
+import { MicTest } from './MicTest';
 import { SmileLogo } from './SmileLogo';
 import { SITE_URL, UPDATE_KEY } from './site';
 import { audioNotice, friendlyError } from './ui-status';
@@ -22,6 +23,7 @@ import {
 import { type UpdateStatus, UpdateStatusSchema } from './version-check';
 
 export function Popup() {
+  const [micTestOpen, setMicTestOpen] = useState(false);
   const { snapshot, ready } = useStore(surface.store);
   const [update, setUpdate] = useState<UpdateStatus>();
   const [later, setLater] = useState(false);
@@ -279,7 +281,18 @@ export function Popup() {
           >
             my streamers
           </button>
+          <span>·</span>
+          <button
+            type="button"
+            className="textbtn"
+            onClick={() => setMicTestOpen(true)}
+          >
+            test my mic
+          </button>
         </nav>
+        <small className="popup-version">
+          v{chrome.runtime.getManifest().version}
+        </small>
         {error && (
           <p className="error" role="alert">
             {error}
@@ -339,6 +352,11 @@ export function Popup() {
           </button>
         )}
       </section>
+      {micTestOpen && (
+        <Sheet title="test my mic" close={() => setMicTestOpen(false)}>
+          <MicTest />
+        </Sheet>
+      )}
       {settingsOpen && (
         <Sheet
           title={confirmDelete ? 'delete your data?' : 'settings'}

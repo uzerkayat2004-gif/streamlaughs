@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest';
-import { zeroScores } from './config';
+import { INFERENCE_CONFIG as C, zeroScores } from './config';
 import { InferencePipeline } from './pipeline';
 
 it('reports actual worker arrivals and zero FPS after frames stop even while status polling continues', () => {
@@ -19,6 +19,45 @@ it('reports actual worker arrivals and zero FPS after frames stop even while sta
     p.clear();
     vi.useRealTimers();
   }
+});
+it('dispatches speech while the live VAD queue still has work instead of starving transcription', async () => {
+  let calls = 0,
+    frame = 0;
+  const words = vi.fn(async () => 'lets go');
+  const p = new InferencePipeline(
+    { vad: async () => (++calls <= 20 ? 0.99 : 0), sound: zeroScores, words },
+    () => {},
+  );
+  const add = () =>
+    p.ingest('mic', new Float32Array(320).fill(0.1), 10000 + ++frame * 20);
+  add();
+  add();
+  add();
+  add();
+  for (let i = 0; i < 36; i++) {
+    add();
+    add();
+    await p.step();
+  }
+  expect(p.pendingWork).toBeGreaterThan(0);
+  expect(words).toHaveBeenCalled();
+  p.clear();
+});
+it('catches up queued VAD before running another synchronous classifier window', async () => {
+  const sound = vi.fn(zeroScores),
+    vad = vi.fn(async () => 0);
+  const p = new InferencePipeline(
+    { vad, sound, words: async () => '' },
+    () => {},
+  );
+  for (let i = 0; i < 60; i++)
+    p.ingest('mic', new Float32Array(320), 10000 + i * 20);
+  await p.step();
+  expect(vad).toHaveBeenCalledOnce();
+  expect(sound).not.toHaveBeenCalled();
+  while (p.pendingWork) await p.step();
+  expect(sound).toHaveBeenCalled();
+  p.clear();
 });
 
 it('samples a brief high-confidence laugh bout often enough to confirm it twice', async () => {
@@ -195,7 +234,7 @@ it('bounds queues during prolonged overload, clears stale PCM on gaps and clears
   const p = new InferencePipeline(models, () => {});
   for (let i = 0; i < 10000; i++)
     p.ingest('mic', new Float32Array(320), 1000 + i * 20);
-  expect(p.pendingWork).toBeLessThanOrEqual(33);
+  expect(p.pendingWork).toBeLessThanOrEqual(C.maxVadJobs + 1);
   await p.step();
   expect(p.health.drops).toBeGreaterThan(1000);
   expect(p.health.lowPower).toBe(true);

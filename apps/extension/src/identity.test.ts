@@ -1,4 +1,6 @@
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { PRODUCT } from '@laughline/shared';
 import { expect, it } from 'vitest';
 import {
@@ -32,3 +34,21 @@ it('the built Chrome manifest has the fixed key and expected ID', () => {
 it('the actual production build has no debug page, simulator or reference controls', () => {
   expect(() => verifyProduction('.output/chrome-mv3')).not.toThrow();
 }, 30000);
+it('rejects a stale content script even when the manifest version and key are current', () => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'streamlaughs-stale-ui-'));
+  const manifest = JSON.parse(
+    readFileSync('.output/chrome-mv3/manifest.json', 'utf8'),
+  );
+  manifest.content_scripts = [
+    { matches: ['https://www.twitch.tv/*'], js: ['old.js'] },
+  ];
+  writeFileSync(
+    path.join(directory, 'manifest.json'),
+    JSON.stringify(manifest),
+  );
+  writeFileSync(
+    path.join(directory, 'old.js'),
+    'const oldUi="green blob, red stop button";',
+  );
+  expect(() => verifyProduction(directory)).toThrow('Stale Twitch UI bundle');
+});

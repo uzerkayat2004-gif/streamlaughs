@@ -9,6 +9,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { AUDIO_DEBUG } from '../audio/config';
 import { AudioFrameHub } from '../audio/ring-buffer';
 import { InferenceBridge } from './bridge';
+import { INFERENCE_CONFIG as C } from './config';
 
 class WorkerFake {
   static instances: WorkerFake[] = [];
@@ -47,7 +48,7 @@ it('isolates speech from realtime work, caps transport and terminates both on pa
     bridge = new InferenceBridge(hub, send);
   bridge.sync(report());
   bridge.sync(report());
-  expect(WorkerFake.instances).toHaveLength(2);
+  expect(WorkerFake.instances).toHaveLength(3);
   const worker = WorkerFake.instances[0]!;
   const speech = WorkerFake.instances[1]!;
   worker.deliver({
@@ -55,9 +56,9 @@ it('isolates speech from realtime work, caps transport and terminates both on pa
     health: { ...emptyInferenceHealth(), phase: 'ready' },
     events: [],
   });
-  for (let i = 0; i < 20; i++)
+  for (let i = 0; i < C.maxTransportFrames + 12; i++)
     hub.onFrame('mic', new Float32Array(320), i * 20);
-  expect(worker.postMessage).toHaveBeenCalledTimes(9);
+  expect(worker.postMessage).toHaveBeenCalledTimes(C.maxTransportFrames + 1);
   worker.deliver({ type: 'ack' });
   hub.onFrame('mic', new Float32Array(320), 500);
   expect(worker.postMessage.mock.lastCall?.[0].drops).toBe(12);
@@ -83,7 +84,7 @@ it('isolates speech from realtime work, caps transport and terminates both on pa
     events: [],
   });
   bridge.sync(report());
-  const second = WorkerFake.instances[2]!;
+  const second = WorkerFake.instances[3]!;
   worker.onerror?.({ message: 'simulated worker failure' });
   expect(second.terminate).not.toHaveBeenCalled();
   bridge.sync({ ...report(), phase: 'micLost', micLost: true });
@@ -96,6 +97,29 @@ it('isolates speech from realtime work, caps transport and terminates both on pa
   expect(JSON.stringify(send.mock.calls)).not.toMatch(
     /transcript|private|Float32Array/,
   );
+});
+it('absorbs a 180 ms classifier stall without dropping either stream before the worker can ACK', () => {
+  vi.stubGlobal('Worker', WorkerFake);
+  vi.stubGlobal('chrome', {
+    runtime: { getURL: (path: string) => `chrome-extension://test${path}` },
+  });
+  const hub = new AudioFrameHub(),
+    bridge = new InferenceBridge(hub, () => {});
+  bridge.sync(report());
+  const worker = WorkerFake.instances[0]!;
+  worker.deliver({
+    type: 'status',
+    health: { ...emptyInferenceHealth(), phase: 'ready' },
+    events: [],
+  });
+  for (let i = 0; i < 9; i++) {
+    hub.onFrame('mic', new Float32Array(320), i * 20);
+    hub.onFrame('tab', new Float32Array(320), i * 20);
+  }
+  expect(
+    worker.postMessage.mock.calls.filter(([m]) => m.type === 'frame'),
+  ).toHaveLength(18);
+  bridge.close();
 });
 it('unblocks the realtime scheduler if the speech worker crashes during a request', () => {
   vi.stubGlobal('Worker', WorkerFake);
@@ -193,9 +217,9 @@ it('does not spin on model-load failure and retries only after an explicit inact
   bridge.sync(report());
   WorkerFake.instances[0]!.onerror?.({ message: 'simulated worker failure' });
   for (let i = 0; i < 20; i++) bridge.sync(report());
-  expect(WorkerFake.instances).toHaveLength(2);
+  expect(WorkerFake.instances).toHaveLength(3);
   bridge.sync({ ...report(), phase: 'paused' });
   bridge.sync(report());
-  expect(WorkerFake.instances).toHaveLength(4);
+  expect(WorkerFake.instances).toHaveLength(6);
   bridge.close();
 });

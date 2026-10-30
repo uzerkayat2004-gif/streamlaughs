@@ -19,6 +19,7 @@ import {
   snap,
 } from './geometry';
 import { newLaugh, OVERLAY_FADE_MS, overlayOpacity } from './overlay-behavior';
+import { PipelineDebug } from './PipelineDebug';
 import { SmileLogo } from './SmileLogo';
 import { audioNotice, friendlyError } from './ui-status';
 
@@ -28,6 +29,17 @@ export function Overlay({
 }: {
   getPlayer: () => HTMLElement | null;
 }) {
+  const [debugOpen, setDebugOpen] = useState(false);
+  useEffect(() => {
+    const key = (event: KeyboardEvent) => {
+      if (event.altKey && event.shiftKey && event.code === 'KeyD') {
+        event.preventDefault();
+        setDebugOpen((value) => !value);
+      }
+    };
+    document.addEventListener('keydown', key, true);
+    return () => document.removeEventListener('keydown', key, true);
+  }, []);
   const { snapshot } = useStore(surface.store);
   const [channel, setChannel] = useState(parseChannel(location.href)),
     [rect, setRect] = useState<DOMRect | null>(null);
@@ -288,6 +300,7 @@ export function Overlay({
   const opacity = overlayOpacity(hovered, activeAt, clock);
   return (
     <div className="overlay-shell">
+      {debugOpen && <PipelineDebug close={() => setDebugOpen(false)} />}
       {notice &&
         (notice.action && notice.action !== 'startAudio' ? (
           <button

@@ -8,7 +8,7 @@ import { decodeWav, encodeWav } from '../tools/eval/wav.mjs';
 
 const id = 'fkocldgggcmhihelohiicoakcfomhepg';
 const origin = `chrome-extension://${id}`;
-const wav = path.resolve('tests/fixtures/audio/laugh-speech.wav');
+const wav = path.resolve('tests/fixtures/audio/laugh-lets-go.wav');
 const streamUrl = 'https://www.twitch.tv/nightowl_tv';
 
 async function extractedProduction() {
@@ -37,6 +37,8 @@ async function extractedProduction() {
     'audio-worklet.js',
     'inference-worker.js',
     'speech-worker.js',
+    'sound-worker.js',
+    'mic-test.html',
     'models/silero-v5.onnx',
     'models/yamnet.tflite',
     'models/whisper-tiny.en/onnx/encoder_model_quantized.onnx',
@@ -134,8 +136,9 @@ for (const [label, volume] of [
     test.setTimeout(150000);
     const folder = await extractedProduction();
     let microphone = wav;
-    if (label === 'loud' && process.env.AUDIO_SYNTHETIC_TONE === '1') {
-      // Optional noise stress probe, separate from the unchanged recorded-mic regression.
+    if (label === 'loud') {
+      // Simulated speaker spill in the recorded microphone, alongside real tab playback.
+      // This is an additive echo stress case, not a physical-room/AEC accuracy claim.
       const samples = decodeWav(readFileSync(wav));
       for (let i = 0; i < samples.length; i++)
         samples[i] += 0.04 * Math.sin((i * Math.PI * 2 * 317) / 16000);
@@ -165,13 +168,16 @@ for (const [label, volume] of [
       channel: 'chromium',
       headless: false,
       ignoreDefaultArgs: ['--disable-extensions'],
-      permissions: ['microphone'],
+      // No context-wide permission override: it hid the broken Welcome → offscreen handoff.
       args: [
         `--load-extension=${folder}`,
         `--disable-extensions-except=${folder}`,
         `--allowlisted-extension-id=${id}`,
         '--auto-accept-camera-and-microphone-capture',
         '--use-fake-device-for-media-stream',
+        '--disable-features=CalculateNativeWinOcclusion',
+        '--disable-background-timer-throttling',
+        '--disable-renderer-backgrounding',
         `--use-file-for-fake-audio-capture=${microphone}`,
       ],
     });
@@ -210,6 +216,19 @@ for (const [label, volume] of [
       await expect(
         welcome.getByText('mic looks good ✓', { exact: true }),
       ).toBeVisible();
+      if (process.env.AUDIO_REAL_PERMISSION_GRANT === '1') {
+        console.info(
+          'permission after Welcome:',
+          await welcome.evaluate(
+            async () =>
+              (
+                await navigator.permissions.query({
+                  name: 'microphone' as PermissionName,
+                })
+              ).state,
+          ),
+        );
+      }
       // The final navigation is covered by polish.spec.ts. Extension-created
       // tabs can start their first navigation before Playwright attaches routing;
       // keep unrelated live directory scripts/iframes out of this audio fixture.
@@ -320,6 +339,16 @@ for (const [label, volume] of [
         throw error;
       }
       const value = await report();
+      await stream.bringToFront();
+      await stream.keyboard.press('Alt+Shift+D');
+      const localDebug = stream.getByRole('dialog', {
+        name: 'local detection debug',
+      });
+      await expect(localDebug).toBeVisible();
+      await expect(localDebug).toContainText('16000 Hz');
+      await localDebug
+        .getByRole('button', { name: 'close detection debug' })
+        .click();
       console.info(
         JSON.stringify({
           case: label,
@@ -341,6 +370,9 @@ for (const [label, volume] of [
         frameSamples: 320,
       });
       expect(value.inference?.guard.kept).toBe(true);
+      expect(value.sessionMatches).toBe(true);
+      expect(value.inference?.stages.nonzeroFrames).toBeGreaterThan(0);
+      expect(value.inference?.stages.speechResults).toBeGreaterThan(0);
       await diagnostics.evaluate(() => {
         Object.assign(window, { copiedReport: '' });
         navigator.clipboard.writeText = async (value) => {
@@ -359,7 +391,49 @@ for (const [label, volume] of [
       expect(copied).not.toMatch(
         /"(?:transcript|lastTranscript|phrases|text)"\s*:|"samples"\s*:\s*\[/i,
       );
+      const completed = await counts();
+      const sessionId = await worker.evaluate(
+        async () =>
+          (await chrome.storage.local.get('laughline:state'))['laughline:state']
+            .session.id,
+      );
       await popup.getByRole('button', { name: 'stop', exact: true }).click();
+      const recapOpened = context.waitForEvent('page');
+      await popup
+        .getByRole('button', { name: 'see recap', exact: true })
+        .click();
+      const recapPage = await recapOpened;
+      await expect(
+        recapPage.getByText('you laughed', { exact: true }),
+      ).toBeVisible();
+      const persisted = await recapPage.evaluate(
+        async (id) =>
+          new Promise<{ matches: boolean; laughs: number; words: number }>(
+            (resolve, reject) => {
+              const request = indexedDB.open('laughline');
+              request.onerror = () =>
+                reject(new Error('saved session database unavailable'));
+              request.onsuccess = () => {
+                const db = request.result,
+                  tx = db.transaction(['sessions', 'recaps']);
+                const session = tx.objectStore('sessions').get(id),
+                  recap = tx.objectStore('recaps').get(id);
+                tx.oncomplete = () => {
+                  resolve({
+                    matches: session.result?.id === recap.result?.sessionId,
+                    laughs: recap.result?.totalLaughs ?? 0,
+                    words: recap.result?.wordCount ?? 0,
+                  });
+                  db.close();
+                };
+              };
+            },
+          ),
+        sessionId,
+      );
+      expect(persisted.matches).toBe(true);
+      expect(persisted.laughs).toBeGreaterThanOrEqual(completed.laughs);
+      expect(persisted.words).toBeGreaterThan(0);
       await expect
         .poll(() =>
           worker.evaluate(() =>
@@ -375,3 +449,60 @@ for (const [label, volume] of [
     }
   });
 }
+
+test('production popup mic check detects the recorded voice without creating a saved session', async () => {
+  test.setTimeout(90000);
+  const folder = await extractedProduction();
+  const context = await chromium.launchPersistentContext('', {
+    channel: 'chromium',
+    headless: false,
+    ignoreDefaultArgs: ['--disable-extensions'],
+    args: [
+      `--load-extension=${folder}`,
+      `--disable-extensions-except=${folder}`,
+      '--use-fake-ui-for-media-stream',
+      '--use-fake-device-for-media-stream',
+      `--use-file-for-fake-audio-capture=${wav}`,
+      '--disable-features=CalculateNativeWinOcclusion',
+    ],
+  });
+  try {
+    const popup = await context.newPage();
+    await popup.goto(`${origin}/popup.html`);
+    await popup
+      .getByRole('button', { name: 'test my mic', exact: true })
+      .click();
+    await popup
+      .getByRole('button', { name: 'start mic check', exact: true })
+      .click();
+    await expect
+      .poll(async () =>
+        Number(
+          await popup.getByLabel('mic check live level').getAttribute('value'),
+        ),
+      )
+      .toBeGreaterThan(0);
+    await expect(popup.getByText('heard you!', { exact: true })).toBeVisible({
+      timeout: 60000,
+    });
+    expect(
+      await popup.evaluate(
+        async () =>
+          (await chrome.storage.local.get('laughline:state'))['laughline:state']
+            .session,
+      ),
+    ).toBeNull();
+    await popup.getByRole('button', { name: 'close', exact: true }).click();
+    await expect
+      .poll(() =>
+        popup.evaluate(() =>
+          chrome.runtime.getContexts({
+            contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
+          }),
+        ),
+      )
+      .toHaveLength(0);
+  } finally {
+    await context.close();
+  }
+});

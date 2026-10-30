@@ -20,8 +20,11 @@ export const INFERENCE_CONFIG = {
   envelopeWindowMs: 1500,
   loudSpeechRms: 0.09,
   loudSpeechMaximumMs: 2000,
-  maxTransportFrames: 8,
-  maxVadJobs: 32,
+  // 2 seconds across two 50 fps streams (256 KB), enough for synchronous
+  // classifier/WASM startup stalls without punching gaps into otherwise live PCM.
+  maxTransportFrames: 200,
+  // Three seconds of 32 ms VAD chunks; catches up after the bounded transport burst.
+  maxVadJobs: 96,
   maxSpeechJobs: 2,
   maxPhrases: 256,
   maxDebugEvents: 40,

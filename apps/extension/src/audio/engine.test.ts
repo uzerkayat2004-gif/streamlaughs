@@ -9,6 +9,7 @@ function track() {
     muted: false,
     onended: null as null | (() => void),
     onmute: null as null | (() => void),
+    onunmute: null as null | (() => void),
     stop: vi.fn(function (this: { readyState: string }) {
       this.readyState = 'ended';
     }),
@@ -127,6 +128,42 @@ describe('offscreen audio ownership', () => {
     mic = stream();
     await engine.retryMic();
     expect(engine.status()).toMatchObject({ phase: 'active', hasMic: true });
+  });
+  it.each(['prompt', 'denied'] as const)(
+    'uses the actual getUserMedia result when the Permissions API says %s',
+    async (state) => {
+      vi.mocked(navigator.permissions.query).mockResolvedValue({
+        state,
+        onchange: null,
+      } as unknown as PermissionStatus);
+      await engine.start({ sessionId: 'one', streamId: 'opaque' });
+      expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({
+        audio: MICROPHONE_CONSTRAINTS,
+        video: false,
+      });
+      expect(engine.status()).toMatchObject({ phase: 'active', hasMic: true });
+    },
+  );
+  it('does not permanently kill a live microphone during a short source mute', async () => {
+    await engine.start({ sessionId: 'one', streamId: 'opaque' });
+    mic.item.muted = true;
+    mic.item.onmute?.();
+    await vi.advanceTimersByTimeAsync(250);
+    expect(mic.item.stop).not.toHaveBeenCalled();
+    mic.item.muted = false;
+    await vi.advanceTimersByTimeAsync(250);
+    expect(engine.status()).toMatchObject({ phase: 'active', hasMic: true });
+  });
+  it('keeps a long-muted live track and automatically resumes when the source unmutes', async () => {
+    await engine.start({ sessionId: 'one', streamId: 'opaque' });
+    mic.item.muted = true;
+    mic.item.onmute?.();
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(engine.status()?.phase).toBe('micLost');
+    expect(mic.item.stop).not.toHaveBeenCalled();
+    mic.item.muted = false;
+    mic.item.onunmute?.();
+    expect(engine.status()?.phase).toBe('active');
   });
   it('tab-ended notification stops all streams even before the worker replies', async () => {
     const emit = vi.fn();

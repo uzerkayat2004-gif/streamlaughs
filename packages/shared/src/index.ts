@@ -134,6 +134,8 @@ export const CommandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('STOP') }),
   z.object({ type: z.literal('PAUSE') }),
   z.object({ type: z.literal('RETRY_MIC') }),
+  z.object({ type: z.literal('MIC_TEST_START') }),
+  z.object({ type: z.literal('MIC_TEST_STOP') }),
   z.object({
     type: z.literal('DEBUG_MIC_START'),
     tabId: z.number().int().optional(),

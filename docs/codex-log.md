@@ -1,5 +1,14 @@
 # Build log
 
+## v0.8.0 · phase 1 detection (2026-10-30)
+
+- Verified the live v0.7.0 ZIP contained the glass UI, then reproduced permission-preflight failure without the test's global mic grant and permanent loss after a transient source mute.
+- Added local stage counters, filtered phrase preview, Alt+Shift+D panel, popup/full-page model-backed mic check, running-version labels and a post-update Twitch refresh notice. New scripting permission is restricted by the existing Twitch host access.
+- Reproduced VAD/Whisper starvation under classifier load; isolated YAMNet in a third local worker, kept all audio transport bounded, fixed fair dispatch and load accounting. No model confidence thresholds changed.
+- Compared the same recorded speaker mixture with browser echo processing on/off; disabled voice-call echo processing for detection and kept non-destructive local reference matching. Added real human “let’s go” + laughter fixture with CC0/public-domain provenance.
+- Phase 1 gate passed: 63 targeted unit tests, typecheck/build, normal and loud recorded-input production-ZIP cases saving laughs + words into the same recap, and popup mic test without a saved session. [Evidence and limits](detection-v080.md). No phase 2 UI work started before this gate.
+
+
 ## v0.7.0 · calm glass UI (2026-10-30)
 
 - Replaced product marks/icons with one rounded smile curve in white/yellow transparent variants. The extension public key, IDs and legacy database/protocol identifiers stay unchanged.

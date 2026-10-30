@@ -1,7 +1,7 @@
 import { PRODUCT } from '@laughline/shared';
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from 'zustand';
-import { MICROPHONE_CONSTRAINTS } from './audio/config';
+import { MIC_CONSENT_KEY, MICROPHONE_CONSTRAINTS } from './audio/config';
 import { checkMicrophone } from './audio/mic-check';
 import { command, connectSurface, surface } from './bridge';
 import { Backdrop, Mark, Toggle, Wave } from './components';
@@ -182,6 +182,7 @@ export function Welcome() {
                     });
                     if (!mounted.current) return;
                     permissionStream.current = stream;
+                    await chrome.storage.local.set({ [MIC_CONSENT_KEY]: true });
                     micCheck.current = new AbortController();
                     setMicLevel(0);
                     const peak = await checkMicrophone(

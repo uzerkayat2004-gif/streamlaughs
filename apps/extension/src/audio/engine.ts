@@ -4,7 +4,7 @@ import {
   emptyAudioMetrics,
 } from '@laughline/shared';
 import { safeError } from '../diagnostics';
-import { AUDIO_DEBUG, AUDIO_STATUS_MS, MICROPHONE_CONSTRAINTS } from './config';
+import { AUDIO_STATUS_MS, MICROPHONE_CONSTRAINTS } from './config';
 import { AudioFrameHub, type AudioSource } from './ring-buffer';
 
 type SourceStats = {
@@ -29,6 +29,7 @@ const stopTracks = (stream: MediaStream | null) => {
   for (const track of stream?.getTracks() ?? []) {
     track.onended = null;
     track.onmute = null;
+    track.onunmute = null;
     track.stop();
   }
 };
@@ -70,11 +71,16 @@ export class AudioEngine {
   private segment = 0;
   private permission: PermissionStatus | null = null;
   private timer: ReturnType<typeof setInterval> | undefined;
+  private micTestTimer: ReturnType<typeof setTimeout> | undefined;
   private lastReport = 0;
   private lastError = '';
   private lastMicTrack: MediaStreamTrack | null = null;
   private deviceSignature = '';
   private changingDevice = false;
+  private mutedSince: number | null = null;
+  private micAttempts = 0;
+  private micOpened = 0;
+  private micPermission: PermissionState = 'prompt';
   private deviceHandler = () => {
     const generation = this.generation;
     if (this.changingDevice || !this.sessionId) return;
@@ -125,6 +131,12 @@ export class AudioEngine {
       tab: describe(this.tab),
       metrics: { ...this.metrics },
       error: this.lastError,
+      permission: this.micPermission,
+      micAttempts: this.micAttempts,
+      micOpened: this.micOpened,
+      echoCancellation:
+        this.mic?.getAudioTracks()[0]?.getSettings?.().echoCancellation ??
+        MICROPHONE_CONSTRAINTS.echoCancellation,
     };
   }
   constructor(
@@ -219,7 +231,7 @@ export class AudioEngine {
     paused?: boolean;
   }) {
     await this.stop();
-    if (micOnly && !AUDIO_DEBUG) throw new Error('capture');
+    // Only the background's explicit mic-check gesture can request micOnly.
     if (!streamId && !micOnly) throw new Error('capture');
     const generation = ++this.generation;
     this.sessionId = sessionId;
@@ -275,6 +287,16 @@ export class AudioEngine {
       this.setProcessing();
       this.lastReport = performance.now();
       this.timer = setInterval(() => this.tick(), AUDIO_STATUS_MS);
+      if (micOnly)
+        this.micTestTimer = setTimeout(() => {
+          if (!this.sessionId || generation !== this.generation) return;
+          this.emit({
+            type: 'AUDIO_TAB_ENDED',
+            sessionId: this.sessionId,
+            ownerId: this.ownerId,
+          });
+          void this.stop();
+        }, 120000);
       this.report();
       return this.status();
     } catch (error) {
@@ -341,29 +363,41 @@ export class AudioEngine {
     };
   }
   private async openMic(generation: number) {
-    if ((await microphonePermission()) !== 'granted')
-      throw new Error('permission');
+    this.micPermission = await microphonePermission();
+    this.micAttempts++;
     const mic = await this.acquire(
       { audio: MICROPHONE_CONSTRAINTS, video: false },
       generation,
     );
     this.mic = mic;
+    this.micOpened++;
+    this.micPermission = 'granted';
+    this.lastError = '';
+    this.mutedSince = null;
     this.lastMicTrack = mic.getAudioTracks()[0] ?? null;
     for (const track of mic.getAudioTracks()) {
       track.onended = () => {
         if (generation === this.generation) this.loseMic();
       };
       track.onmute = () => {
-        if (generation === this.generation) this.loseMic();
+        if (generation === this.generation)
+          this.mutedSince ??= performance.now();
+      };
+      track.onunmute = () => {
+        if (generation !== this.generation || !this.mic) return;
+        this.mutedSince = null;
+        if (this.micLost) {
+          this.micLost = false;
+          this.lastError = '';
+          this.phase = this.paused ? 'paused' : 'active';
+          this.setProcessing();
+          this.report();
+        }
       };
     }
     this.attach('mic', mic, generation);
-    this.permission = await navigator.permissions.query({
-      name: 'microphone' as PermissionName,
-    });
-    this.permission.onchange = () => {
-      if (this.permission?.state !== 'granted') this.loseMic();
-    };
+    // Track state / the actual capture result are authoritative. Permissions API
+    // can report denied for a working extension-origin getUserMedia grant.
     this.micLost = false;
   }
   private disconnect(source: AudioSource) {
@@ -435,23 +469,42 @@ export class AudioEngine {
     if (
       this.mic
         ?.getAudioTracks()
-        .some(
-          (track) =>
-            track.muted || !track.enabled || track.readyState !== 'live',
-        )
+        .some((track) => !track.enabled || track.readyState !== 'live')
     )
       this.loseMic();
+    const muted = this.mic?.getAudioTracks().some((track) => track.muted);
+    if (muted) {
+      this.mutedSince ??= performance.now();
+      if (performance.now() - this.mutedSince >= 1500 && !this.micLost) {
+        // A source mute is reversible. Keep its live track and listen for unmute.
+        this.micLost = true;
+        this.lastError = 'microphone is muted · unmute your input or tap retry';
+        this.phase = this.paused ? 'paused' : 'micLost';
+        this.frames.clear();
+        this.setProcessing();
+        this.report();
+      }
+    } else if (this.mic && this.mutedSince !== null) {
+      this.mutedSince = null;
+      if (this.micLost) {
+        this.micLost = false;
+        this.lastError = '';
+        this.phase = this.paused ? 'paused' : 'active';
+        this.setProcessing();
+        this.report();
+      }
+    }
     const now = performance.now(),
       elapsed = Math.max(1, now - this.lastReport);
     this.lastReport = now;
     const mic = this.stats.mic,
       tab = this.stats.tab,
-      processing = !this.paused && !this.micLost;
+      processing = !this.paused && !this.micLost && !muted;
     const micDelta = Math.max(0, mic.frames - mic.previousFrames),
       tabDelta = Math.max(0, tab.frames - tab.previousFrames);
     this.metrics = {
-      micLevel: processing ? mic.rms : 0,
-      tabLevel: processing ? tab.rms : 0,
+      micLevel: processing && micDelta ? mic.rms : 0,
+      tabLevel: processing && tabDelta ? tab.rms : 0,
       micPeak: processing ? mic.peak : 0,
       tabPeak: processing ? tab.peak : 0,
       micFps: (Math.max(0, mic.frames - mic.previousFrames) * 1000) / elapsed,
@@ -477,6 +530,7 @@ export class AudioEngine {
       this.deviceHandler,
     );
     clearInterval(this.timer);
+    clearTimeout(this.micTestTimer);
     this.timer = undefined;
     if (this.permission) this.permission.onchange = null;
     this.permission = null;
@@ -497,6 +551,7 @@ export class AudioEngine {
     this.phase = 'idle';
     this.paused = false;
     this.micLost = false;
+    this.mutedSince = null;
     this.report();
     this.sessionId = null;
   }

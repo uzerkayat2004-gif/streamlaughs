@@ -32,8 +32,19 @@ export function verifyProduction(directory, product = readProduct(), origins) {
     'tabCapture',
     'offscreen',
     'downloads',
+    'scripting',
   ]);
   assert.deepEqual(manifest.host_permissions, ['https://www.twitch.tv/*']);
+  const contentScripts = (manifest.content_scripts ?? []).flatMap(
+    (entry) => entry.js ?? [],
+  );
+  const content = contentScripts
+    .map((file) => readFileSync(path.join(directory, file), 'utf8'))
+    .join('\n');
+  assert(
+    content.includes('glass-v080') && content.includes('glass-launcher'),
+    'Stale Twitch UI bundle; rebuild the content script',
+  );
   const connections = manifest.content_security_policy.extension_pages
     .match(/connect-src ([^;]+);/)[1]
     .split(/\s+/);

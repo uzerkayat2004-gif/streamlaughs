@@ -8,6 +8,21 @@ import { z } from 'zod';
 export const SpeechResultSchema = z
   .object({ phrases: z.array(SafePhraseSchema).max(64), hype: z.boolean() })
   .strict();
+export const ClassScoresSchema = z
+  .object({
+    laugh: z.number().min(0).max(1),
+    scream: z.number().min(0).max(1),
+    gasp: z.number().min(0).max(1),
+    speech: z.number().min(0).max(1),
+  })
+  .strict();
+export const EchoStateSchema = z
+  .object({
+    removed: z.boolean(),
+    inputRms: z.number().nonnegative(),
+    outputRms: z.number().nonnegative(),
+  })
+  .strict();
 
 export const modelState = () => ({
   phase: 'idle' as 'idle' | 'loading' | 'ready' | 'error',
@@ -33,6 +48,27 @@ const track = z
   .strict();
 export const WorkerDiagnosticsSchema = z
   .object({
+    stages: z
+      .object({
+        nonzeroFrames: z.number().nonnegative(),
+        vadCalls: z.number().nonnegative(),
+        voicedChunks: z.number().nonnegative(),
+        segments: z.number().nonnegative(),
+        soundCalls: z.number().nonnegative(),
+        soundJobsSkipped: z.number().nonnegative().default(0),
+        speechRequests: z.number().nonnegative(),
+        speechResults: z.number().nonnegative(),
+        wordEvents: z.number().nonnegative(),
+        acceptedEvents: z.number().nonnegative(),
+      })
+      .strict()
+      .default(() => emptyStages()),
+    laughScore: z.number().min(0).max(1).default(0),
+    echo: EchoStateSchema.default(() => ({
+      removed: false,
+      inputRms: 0,
+      outputRms: 0,
+    })),
     models: z.object({ vad: model, yamnet: model, whisper: model }).strict(),
     topClass: z
       .object({ label: z.string().max(120), score: z.number().min(0).max(1) })
@@ -69,7 +105,22 @@ export const WorkerDiagnosticsSchema = z
   })
   .strict();
 export type WorkerDiagnostics = z.infer<typeof WorkerDiagnosticsSchema>;
+export const emptyStages = () => ({
+  nonzeroFrames: 0,
+  vadCalls: 0,
+  voicedChunks: 0,
+  segments: 0,
+  soundCalls: 0,
+  soundJobsSkipped: 0,
+  speechRequests: 0,
+  speechResults: 0,
+  wordEvents: 0,
+  acceptedEvents: 0,
+});
 export const emptyWorkerDiagnostics = (): WorkerDiagnostics => ({
+  stages: emptyStages(),
+  laughScore: 0,
+  echo: { removed: false, inputRms: 0, outputRms: 0 },
   models: { vad: modelState(), yamnet: modelState(), whisper: modelState() },
   topClass: { label: 'waiting', score: 0 },
   health: emptyInferenceHealth(),
@@ -87,6 +138,10 @@ export const emptyWorkerDiagnostics = (): WorkerDiagnostics => ({
 });
 export const AudioDiagnosticsSchema = z
   .object({
+    permission: z.enum(['prompt', 'granted', 'denied']).default('prompt'),
+    micAttempts: z.number().nonnegative().default(0),
+    micOpened: z.number().nonnegative().default(0),
+    echoCancellation: z.boolean().default(false),
     phase: z.string().max(32),
     context: z.string().max(32),
     inputSampleRate: z.number().nonnegative(),
@@ -100,6 +155,13 @@ export const AudioDiagnosticsSchema = z
   .strict();
 export const DiagnosticsSchema = z
   .object({
+    offscreenAlive: z.boolean().default(false),
+    micConsent: z.boolean().default(false),
+    sessionMatches: z.boolean().default(false),
+    savedLaughs: z.number().nonnegative().default(0),
+    savedWords: z.number().nonnegative().default(0),
+    sessionLaughs: z.number().nonnegative().default(0),
+    sessionWords: z.number().nonnegative().default(0),
     version: z.string().max(30),
     listening: z.boolean(),
     captureState: z.string().max(32),

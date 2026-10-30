@@ -303,6 +303,13 @@ describe('background capture integration with browser ports mocked', () => {
     expect(fixture.exists).toBe(false);
     expect(fixture.getStreamId).not.toHaveBeenCalled();
   });
+  it('does not mistake an unreliable Permissions API denial for a failed user-authorized capture', async () => {
+    fixture.permission = 'denied';
+    fixture.storage['streamlaughs:mic-consent'] = true;
+    const result = await dispatch({ type: 'START', tabId: 1 });
+    expect(fixture.getStreamId).toHaveBeenCalledOnce();
+    expect(result.state.capture.phase).toBe('active');
+  });
   it('listening-off releases audio and ignores the late owner-idle report without ending the session', async () => {
     const start = await dispatch({ type: 'START', tabId: 1 });
     const sessionId = start.state.session!.id;

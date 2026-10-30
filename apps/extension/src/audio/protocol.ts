@@ -3,6 +3,12 @@ export const OwnerCommandSchema = z.discriminatedUnion('type', [
   z
     .object({
       target: z.literal('offscreen'),
+      type: z.literal('AUDIO_PREVIEW'),
+    })
+    .strict(),
+  z
+    .object({
+      target: z.literal('offscreen'),
       type: z.literal('AUDIO_DIAGNOSTICS'),
     })
     .strict(),

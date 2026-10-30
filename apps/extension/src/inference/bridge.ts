@@ -21,6 +21,14 @@ import { INFERENCE_CONFIG as C } from './config';
 export class InferenceBridge {
   private worker: Worker | null = null;
   private speechWorker: Worker | null = null;
+  private soundWorker: Worker | null = null;
+  private soundState = modelState();
+  private activeSoundId: number | null = null;
+  private pendingSound: {
+    id: number;
+    samples: Float32Array;
+    reference?: Float32Array;
+  } | null = null;
   private speechState = modelState();
   private speechResources: string[] = [];
   private pendingSpeech: { id: number; samples: Float32Array } | null = null;
@@ -32,6 +40,10 @@ export class InferenceBridge {
   private health: InferenceHealth = emptyInferenceHealth();
   private debug: unknown = null;
   private failed = false;
+  private lastPhrase = '';
+  preview() {
+    return this.lastPhrase;
+  }
   private productionDiagnostics = emptyWorkerDiagnostics();
   diagnostics() {
     const stale = performance.now() - this.lastWorkerReport > 1500;
@@ -40,6 +52,7 @@ export class InferenceBridge {
       models: {
         ...this.productionDiagnostics.models,
         whisper: this.speechState,
+        yamnet: this.soundState,
       },
       ...(stale ? { micFps: 0, tabFps: 0 } : {}),
       health: { ...this.health },
@@ -64,6 +77,27 @@ export class InferenceBridge {
         { type: 'speech', id: pending.id, samples: pending.samples },
         [pending.samples.buffer],
       );
+    }
+  }
+  private forwardSound() {
+    const pending = this.pendingSound;
+    if (!pending || !this.worker) return;
+    if (this.soundState.phase === 'error') {
+      pending.samples.fill(0);
+      pending.reference?.fill(0);
+      this.pendingSound = null;
+      this.worker.postMessage({
+        type: 'sound_result',
+        id: pending.id,
+        error: this.soundState.error,
+      });
+    } else if (this.soundState.phase === 'ready' && this.soundWorker) {
+      this.pendingSound = null;
+      this.activeSoundId = pending.id;
+      this.soundWorker.postMessage({ type: 'sound', ...pending }, [
+        pending.samples.buffer,
+        ...(pending.reference ? [pending.reference.buffer] : []),
+      ]);
     }
   }
   constructor(
@@ -96,11 +130,51 @@ export class InferenceBridge {
     this.health = { ...emptyInferenceHealth(), phase: 'warming' };
     this.productionDiagnostics = emptyWorkerDiagnostics();
     this.speechState = modelState();
+    this.soundState = modelState();
     this.publish([]);
     const worker = new Worker(chrome.runtime.getURL('/inference-worker.js'));
     this.worker = worker;
     const speechWorker = new Worker(chrome.runtime.getURL('/speech-worker.js'));
     this.speechWorker = speechWorker;
+    const soundWorker = new Worker(chrome.runtime.getURL('/sound-worker.js'));
+    this.soundWorker = soundWorker;
+    soundWorker.onmessage = ({ data }) => {
+      if (soundWorker !== this.soundWorker || worker !== this.worker) return;
+      if (data.type === 'sound_status') {
+        const parsed = ModelStateSchema.safeParse(data.model);
+        if (parsed.success) this.soundState = parsed.data;
+        worker.postMessage({ type: 'sound_status', model: this.soundState });
+        this.forwardSound();
+      } else if (
+        data.type === 'sound_result' &&
+        data.id === this.activeSoundId
+      ) {
+        this.activeSoundId = null;
+        worker.postMessage(data);
+      }
+    };
+    soundWorker.onerror = (event) => {
+      if (soundWorker !== this.soundWorker) return;
+      this.soundState = {
+        phase: 'error',
+        ms: 0,
+        error: safeError(new Error(event.message)),
+      };
+      if (this.activeSoundId !== null) {
+        worker.postMessage({
+          type: 'sound_result',
+          id: this.activeSoundId,
+          error: this.soundState.error,
+        });
+        this.activeSoundId = null;
+      }
+      worker.postMessage({ type: 'sound_status', model: this.soundState });
+      this.forwardSound();
+    };
+    soundWorker.postMessage({
+      type: 'init',
+      base: chrome.runtime.getURL('').replace(/\/$/, ''),
+    });
     speechWorker.onmessage = ({ data }) => {
       if (speechWorker !== this.speechWorker || worker !== this.worker) return;
       if (data.type === 'speech_status') {
@@ -130,6 +204,9 @@ export class InferenceBridge {
             lastTranscript: data.debugTranscript.slice(0, 1000),
           };
         const parsed = SpeechResultSchema.safeParse(data.result);
+        if (parsed.success)
+          this.lastPhrase =
+            parsed.data.phrases.find((p) => p.class === 'ok')?.text ?? '';
         worker.postMessage({
           type: 'speech_result',
           id: data.id,
@@ -190,6 +267,22 @@ export class InferenceBridge {
           if (result.success) events.push(result.data);
         }
         this.publish(events);
+      } else if (data.type === 'sound_request') {
+        if (
+          !(data.samples instanceof Float32Array) ||
+          data.samples.length !== 15600 ||
+          !Number.isInteger(data.id) ||
+          (data.reference &&
+            (!(data.reference instanceof Float32Array) ||
+              data.reference.length > 32000))
+        )
+          return;
+        this.pendingSound = {
+          id: data.id,
+          samples: data.samples,
+          reference: data.reference,
+        };
+        this.forwardSound();
       } else if (data.type === 'speech_request') {
         if (
           !(data.samples instanceof Float32Array) ||
@@ -213,6 +306,7 @@ export class InferenceBridge {
     };
     worker.postMessage({
       type: 'init',
+      externalSound: true,
       base: chrome.runtime.getURL('').replace(/\/$/, ''),
     });
   }
@@ -258,11 +352,22 @@ export class InferenceBridge {
       : null;
   }
   close() {
-    if (!this.worker && !this.speechWorker && this.health.phase === 'idle')
+    if (
+      !this.worker &&
+      !this.speechWorker &&
+      !this.soundWorker &&
+      this.health.phase === 'idle'
+    )
       return;
     // Termination also cancels in-flight inference on pause/micLost; no late result can escape.
     this.worker?.terminate();
     this.speechWorker?.terminate();
+    this.soundWorker?.terminate();
+    this.soundWorker = null;
+    this.activeSoundId = null;
+    this.pendingSound?.samples.fill(0);
+    this.pendingSound?.reference?.fill(0);
+    this.pendingSound = null;
     this.speechWorker = null;
     this.pendingSpeech?.samples.fill(0);
     this.pendingSpeech = null;
@@ -272,9 +377,11 @@ export class InferenceBridge {
     this.inFlight = 0;
     this.drops = 0;
     this.debug = null;
+    this.lastPhrase = '';
     this.health = emptyInferenceHealth();
     this.productionDiagnostics = emptyWorkerDiagnostics();
     this.speechState = modelState();
+    this.soundState = modelState();
     this.publish([]);
   }
 }

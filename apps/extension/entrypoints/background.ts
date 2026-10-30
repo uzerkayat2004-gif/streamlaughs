@@ -19,7 +19,7 @@ import {
   STATE_KEY,
   visibleWords,
 } from '@laughline/shared';
-import { AUDIO_DEBUG } from '../src/audio/config';
+import { AUDIO_DEBUG, MIC_CONSENT_KEY } from '../src/audio/config';
 import {
   audioOwnerError,
   closeAudioOwner,
@@ -38,6 +38,7 @@ import {
   UPDATE_ATTEMPT_KEY,
   UpdateAttemptSchema,
 } from '../src/update-flow';
+import { notifyUpdatedTabs } from '../src/updated-note';
 import { checkVersion } from '../src/version-check';
 
 export default defineBackground(() => {
@@ -236,9 +237,9 @@ export default defineBackground(() => {
       await publish();
       runSource();
     } else if (
-      AUDIO_DEBUG &&
       owner?.sessionId === state.capture.sessionId &&
-      owner?.sessionId.startsWith('debug-')
+      (owner?.sessionId.startsWith('mic-test-') ||
+        (AUDIO_DEBUG && owner?.sessionId.startsWith('debug-')))
     ) {
       state.capture = captureTransition(state.capture, {
         type: 'workerRestart',
@@ -302,12 +303,16 @@ export default defineBackground(() => {
       return;
     if (state.settings.listen) {
       await ensureAudioOwner();
-      if (
-        (await ownerCommand<PermissionState>({
-          target: 'offscreen',
-          type: 'AUDIO_PERMISSION',
-        })) !== 'granted'
-      ) {
+      const permission = await ownerCommand<PermissionState>({
+        target: 'offscreen',
+        type: 'AUDIO_PERMISSION',
+      });
+      const consent =
+        (await chrome.storage.local.get(MIC_CONSENT_KEY))[MIC_CONSENT_KEY] ===
+        true;
+      // A successful Welcome grant can coexist with Permissions API "prompt" on extension pages.
+      // Let getUserMedia be authoritative after explicit consent. Browser-denied capture still fails normally.
+      if (permission !== 'granted' && !consent) {
         state.capture = state.session
           ? {
               ...captureTransition(state.capture, {
@@ -459,11 +464,13 @@ export default defineBackground(() => {
             await welcome(state.session.tabId);
             break;
           }
+          const permission = await ownerCommand<PermissionState>({
+            target: 'offscreen',
+            type: 'AUDIO_PERMISSION',
+          });
           if (
-            (await ownerCommand<PermissionState>({
-              target: 'offscreen',
-              type: 'AUDIO_PERMISSION',
-            })) !== 'granted'
+            permission !== 'granted' &&
+            !(await chrome.storage.local.get(MIC_CONSENT_KEY))[MIC_CONSENT_KEY]
           ) {
             state.capture = captureTransition(state.capture, {
               type: 'permissionRequired',
@@ -533,6 +540,44 @@ export default defineBackground(() => {
             `/recap.html${message.view === 'streamers' ? '?view=streamers' : id ? `?session=${encodeURIComponent(id)}` : ''}`,
           ),
         });
+        break;
+      }
+      case 'MIC_TEST_STOP': {
+        if (!state.session && state.capture.sessionId?.startsWith('mic-test-'))
+          await stop();
+        break;
+      }
+      case 'MIC_TEST_START': {
+        if (state.session) break;
+        if (!(await chrome.storage.local.get(MIC_CONSENT_KEY))[MIC_CONSENT_KEY])
+          throw new Error('allow the microphone first');
+        await stop();
+        await ensureAudioOwner();
+        state.capture = captureTransition(state.capture, {
+          type: 'start',
+          sessionId: `mic-test-${crypto.randomUUID()}`,
+          listen: true,
+        });
+        await publish();
+        try {
+          const owner = await ownerCommand({
+            target: 'offscreen',
+            type: 'AUDIO_START',
+            sessionId: state.capture.sessionId!,
+            micOnly: true,
+          });
+          activeOwnerId = owner?.ownerId ?? null;
+          state.capture = captureTransition(state.capture, {
+            type: 'workerRestart',
+            owner,
+          });
+          await publish();
+        } catch {
+          await stop();
+          throw new Error(
+            'microphone could not start · check browser and Windows microphone access',
+          );
+        }
         break;
       }
       case 'DEBUG_MIC_START': {
@@ -663,19 +708,57 @@ export default defineBackground(() => {
       );
       return true;
     }
+    const audioUI =
+      ['/diagnostics.html', '/popup.html', '/mic-test.html'].some(
+        (path) => sender.url === chrome.runtime.getURL(path),
+      ) ||
+      (sender.tab?.id === state.session?.tabId &&
+        parseChannel(sender.url ?? '') === state.session?.channel);
     if (
-      sender.url === chrome.runtime.getURL('/diagnostics.html') &&
-      (message as { type?: string })?.type === 'GET_DIAGNOSTICS'
+      audioUI &&
+      (message as { type?: string })?.type === 'GET_AUDIO_PREVIEW'
     ) {
       void (async () => {
         await ready;
-        const owner = (await hasAudioOwner())
-          ? await ownerCommand<{ audio: unknown; inference: unknown }>({
+        return (await hasAudioOwner())
+          ? ownerCommand<string>({
+              target: 'offscreen',
+              type: 'AUDIO_PREVIEW',
+            }).catch(() => '')
+          : '';
+      })().then(reply);
+      return true;
+    }
+    if (audioUI && (message as { type?: string })?.type === 'GET_DIAGNOSTICS') {
+      void (async () => {
+        await ready;
+        const exists = await hasAudioOwner();
+        const owner = exists
+          ? await ownerCommand<{
+              sessionId: string | null;
+              audio: unknown;
+              inference: unknown;
+            }>({
               target: 'offscreen',
               type: 'AUDIO_DIAGNOSTICS',
             }).catch(() => null)
           : null;
+        const saved = state.session
+          ? await db.sessions.get(state.session.id)
+          : undefined;
         return {
+          offscreenAlive: exists,
+          micConsent:
+            (await chrome.storage.local.get(MIC_CONSENT_KEY))[
+              MIC_CONSENT_KEY
+            ] === true,
+          sessionMatches:
+            !!owner && owner.sessionId === state.capture.sessionId,
+          savedLaughs: saved?.laughCount ?? 0,
+          savedWords: saved?.topWords.reduce((n, w) => n + w.count, 0) ?? 0,
+          sessionLaughs: state.session?.laughCount ?? 0,
+          sessionWords:
+            state.session?.topWords.reduce((n, w) => n + w.count, 0) ?? 0,
           version: chrome.runtime.getManifest().version,
           listening: state.settings.listen,
           captureState: state.capture.phase,
@@ -770,6 +853,11 @@ export default defineBackground(() => {
     const popup = sender.url === chrome.runtime.getURL('/popup.html');
     if (
       (parsed.data.type === 'START' && !popup) ||
+      (['MIC_TEST_START', 'MIC_TEST_STOP'].includes(parsed.data.type) &&
+        ![
+          chrome.runtime.getURL('/popup.html'),
+          chrome.runtime.getURL('/mic-test.html'),
+        ].includes(sender.url ?? '')) ||
       (['SETTINGS', 'DELETE_DATA'].includes(parsed.data.type) &&
         !extensionPage) ||
       (parsed.data.type === 'DEBUG_MIC_START' &&
@@ -826,6 +914,11 @@ export default defineBackground(() => {
       });
   });
   chrome.runtime.onInstalled.addListener(({ reason }) => {
+    if (reason === 'update')
+      void notifyUpdatedTabs(
+        PRODUCT.name,
+        chrome.runtime.getManifest().version,
+      ).catch(() => {});
     if (reason === 'install')
       void chrome.tabs.create({ url: chrome.runtime.getURL('/welcome.html') });
     if (reason === 'update' && isZipInstall(chrome.runtime.id))

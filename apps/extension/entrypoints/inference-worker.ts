@@ -1,6 +1,8 @@
 import type { PersonalEvent } from '@laughline/shared';
 import { AUDIO_DEBUG } from '../src/audio/config';
 import {
+  ClassScoresSchema,
+  EchoStateSchema,
   emptyWorkerDiagnostics,
   SpeechResultSchema,
   safeError,
@@ -26,6 +28,27 @@ export default defineUnlistedScript(() => {
     number,
     { resolve(value: SpeechResult): void; reject(error: Error): void }
   >();
+  let soundId = 0;
+  const soundRequests = new Map<
+    number,
+    {
+      resolve(value: import('../src/inference/config').ClassScores): void;
+      reject(error: Error): void;
+    }
+  >();
+  const requestSound = (samples: Float32Array, reference?: Float32Array) =>
+    new Promise<import('../src/inference/config').ClassScores>(
+      (resolve, reject) => {
+        const id = ++soundId,
+          copy = samples.slice(),
+          ref = reference?.slice();
+        soundRequests.set(id, { resolve, reject });
+        self.postMessage(
+          { type: 'sound_request', id, samples: copy, reference: ref },
+          { transfer: [copy.buffer, ...(ref ? [ref.buffer] : [])] },
+        );
+      },
+    );
   const requestSpeech = (samples: Float32Array) =>
     new Promise<SpeechResult>((resolve, reject) => {
       const id = ++speechId;
@@ -38,10 +61,11 @@ export default defineUnlistedScript(() => {
     });
   const report = () => {
     if (!models) return;
+    const base = pipeline?.diagnostics() ?? emptyWorkerDiagnostics();
     const diagnostics = {
-      ...(pipeline?.diagnostics() ?? emptyWorkerDiagnostics()),
+      ...base,
       models: models.status,
-      error: failure,
+      error: failure || base.error,
     };
     const health = pipeline
       ? { ...pipeline.health, backend: models.backend }
@@ -101,6 +125,7 @@ export default defineUnlistedScript(() => {
             data.base,
             data.backend ?? INFERENCE_CONFIG.preferredBackend,
           );
+        else if (data.externalSound) await models.loadVad(data.base);
         else await models.loadRealtime(data.base);
         if (stopped) return;
         pipeline = new InferencePipeline(
@@ -108,10 +133,15 @@ export default defineUnlistedScript(() => {
             ? models
             : {
                 vad: (samples) => models!.vad(samples),
-                sound: (samples) => models!.sound(samples),
+                sound: data.externalSound
+                  ? requestSound
+                  : (samples, reference) => models!.sound(samples, reference),
                 resetVad: () => models!.resetVad(),
                 get topClass() {
                   return models!.topClass;
+                },
+                get echo() {
+                  return models!.echo;
                 },
                 words: requestSpeech,
               },
@@ -130,6 +160,34 @@ export default defineUnlistedScript(() => {
         report();
         self.postMessage({ type: 'error', error: failure });
       }
+    } else if (data.type === 'sound_result') {
+      const pending = soundRequests.get(data.id);
+      if (!pending) return;
+      soundRequests.delete(data.id);
+      const scores = ClassScoresSchema.safeParse(data.scores);
+      const echo = EchoStateSchema.safeParse(data.echo);
+      if (models && echo.success) models.echo = echo.data;
+      if (
+        models &&
+        data.topClass &&
+        typeof data.topClass.label === 'string' &&
+        Number.isFinite(data.topClass.score)
+      )
+        models.topClass = {
+          label: data.topClass.label.slice(0, 120),
+          score: Math.max(0, Math.min(1, data.topClass.score)),
+        };
+      if (scores.success) pending.resolve(scores.data);
+      else
+        pending.reject(
+          new Error(
+            typeof data.error === 'string'
+              ? data.error.slice(0, 400)
+              : 'invalid local sound result',
+          ),
+        );
+    } else if (data.type === 'sound_status' && models) {
+      models.status.yamnet = data.model;
     } else if (data.type === 'speech_result') {
       const pending = speechRequests.get(data.id);
       if (!pending) return;
@@ -159,6 +217,9 @@ export default defineUnlistedScript(() => {
       for (const pending of speechRequests.values())
         pending.reject(new Error('stopped'));
       speechRequests.clear();
+      for (const pending of soundRequests.values())
+        pending.reject(new Error('stopped'));
+      soundRequests.clear();
       if (!running) await models?.close();
       self.close();
     } else if (data.type === 'evaluate' && AUDIO_DEBUG && models && !running) {

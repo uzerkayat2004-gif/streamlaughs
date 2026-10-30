@@ -13,6 +13,7 @@ import {
   type ClassScores,
   SOUND_CLASSES,
 } from './config';
+import { removeReferenceEcho } from './reference-echo';
 import { mapSoundScores } from './rules';
 
 const makeWhisper = (device: 'wasm' | 'webgpu') =>
@@ -31,8 +32,12 @@ export type SpeechResult = {
 };
 export interface ModelRunner {
   topClass?: { label: string; score: number };
+  echo?: { removed: boolean; inputRms: number; outputRms: number };
   vad(samples: Float32Array): Promise<number>;
-  sound(samples: Float32Array): ClassScores;
+  sound(
+    samples: Float32Array,
+    reference?: Float32Array,
+  ): ClassScores | Promise<ClassScores>;
   words(samples: Float32Array): Promise<string | SpeechResult>;
   resetVad?(): void;
 }
@@ -53,6 +58,7 @@ export class LocalModels implements ModelRunner {
   calls = { vad: 0, yamnet: 0, whisper: 0 };
   status = { vad: modelState(), yamnet: modelState(), whisper: modelState() };
   topClass = { label: 'waiting', score: 0 };
+  echo = { removed: false, inputRms: 0, outputRms: 0 };
   private silero!: ort.InferenceSession;
   private yamnet!: AudioClassifier;
   private whisper!: AutomaticSpeechRecognitionPipeline;
@@ -82,8 +88,12 @@ export class LocalModels implements ModelRunner {
     await this.loadSpeech(base, preference);
   }
   async loadRealtime(base: string) {
+    await this.loadVad(base);
+    await this.loadSound(base);
+  }
+  async loadVad(base: string) {
     this.configure(base);
-    let start = performance.now();
+    const start = performance.now();
     this.status.vad.phase = 'loading';
     this.silero = await ort.InferenceSession.create(
       `${base}/models/silero-v5.onnx`,
@@ -91,7 +101,12 @@ export class LocalModels implements ModelRunner {
     );
     this.loadMs.vad = performance.now() - start;
     this.status.vad = { phase: 'ready', error: '', ms: this.loadMs.vad };
-    start = performance.now();
+    await this.vad(new Float32Array(C.vadWindow));
+    this.resetVad();
+  }
+  async loadSound(base: string) {
+    this.configure(base);
+    const start = performance.now();
     this.status.yamnet.phase = 'loading';
     this.yamnet = await AudioClassifier.createFromOptions(
       await FilesetResolver.forAudioTasks(`${base}/runtime/mediapipe`),
@@ -102,9 +117,7 @@ export class LocalModels implements ModelRunner {
     );
     this.loadMs.yamnet = performance.now() - start;
     // Compile kernels before accepting live frames; first-call JIT must not trip overload recovery.
-    await this.vad(new Float32Array(C.vadWindow));
     this.sound(new Float32Array(C.soundWindow));
-    this.resetVad();
     this.topClass = { label: 'waiting', score: 0 };
     this.status.yamnet = { phase: 'ready', error: '', ms: this.loadMs.yamnet };
   }
@@ -170,9 +183,21 @@ export class LocalModels implements ModelRunner {
     this.calls.vad++;
     return probability;
   }
-  sound(samples: Float32Array) {
+  sound(samples: Float32Array, reference?: Float32Array) {
     const start = performance.now();
-    const result = this.yamnet.classify(samples, 16000);
+    const clean = reference ? removeReferenceEcho(samples, reference) : samples;
+    const rms = (values: Float32Array) =>
+      Math.sqrt(
+        values.reduce((sum, value) => sum + value * value, 0) /
+          Math.max(1, values.length),
+      );
+    this.echo = {
+      removed: clean !== samples,
+      inputRms: rms(samples),
+      outputRms: rms(clean),
+    };
+    const result = this.yamnet.classify(clean, 16000);
+    if (clean !== samples) clean.fill(0);
     const top = result[0]?.classifications[0]?.categories?.toSorted(
       (a, b) => b.score - a.score,
     )[0];
@@ -184,6 +209,19 @@ export class LocalModels implements ModelRunner {
       result[0]?.classifications[0]?.categories ?? [],
       SOUND_CLASSES,
     );
+    if (clean !== samples) {
+      // Reference cleanup is a complementary view, never a replacement that can
+      // erase evidence in the original mic. The raw-waveform guard still rejects
+      // confirmed playback after classification.
+      const original = this.yamnet.classify(samples, 16000);
+      const raw = mapSoundScores(
+        original[0]?.classifications[0]?.categories ?? [],
+        SOUND_CLASSES,
+      );
+      for (const key of Object.keys(scores) as (keyof ClassScores)[])
+        scores[key] = Math.max(scores[key], raw[key]);
+      this.calls.yamnet++;
+    }
     this.times.yamnet += performance.now() - start;
     this.calls.yamnet++;
     return scores;

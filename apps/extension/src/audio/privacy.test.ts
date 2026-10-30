@@ -46,10 +46,12 @@ it('guards audio-owning modules against persistent, network and logging sinks', 
     'src/audio/mic-check.ts',
     'entrypoints/audio-worklet.ts',
     'src/inference/pipeline.ts',
+    'src/inference/reference-echo.ts',
     'src/inference/rules.ts',
     'src/inference/models.ts',
     'entrypoints/inference-worker.ts',
     'entrypoints/speech-worker.ts',
+    'entrypoints/sound-worker.ts',
   ]) {
     const source = readFileSync(resolve(file), 'utf8');
     expect(source, file).not.toMatch(

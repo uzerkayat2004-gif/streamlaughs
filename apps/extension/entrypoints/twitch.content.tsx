@@ -31,6 +31,8 @@ export default defineContentScript({
     };
     chrome.runtime.onMessage.addListener(channelInfo);
     const host = document.createElement('laughline-overlay');
+    host.dataset.streamlaughsVersion = chrome.runtime.getManifest().version;
+    host.dataset.streamlaughsUi = 'glass-v080';
     host.style.cssText =
       'position:fixed;inset:0;z-index:2147483646;pointer-events:none;';
     const shadow = host.attachShadow({ mode: 'open' });

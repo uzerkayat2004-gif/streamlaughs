@@ -29,9 +29,12 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, reply) => {
     switch (parsed.data.type) {
       case 'AUDIO_DIAGNOSTICS':
         return {
+          sessionId: engine.status()?.sessionId ?? null,
           audio: engine.diagnostics(),
           inference: inference.diagnostics(),
         };
+      case 'AUDIO_PREVIEW':
+        return inference.preview();
       case 'AUDIO_START':
         return engine.start(parsed.data);
       case 'AUDIO_PAUSE':
