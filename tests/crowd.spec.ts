@@ -118,7 +118,9 @@ test('real Worker + simulator: few → live, approved words, watch-only zero sen
     ).toHaveAttribute('aria-pressed', 'false');
     await popup.getByRole('button', { name: 'close', exact: true }).click();
     await popup.getByRole('button', { name: 'start', exact: true }).click();
-    await expect(popup.getByText('a few here', { exact: true })).toBeVisible();
+    await expect(
+      popup.getByText('few people here yet', { exact: true }),
+    ).toBeVisible();
     const frames = () =>
       worker.evaluate(
         () =>
@@ -151,7 +153,9 @@ test('real Worker + simulator: few → live, approved words, watch-only zero sen
       .poll(first.output, { timeout: 15000 })
       .toContain('TEST TRAFFIC: 2');
     await popup.waitForTimeout(2200);
-    await expect(popup.getByText('a few here', { exact: true })).toBeVisible();
+    await expect(
+      popup.getByText('few people here yet', { exact: true }),
+    ).toBeVisible();
     expect(
       await popup
         .getByRole('img', { name: /people laughing right now/ })
@@ -164,15 +168,11 @@ test('real Worker + simulator: few → live, approved words, watch-only zero sen
     await expect(
       popup.getByText('live · test traffic', { exact: true }),
     ).toBeVisible();
-    await expect(
-      popup.getByRole('img', { name: /[1-3] people laughing right now/ }),
-    ).toBeVisible();
-    await expect(
-      popup
-        .locator('.words .word')
-        .filter({ hasText: /bro|no way/ })
-        .first(),
-    ).toBeVisible();
+    await stream.bringToFront();
+    await stream.locator('.glass-launcher').click();
+    const panel = stream.getByRole('dialog', { name: 'crowd box' });
+    await expect(panel.locator('.panel-live-count b')).toHaveText(/[1-3]/);
+    await expect(panel.locator('.panel-words')).toContainText(/bro|no way/);
     expect(await frames()).toBe(0);
     expect(
       await worker.evaluate(

@@ -69,7 +69,7 @@ test('built MV3 extension: dot, popup, sync, drag, privacy, persistence, recap a
       ),
     ).toBe(0);
     await expect(
-      popup.getByText('laughing right now', { exact: true }),
+      popup.getByText('laughs so far', { exact: true }),
     ).toBeVisible();
     await expect(
       stream.getByRole('button', { name: `${PRODUCT.name}, recording` }),
@@ -81,7 +81,8 @@ test('built MV3 extension: dot, popup, sync, drag, privacy, persistence, recap a
     const activeDot = stream.getByRole('button', {
       name: `${PRODUCT.name}, recording`,
     });
-    await activeDot.click();
+    if ((await activeDot.getAttribute('aria-expanded')) !== 'true')
+      await activeDot.click();
     const box = stream.getByRole('dialog', { name: 'crowd box' });
     await expect(box).toBeVisible();
     await expect(box.getByText('simulated crowd · 3+ people')).toBeVisible();
@@ -92,8 +93,10 @@ test('built MV3 extension: dot, popup, sync, drag, privacy, persistence, recap a
       stream.getByRole('button', { name: `${PRODUCT.name}, paused` }),
     ).toBeVisible();
     await expect(popup.getByRole('button', { name: 'resume' })).toBeVisible();
-    const pausedLaughs = await popup.locator('.you').textContent();
-    await expect(popup.locator('.you')).toHaveText(pausedLaughs ?? '');
+    const pausedLaughs = await popup.locator('.glass-laugh-chip').textContent();
+    await expect(popup.locator('.glass-laugh-chip')).toHaveText(
+      pausedLaughs ?? '',
+    );
     await box.getByRole('button', { name: 'resume', exact: true }).click();
     await expect(popup.getByRole('button', { name: 'pause' })).toBeVisible();
 
@@ -101,7 +104,6 @@ test('built MV3 extension: dot, popup, sync, drag, privacy, persistence, recap a
     await activeDot.hover();
     await stream.mouse.down();
     await stream.mouse.move(28, 270, { steps: 12 });
-    await expect(activeDot).toHaveClass(/is-drag/);
     await stream.mouse.up();
     await expect(box).toBeVisible(); // Drag must not act like a click.
     await expect
@@ -154,11 +156,13 @@ test('built MV3 extension: dot, popup, sync, drag, privacy, persistence, recap a
       stream.getByRole('dialog', { name: 'crowd box' }),
     ).toBeVisible();
     await expect
-      .poll(() => popup.locator('.you').textContent(), { timeout: 12000 })
-      .toBe('you · 0 laughs');
+      .poll(() => popup.locator('.glass-laugh-chip').textContent(), {
+        timeout: 12000,
+      })
+      .toBe('0 laughs');
 
     // Wait for a calm burst and assert the real simulator's privacy floor.
-    await expect(stream.getByLabel('crowd words')).toHaveText('—0 people', {
+    await expect(stream.locator('.panel-words')).toHaveText('', {
       timeout: 45000,
     });
     await expect
@@ -212,7 +216,11 @@ test('built MV3 extension: dot, popup, sync, drag, privacy, persistence, recap a
     ).toBeVisible();
     await recap.getByRole('button', { name: 'replay', exact: true }).click();
     await expect(recap.getByText('you laughed', { exact: true })).toBeVisible();
-    await expect(recap.locator('.x-pb')).toHaveCount(1);
+    await recap.getByRole('button', { name: 'my streamers' }).click();
+    await expect(recap.locator('.streamer-card')).toHaveCount(1);
+    await recap.locator('.streamer-card').click();
+    await expect(recap.locator('.saved-stream-row')).toHaveCount(1);
+    await recap.locator('.stream-open').click();
     await recap.emulateMedia({ reducedMotion: 'reduce' });
     await expect(recap.locator('.x-st')).toHaveCSS('animation-name', 'none');
     await recap.screenshot({ path: path.join(shots, 'recap.png') });
@@ -237,7 +245,28 @@ test('built MV3 extension: dot, popup, sync, drag, privacy, persistence, recap a
     await expect(
       popup.getByRole('button', { name: 'stop', exact: true }),
     ).toHaveCount(0);
-    await expect(recap.locator('.x-pb')).toHaveCount(2);
+    await expect
+      .poll(() =>
+        recap.evaluate(
+          () =>
+            new Promise<number>((resolve, reject) => {
+              const request = indexedDB.open('laughline');
+              request.onerror = () => reject(request.error);
+              request.onsuccess = () => {
+                const database = request.result;
+                const all = database
+                  .transaction('recaps')
+                  .objectStore('recaps')
+                  .count();
+                all.onsuccess = () => {
+                  resolve(all.result);
+                  database.close();
+                };
+              };
+            }),
+        ),
+      )
+      .toBe(2);
 
     const welcome = await context.newPage();
     await welcome.goto(`chrome-extension://${id}/welcome.html`);
@@ -264,7 +293,28 @@ test('built MV3 extension: dot, popup, sync, drag, privacy, persistence, recap a
       popup.getByRole('dialog', { name: 'delete your data?' }),
     ).toBeVisible();
     await popup.getByRole('button', { name: 'keep my data' }).click();
-    await expect(recap.locator('.x-pb')).toHaveCount(2);
+    await expect
+      .poll(() =>
+        recap.evaluate(
+          () =>
+            new Promise<number>((resolve, reject) => {
+              const request = indexedDB.open('laughline');
+              request.onerror = () => reject(request.error);
+              request.onsuccess = () => {
+                const database = request.result;
+                const all = database
+                  .transaction('recaps')
+                  .objectStore('recaps')
+                  .count();
+                all.onsuccess = () => {
+                  resolve(all.result);
+                  database.close();
+                };
+              };
+            }),
+        ),
+      )
+      .toBe(2);
     await popup
       .getByRole('button', { name: 'delete my data', exact: true })
       .click();

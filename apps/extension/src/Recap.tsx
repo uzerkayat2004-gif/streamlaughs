@@ -1,21 +1,31 @@
 import {
+  type MySession,
   PRODUCT,
   type Recap as RecapData,
   RecapSchema,
 } from '@laughline/shared';
+import { liveQuery } from 'dexie';
 import { useCallback, useEffect, useState } from 'react';
-import { useStore } from 'zustand';
-import { connectSurface, surface } from './bridge';
 import { CountUp, formatTime, Mark, useReducedMotion } from './components';
 import { db } from './db';
+import { HistoryView, StreamerAvatar } from './HistoryView';
+import { completeRecaps, groupHistory, type StreamerProfile } from './history';
+import { ShareSheet } from './ShareSheet';
+import { SmileLogo } from './SmileLogo';
 
 export function Recap() {
-  const lastRecapId = useStore(
-    surface.store,
-    (state) => state.snapshot.lastRecapId,
-  );
   const reduce = useReducedMotion();
-  useEffect(connectSurface, []);
+  const [view, setView] = useState(
+    new URLSearchParams(location.search).get('view') === 'streamers'
+      ? 'streamers'
+      : 'story',
+  );
+  const [sessions, setSessions] = useState<MySession[]>([]),
+    [profiles, setProfiles] = useState<StreamerProfile[]>([]),
+    [share, setShare] = useState<{
+      recap: RecapData;
+      profile?: StreamerProfile;
+    } | null>(null);
   const [recaps, setRecaps] = useState<RecapData[]>([]),
     [selected, setSelected] = useState<string | null>(
       new URLSearchParams(location.search).get('session'),
@@ -26,6 +36,10 @@ export function Recap() {
     [loading, setLoading] = useState(true),
     [reverse, setReverse] = useState(false);
   const recap = recaps.find((item) => item.id === selected) ?? recaps[0];
+  const groups = groupHistory(sessions, recaps, profiles);
+  const profile = profiles.find((p) => p.login === recap?.channel);
+  const displayName =
+    profile?.displayName || recap?.displayName || recap?.channel || '';
   const hasCrowd = !!recap?.crowdSummary;
   const story = requestedStory === 1 && !hasCrowd ? 2 : requestedStory;
   const stories = hasCrowd ? [0, 1, 2, 3, 4, 5] : [0, 2, 3, 4, 5];
@@ -44,37 +58,39 @@ export function Recap() {
     },
     [story, cycle, hasCrowd],
   );
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Finalization and deletion invalidate this IndexedDB query.
   useEffect(() => {
-    let alive = true;
-    const load = () =>
-      void db.recaps
-        .orderBy('createdAt')
-        .reverse()
-        .toArray()
-        .then((items) => {
-          if (alive) {
-            setRecaps(items.map((item) => RecapSchema.parse(item)));
-            setLoading(false);
-          }
-        })
-        .catch(() => {
-          if (alive) {
-            setMessage('recaps couldn’t load · reload this page to retry');
-            setLoading(false);
-          }
-        });
-    load();
-    return () => {
-      alive = false;
-    };
-  }, [lastRecapId]);
+    const subscription = liveQuery(() =>
+      Promise.all([
+        db.sessions.toArray(),
+        db.recaps.orderBy('createdAt').reverse().toArray(),
+        db.streamerProfiles.toArray(),
+      ]),
+    ).subscribe({
+      next: ([saved, items, people]) => {
+        setSessions(saved);
+        setRecaps(
+          completeRecaps(
+            saved,
+            items.map((item) => RecapSchema.parse(item)),
+          ).sort((a, b) => b.createdAt - a.createdAt),
+        );
+        setProfiles(people);
+        setLoading(false);
+      },
+      error: () => {
+        setMessage('recaps couldn’t load · reload this page to retry');
+        setLoading(false);
+      },
+    });
+    return () => subscription.unsubscribe();
+  }, []);
   useEffect(() => {
-    if (!recap || story === 5 || reduce) return;
+    if (!recap || story === 5 || reduce || view !== 'story' || share) return;
     const timer = setTimeout(() => go(story + 1), 5000);
     return () => clearTimeout(timer);
-  }, [story, recap, go, reduce]);
+  }, [story, recap, go, reduce, view, share]);
   useEffect(() => {
+    if (view !== 'story' || share) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
         event.preventDefault();
@@ -83,16 +99,47 @@ export function Recap() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [story, go]);
+  }, [story, go, view, share]);
   useEffect(() => {
     if (!message) return;
     const timer = setTimeout(() => setMessage(''), 3500);
     return () => clearTimeout(timer);
   }, [message]);
+  if (view === 'streamers')
+    return (
+      <HistoryView
+        groups={groups}
+        onSelect={(item) => {
+          setSelected(item.id);
+          setView('story');
+          history.replaceState(
+            null,
+            '',
+            `?session=${encodeURIComponent(item.id)}`,
+          );
+          go(0);
+        }}
+        onLast={() => {
+          setView('story');
+          history.replaceState(
+            null,
+            '',
+            recap ? `?session=${encodeURIComponent(recap.id)}` : '?',
+          );
+        }}
+      />
+    );
   if (!recap)
     return (
       <main className="empty-recap">
         <Mark />
+        <button
+          type="button"
+          className="textbtn"
+          onClick={() => setView('streamers')}
+        >
+          my streamers
+        </button>
         <h1>
           {loading ? 'one little moment…' : 'your next laugh starts a story.'}
         </h1>
@@ -110,7 +157,36 @@ export function Recap() {
       </main>
     );
   return (
-    <main className="x-rc" aria-label="Session recap">
+    <main
+      className="x-rc"
+      aria-label="Session recap"
+      style={
+        {
+          '--recap-glow': [
+            '#FFD23F15',
+            '#2FE0C212',
+            '#ffffff08',
+            '#a677770f',
+            '#FFD23F12',
+            '#ffffff08',
+          ][story],
+        } as React.CSSProperties
+      }
+    >
+      <div className="recap-ambient" aria-hidden="true" />
+      <header className="recap-topbar">
+        <Mark />
+        <button
+          type="button"
+          className="textbtn"
+          onClick={() => {
+            setView('streamers');
+            history.replaceState(null, '', '?view=streamers');
+          }}
+        >
+          my streamers ↗
+        </button>
+      </header>
       <div
         className="x-card"
         data-tone={story < 2 ? 'light' : 'dark'}
@@ -125,6 +201,23 @@ export function Recap() {
           go(story + (event.clientX - bounds.left < bounds.width / 2 ? -1 : 1));
         }}
       >
+        <header className="recap-streamer">
+          <StreamerAvatar
+            login={recap.channel}
+            name={displayName}
+            profile={profile}
+            size={34}
+          />
+          <div>
+            <b>{displayName}</b>
+            <small>
+              {new Date(recap.startedAt ?? recap.createdAt).toLocaleDateString(
+                undefined,
+                { day: 'numeric', month: 'short', year: 'numeric' },
+              )}
+            </small>
+          </div>
+        </header>
         <div
           className="x-bars"
           aria-hidden="true"
@@ -330,16 +423,7 @@ export function Recap() {
                 <button
                   type="button"
                   className="x-pill x-pill--yellow"
-                  onClick={async () => {
-                    try {
-                      await navigator.clipboard.writeText(
-                        `${recap.totalLaughs} laughs with ${recap.channel} · ${PRODUCT.name} (personal: ${recap.source}; ${crowdDescription})`,
-                      );
-                      setMessage('card copied');
-                    } catch {
-                      setMessage('couldn’t copy · focus this tab and retry');
-                    }
-                  }}
+                  onClick={() => setShare({ recap, profile })}
                 >
                   share
                 </button>
@@ -354,6 +438,10 @@ export function Recap() {
             </>
           )}
         </div>
+        <footer className="recap-card-brand">
+          <SmileLogo size={21} />
+          <span>{PRODUCT.wordmark}</span>
+        </footer>
       </div>
       <div className="story-navigation">
         <button
@@ -376,39 +464,13 @@ export function Recap() {
           next
         </button>
       </div>
-      <div className="x-past">
-        <p>past streams</p>
-        <div>
-          {recaps.map((item, i) => (
-            <button
-              type="button"
-              className="x-pb"
-              key={item.id}
-              style={{
-                background: ['var(--yellow)', 'var(--teal)', 'var(--coral)'][
-                  i % 3
-                ],
-              }}
-              data-session-id={item.sessionId}
-              title={`${item.channel} · ${new Date(item.createdAt).toLocaleDateString()} · ${item.totalLaughs} laughs`}
-              aria-pressed={recap.id === item.id}
-              aria-label={`${item.channel}, ${item.totalLaughs} laughs`}
-              onClick={() => {
-                setSelected(item.id);
-                history.replaceState(
-                  null,
-                  '',
-                  `?session=${encodeURIComponent(item.id)}`,
-                );
-                go(0);
-              }}
-            >
-              <b>{item.channel[0]?.toUpperCase()}</b>
-              <small>{item.totalLaughs}</small>
-            </button>
-          ))}
-        </div>
-      </div>
+      <button
+        type="button"
+        className="textbtn recap-share-link"
+        onClick={() => setShare({ recap, profile })}
+      >
+        share recap ↑
+      </button>
       <p className="preview-label">
         {recap.source === 'local'
           ? `real personal reactions · ${crowdDescription}`
@@ -419,6 +481,13 @@ export function Recap() {
         <div className="x-toast x-glass is-on" role="status">
           {message}
         </div>
+      )}
+      {share && (
+        <ShareSheet
+          recap={share.recap}
+          profile={share.profile}
+          close={() => setShare(null)}
+        />
       )}
     </main>
   );

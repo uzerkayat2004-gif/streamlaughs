@@ -117,6 +117,11 @@ export default defineConfig({
     minimum_chrome_version: '120',
     permissions: ['storage', 'tabs', 'tabCapture', 'offscreen', 'downloads'],
     host_permissions: ['https://www.twitch.tv/*'],
+    optional_host_permissions: configuredSite
+      ? [
+          `${new URL(configuredSite).protocol}//${new URL(configuredSite).hostname}/*`,
+        ]
+      : [],
     icons: {
       16: '/icon/16.png',
       32: '/icon/32.png',
@@ -134,7 +139,7 @@ export default defineConfig({
       },
     },
     content_security_policy: {
-      extension_pages: `script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; connect-src 'self'${apiConnections}${siteConnections}; worker-src 'self'; font-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'`,
+      extension_pages: `script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; connect-src 'self'${apiConnections}${siteConnections}; worker-src 'self'; font-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'`,
     },
     web_accessible_resources: [
       { resources: ['fonts/*'], matches: ['https://www.twitch.tv/*'] },

@@ -58,7 +58,14 @@ vi.mock('../db', () => ({
         fixture.recaps = [];
       }),
     },
-    transaction: vi.fn(async (_mode, _sessions, _recaps, work) => work()),
+    streamerProfiles: {
+      get: vi.fn(async () => undefined),
+      put: vi.fn(async () => {}),
+      clear: vi.fn(async () => {}),
+    },
+    transaction: vi.fn(async (...args: unknown[]) =>
+      (args.at(-1) as () => Promise<void>)(),
+    ),
   },
 }));
 vi.mock('./offscreen-client', () => ({
@@ -172,6 +179,7 @@ describe('background capture integration with browser ports mocked', () => {
         },
       },
       tabs: {
+        sendMessage: vi.fn(async () => undefined),
         query: async () => [tab(fixture.activeTab)],
         get: async (id: number) => tab(id),
         create: vi.fn(),

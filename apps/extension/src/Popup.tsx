@@ -8,18 +8,8 @@ import { ArrowRight, Pause, Play, Settings } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useStore } from 'zustand';
 import { command, connectSurface, surface } from './bridge';
-import {
-  Backdrop,
-  Blob,
-  Confetti,
-  crowdLabel,
-  Mark,
-  Sheet,
-  Timer,
-  Toggle,
-  Words,
-  YouPill,
-} from './components';
+import { Backdrop, crowdLabel, Mark, Sheet, Timer, Toggle } from './components';
+import { SmileLogo } from './SmileLogo';
 import { SITE_URL, UPDATE_KEY } from './site';
 import { audioNotice, friendlyError } from './ui-status';
 import {
@@ -141,7 +131,9 @@ export function Popup() {
         {activeChannel && (
           <div className="who">
             <span className="av">{activeChannel[0]?.toUpperCase()}</span>
-            <p>{activeChannel}</p>
+            <p title={session?.displayName || activeChannel}>
+              {session?.displayName || activeChannel}
+            </p>
             {session && (
               <>
                 <span
@@ -159,21 +151,16 @@ export function Popup() {
         )}
         {session ? (
           <>
-            <div
-              className={`stagewrap ${snapshot.status === 'paused' ? 'is-paused' : ''}`}
-            >
-              <Words crowd={snapshot.crowd} />
-              <Blob
-                crowd={snapshot.crowd}
-                count={snapshot.crowd?.laughingNow ?? 0}
-                paused={snapshot.status === 'paused'}
-              />
+            <div className="popup-session-main">
+              <SmileLogo size={110} />
+              <strong>{session.laughCount}</strong>
+              <p>laughs so far</p>
             </div>
             <div className="bottom">
-              <YouPill
-                count={session.laughCount}
-                paused={snapshot.status === 'paused'}
-              />
+              <span className="glass-laugh-chip">
+                <SmileLogo size={18} />
+                {session.laughCount} laughs
+              </span>
               <button
                 type="button"
                 className="iconbtn pause-mini"
@@ -207,7 +194,20 @@ export function Popup() {
         ) : (
           <>
             <div className="idle-stage">
-              <Blob decorative count={0} />
+              <button
+                type="button"
+                className="smile-trigger"
+                aria-label="open Twitch"
+                onClick={() =>
+                  void chrome.tabs.create({
+                    url: 'https://www.twitch.tv/directory',
+                  })
+                }
+              >
+                <span className="smile-breath">
+                  <SmileLogo size={190} />
+                </span>
+              </button>
               <h1>
                 {channel ? `${PRODUCT.pitch}.` : 'open any Twitch stream'}
               </h1>
@@ -260,17 +260,26 @@ export function Popup() {
                 open Twitch <ArrowRight size={17} />
               </a>
             )}
-            {snapshot.lastRecapId && (
-              <button
-                type="button"
-                className="textbtn"
-                onClick={() => void act({ type: 'OPEN_RECAP' })}
-              >
-                see your last recap
-              </button>
-            )}
           </>
         )}
+        <nav className="popup-history-links" aria-label="your saved streams">
+          <button
+            type="button"
+            className="textbtn"
+            disabled={!snapshot.lastRecapId}
+            onClick={() => void act({ type: 'OPEN_RECAP' })}
+          >
+            last recap
+          </button>
+          <span>·</span>
+          <button
+            type="button"
+            className="textbtn"
+            onClick={() => void act({ type: 'OPEN_RECAP', view: 'streamers' })}
+          >
+            my streamers
+          </button>
+        </nav>
         {error && (
           <p className="error" role="alert">
             {error}
@@ -439,20 +448,17 @@ export function Popup() {
         </Sheet>
       )}
       {ended && (
-        <>
-          <Confetti />
-          <Sheet title="nice session" close={() => setEnded(null)}>
-            <p className="big">{ended.laughCount} laughs</p>
-            <p className="sub">with {ended.channel}</p>
-            <button
-              type="button"
-              className="btn"
-              onClick={() => void act({ type: 'OPEN_RECAP', id: ended.id })}
-            >
-              see recap
-            </button>
-          </Sheet>
-        </>
+        <Sheet title="nice session" close={() => setEnded(null)}>
+          <p className="big">{ended.laughCount} laughs</p>
+          <p className="sub">with {ended.channel}</p>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => void act({ type: 'OPEN_RECAP', id: ended.id })}
+          >
+            see recap
+          </button>
+        </Sheet>
       )}
     </main>
   );

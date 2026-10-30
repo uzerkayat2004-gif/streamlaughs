@@ -1,8 +1,11 @@
-# StreamLaughs v0.6.4
+# StreamLaughs v0.7.0
 
 see who's laughing with you.
 
-- Edge Add-ons support: separate store identity and automatic browser updates; ZIP installs retain the popup update flow.
+- Smile-only logo and a smaller frosted-glass Twitch panel, with drag memory and a four-second fade.
+- Calm popup, saved history grouped by streamer, and optional locally cached public profile photos.
+- Dark recap stories and a locally drawn 1080x1920 PNG share sheet: preview, download, copy and native file sharing where supported.
+- Store installs retain browser-managed updates; ZIP installs retain the popup update flow.
 - Store submission ZIP contains one manifest.json, no manifest key and no downloads permission; ZIP installs keep self-updates.
 - Recaps and settings stay in your browser. Microphone diagnostics and all local models remain bundled.
 - Audio is processed on your PC and never saved or sent. Sharing is optional.

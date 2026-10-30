@@ -334,6 +334,8 @@ export default defineBackground(() => {
         session: MySessionSchema.parse({
           id: crypto.randomUUID(),
           channel,
+          channelUrl: `https://www.twitch.tv/${channel}`,
+          displayName: channel,
           tabId: tab.id,
           startedAt: now,
           endedAt: null,
@@ -385,6 +387,31 @@ export default defineBackground(() => {
     }
     await publish();
     runSource();
+    const sessionId = state.session?.id;
+    void chrome.tabs
+      .sendMessage(tab.id, { type: 'STREAMER_CONTEXT' })
+      .then((info) =>
+        serialize(async () => {
+          if (
+            state.session?.id !== sessionId ||
+            !state.session ||
+            info?.channel !== channel ||
+            typeof info.displayName !== 'string'
+          )
+            return;
+          const displayName = info.displayName.trim().slice(0, 100) || channel;
+          state.session = { ...state.session, displayName };
+          await db.sessions.put(state.session);
+          const profile = await db.streamerProfiles.get(channel);
+          await db.streamerProfiles.put({
+            ...profile,
+            login: channel,
+            displayName,
+          });
+          await publish();
+        }),
+      )
+      .catch(() => {});
   }
   async function handle(message: Command) {
     switch (message.type) {
@@ -482,10 +509,17 @@ export default defineBackground(() => {
       }
       case 'DELETE_DATA': {
         await stop();
-        await db.transaction('rw', db.sessions, db.recaps, async () => {
-          await db.sessions.clear();
-          await db.recaps.clear();
-        });
+        await db.transaction(
+          'rw',
+          db.sessions,
+          db.recaps,
+          db.streamerProfiles,
+          async () => {
+            await db.sessions.clear();
+            await db.recaps.clear();
+            await db.streamerProfiles.clear();
+          },
+        );
         const revision = state.revision;
         await chrome.storage.local.clear();
         state = { ...initialSnapshot(), revision };
@@ -496,7 +530,7 @@ export default defineBackground(() => {
         const id = message.id ?? state.lastRecapId;
         await chrome.tabs.create({
           url: chrome.runtime.getURL(
-            `/recap.html${id ? `?session=${encodeURIComponent(id)}` : ''}`,
+            `/recap.html${message.view === 'streamers' ? '?view=streamers' : id ? `?session=${encodeURIComponent(id)}` : ''}`,
           ),
         });
         break;

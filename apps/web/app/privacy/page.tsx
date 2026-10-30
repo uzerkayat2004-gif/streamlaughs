@@ -135,8 +135,18 @@ export default function Privacy() {
               lifetime, if shorter). The temporary login-state cookie lasts 10
               minutes. Your Twitch access token is used only for the login
               checks and is not put in the session; refresh tokens are not
-              retained. A separate app access token for public VOD lookup is
-              cached only in server memory until expiry.
+              retained. A separate app access token for public VOD and
+              profile-photo lookup is cached only in server memory until expiry.
+            </p>
+            <p>
+              Optional profile photos in “my streamers” use your existing
+              website sign-in after you grant the extension access to this site.
+              Only public channel logins are sent for that lookup; photos are
+              cached in your browser. Your recaps, counts, words and viewing
+              dates are not sent. Without sign-in or permission, initials work
+              offline. Share images are drawn locally from selected statistics
+              and leave your browser only when you choose to download, copy or
+              share them.
             </p>
             <p>
               The live view is the same aggregate fan view viewers can see.
@@ -202,6 +212,14 @@ export default function Privacy() {
                     <td>
                       Put the reaction dot on Twitch streams. The content script
                       is limited to Twitch.
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">website access · optional</th>
+                    <td>
+                      Use your website sign-in to retrieve public Twitch profile
+                      photos, only after you choose connect profile photos. No
+                      additional Twitch scopes or cookie-reading permission.
                     </td>
                   </tr>
                   <tr>

@@ -1184,3 +1184,151 @@
     box-shadow: 0 20px 70px #0006;
   }
 }
+
+/* v0.7 preview: same restrained smile and glass palette as the extension. */
+.extension-preview .mark {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.replica-smile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #fff;
+  gap: 5px;
+  margin: 10px auto;
+}
+.replica-smile strong {
+  font-size: 30px;
+}
+.replica-smile span {
+  color: #aaaab4;
+  font-size: 11px;
+}
+.extension-preview .x-dot {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: rgba(15, 15, 20, 0.35);
+  border: 1px solid #ffffff1a;
+  backdrop-filter: blur(16px) saturate(140%);
+  box-shadow: 0 4px 18px #0003;
+  opacity: 0.6;
+  animation: none;
+}
+.extension-preview .x-dot:hover {
+  opacity: 1;
+}
+.extension-preview .x-dot::before,
+.extension-preview .x-dot::after {
+  display: none;
+}
+.replica-recording-dot {
+  position: absolute;
+  right: 1px;
+  top: 1px;
+  width: 6px;
+  height: 6px;
+  background: #bc777b;
+  border-radius: 50%;
+}
+.extension-preview .replica-fanbox {
+  width: 190px;
+  right: 60px;
+  bottom: 72px;
+  top: auto;
+  padding: 12px;
+  color: #ffffffd9;
+  background: rgba(15, 15, 20, 0.35);
+  border: 1px solid #ffffff1a;
+  backdrop-filter: blur(16px) saturate(140%);
+  box-shadow: 0 8px 30px #0003;
+}
+.replica-fanbox .replica-smile {
+  margin: 0;
+}
+.replica-fanbox .replica-smile svg {
+  width: 40px;
+  height: 40px;
+}
+.extension-preview .you-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff08;
+  border: 1px solid #ffffff1a;
+  color: #ffffffd9;
+}
+.extension-preview .replica-live-controls button {
+  background: #ffffff0d;
+  border: 1px solid #ffffff1a;
+  color: #fff;
+}
+.extension-preview .replica-popup {
+  background: #141419f5;
+  box-shadow: 0 20px 70px #0006;
+}
+.extension-preview .replica-recap .x-card {
+  background: #151519;
+  color: #f0f0f4;
+}
+.extension-preview .x-st--sun,
+.extension-preview .x-st--sea {
+  background: transparent;
+  color: #f0f0f4;
+}
+.extension-preview .x-st--sun .x-giant {
+  color: #ffd23f;
+}
+.extension-preview .x-bars i {
+  background: #ffffff20;
+}
+.replica-recap-heading {
+  position: absolute;
+  top: 24px;
+  left: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 2;
+  font-size: 12px;
+}
+.replica-recap-heading > span {
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background: #4f4937;
+}
+.replica-recap-heading small {
+  display: block;
+  font-size: 9px;
+  color: #aaaab4;
+}
+.replica-recap-brand {
+  position: absolute;
+  bottom: 12px;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  color: #aaaab4;
+  font-size: 10px;
+}
+.replica-past {
+  flex-wrap: wrap;
+}
+.replica-past > span {
+  flex-basis: 100%;
+  text-align: center;
+}
+.extension-preview .x-st.is-on .x-sq path {
+  animation-duration: 240ms;
+  animation-delay: 0s;
+}

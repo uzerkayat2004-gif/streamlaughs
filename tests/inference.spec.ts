@@ -81,11 +81,13 @@ test('real bundled YAMNet laugh updates the dot box, popup, checkpoint and recap
       )
       .toBeGreaterThan(0);
     await stream.locator('.x-dot').click();
-    await expect(stream.locator('.x-cbox .you')).toContainText(/[1-9]\d*/);
+    await expect(stream.locator('.x-cbox .glass-laugh-chip')).toContainText(
+      /[1-9]\d*/,
+    );
     const popup = await context.newPage();
     await stream.bringToFront();
     await popup.goto(`chrome-extension://${id}/popup.html`);
-    await expect(popup.locator('.you')).toContainText(/[1-9]\d*/);
+    await expect(popup.locator('.glass-laugh-chip')).toContainText(/[1-9]\d*/);
     const snapshot = await popup.evaluate(
       async () =>
         (await chrome.storage.local.get('laughline:state'))['laughline:state'],

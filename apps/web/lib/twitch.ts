@@ -211,3 +211,40 @@ export async function getVods(
   }
   return result;
 }
+export async function getPublicProfile(login: string) {
+  await checkClientCredentials();
+  const response = await json(
+    `${helixOrigin()}/helix/users?${new URLSearchParams({ login })}`,
+    {
+      headers: {
+        Authorization: `Bearer ${appToken!.value}`,
+        'Client-Id': secret('TWITCH_CLIENT_ID'),
+      },
+    },
+    'user_lookup',
+  );
+  const parsed = z
+    .object({
+      data: z
+        .array(
+          z.object({
+            login: z.string(),
+            display_name: z.string().max(100),
+            profile_image_url: z.string().url(),
+          }),
+        )
+        .length(1),
+    })
+    .parse(response);
+  const profile = parsed.data[0]!;
+  if (profile.login !== login) throw new Error('profile unavailable');
+  const url = new URL(profile.profile_image_url);
+  if (
+    url.protocol !== 'https:' ||
+    url.hostname !== 'static-cdn.jtvnw.net' ||
+    url.username ||
+    url.password
+  )
+    throw new Error('profile unavailable');
+  return { login, displayName: profile.display_name, avatarUrl: url.href };
+}

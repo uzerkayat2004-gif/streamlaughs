@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { SmileLogo } from './SmileLogo';
 
 export function crowdLabel(crowd: CrowdState | null) {
   if (crowd?.source === 'fake') return 'simulated crowd · 3+ people';
@@ -18,16 +19,8 @@ export function crowdLabel(crowd: CrowdState | null) {
 export function Mark() {
   return (
     <div className="mark">
+      <SmileLogo size={24} />
       <b>{PRODUCT.wordmark}</b>
-      <svg width="54" height="7" viewBox="0 0 54 7" aria-hidden="true">
-        <path
-          d="M2 1.5c6 3.6 14 4.6 25 4.6s19-1 25-4.6"
-          fill="none"
-          stroke="#FFD23F"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-        />
-      </svg>
     </div>
   );
 }
@@ -308,7 +301,7 @@ export function CountUp({
     let frame = 0;
     const start = performance.now();
     const step = (now: number) => {
-      const progress = Math.min(1, Math.max(0, now - start - 200) / 1300);
+      const progress = Math.min(1, Math.max(0, now - start) / 240);
       setDisplay(Math.round(value * (1 - (1 - progress) ** 4)));
       if (progress < 1) frame = requestAnimationFrame(step);
     };

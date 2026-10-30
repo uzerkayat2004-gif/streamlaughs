@@ -4,6 +4,8 @@
 
 A little crowd for Twitch: your local laughs, everyone’s anonymous reactions, and a Wrapped-style recap when the stream ends.
 
+**v0.7.0:** a quiet glass overlay, smile-only logo, history grouped by streamer, and a locally drawn story PNG. [What changed, verification and manual checks](docs/ui-v070.md).
+
 > **Demo GIF / screenshot placeholder:** replace this line with the final crowd-blob GIF after recording. [Current extension screenshots](docs/screenshots/part6) · [Website preview](docs/screenshots/part5/home-desktop.png).
 
 ## Install in three steps
@@ -27,6 +29,8 @@ Every successful main deployment rebuilds the download; no release or manual upl
 - **Audio is processed on your PC and never saved or sent.** Bundled models use short RAM buffers; full transcripts are discarded.
 - **Sharing is optional and off by default.** Only anonymous counts and allowlisted words leave the extension. Counts and each word need three anonymous contributors; this is not proof of three unique humans. Watch-only still establishes a network connection.
 - **No viewer accounts or analytics.** Only eligible aggregate minutes are kept for 30 days. The website uses one essential streamer-auth cookie. Providers see network metadata; [boundaries and deletion](docs/technical-guide.md#privacy).
+
+Profile photos are optional: sign in on the website, then choose **connect Twitch profile photos** in **my streamers** and approve access to this site. Only public channel logins go to that lookup; photos are cached locally. Recap statistics and viewing dates stay local. Initials work without permission, sign-in or a network connection. Share images are made locally from selected stats; sharing a PNG is always your action. No extra Twitch OAuth scopes or cookie-reading permission are requested.
 
 ## How it works
 

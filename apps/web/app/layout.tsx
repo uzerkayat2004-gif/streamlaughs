@@ -21,7 +21,11 @@ export const metadata: Metadata = {
   title: { default: PRODUCT.name, template: `%s · ${PRODUCT.name}` },
   description: PRODUCT.pitch,
   applicationName: PRODUCT.name,
-  icons: { icon: '/icon.svg', shortcut: '/icon.svg', apple: '/apple-icon' },
+  icons: {
+    icon: `/icon.svg?v=${PRODUCT.version}`,
+    shortcut: `/icon.svg?v=${PRODUCT.version}`,
+    apple: `/apple-icon?v=${PRODUCT.version}`,
+  },
   openGraph: {
     title: PRODUCT.name,
     siteName: PRODUCT.name,

@@ -121,8 +121,10 @@ test('clean ZIP install: fixed ID, first run, mic choice, zero dev controls, key
     });
     await dot.focus();
     await stream.keyboard.press('Enter');
-    const pause = stream.getByRole('button', { name: 'pause', exact: true });
-    await expect(pause).toBeFocused();
+    const handle = stream.getByRole('button', {
+      name: 'move reaction panel with arrow keys or drag',
+    });
+    await expect(handle).toBeFocused();
     await stream.keyboard.press('Escape');
     await expect(dot).toBeFocused();
     await popup.getByRole('button', { name: 'stop', exact: true }).click();
@@ -143,9 +145,7 @@ test('clean ZIP install: fixed ID, first run, mic choice, zero dev controls, key
     await expect(
       (await touched).getByText('you laughed', { exact: true }),
     ).toBeVisible();
-    await stream
-      .getByRole('button', { name: 'dismiss recap notification' })
-      .tap();
+    await stream.getByRole('button', { name: 'dismiss recap toast' }).tap();
     await expect(recapLink).toHaveCount(0);
   } finally {
     await context.close();
@@ -232,23 +232,23 @@ test('saved stream bubbles select their own stored data; calm and audio states f
     await recap.reload();
     // biome-ignore lint/performance/useDomNodeTextContent: check visible copy, excluding scripts with compatibility IDs.
     expect(await recap.locator('body').innerText()).not.toMatch(/laughline/i);
-    await expect(
-      recap.locator('[data-session-id="saved-one"] small'),
-    ).toHaveText('17');
-    await expect(
-      recap.locator('[data-session-id="saved-two"] small'),
-    ).toHaveText('4');
-    await recap.locator('[data-session-id="saved-two"]').focus();
+    await recap.getByRole('button', { name: 'my streamers' }).click();
+    const cards = recap.locator('.streamer-card');
+    await expect(cards).toHaveCount(2);
+    await cards.filter({ hasText: 'second_stream' }).click();
+    await recap.locator('.stream-open').focus();
     await recap.keyboard.press('Enter');
     await expect(recap.locator('.x-giant')).toHaveText('4');
     await expect(
       recap.getByText('times with second_stream', { exact: true }),
     ).toBeVisible();
-    await expect(
-      recap.locator('[data-session-id="saved-two"]'),
-    ).toHaveAttribute('aria-pressed', 'true');
     await expect(recap.locator('.x-st')).toHaveCSS('animation-name', 'none');
-    await recap.locator('[data-session-id="saved-one"]').click();
+    await recap.getByRole('button', { name: 'my streamers' }).click();
+    await recap
+      .locator('.streamer-card')
+      .filter({ hasText: 'first_stream' })
+      .click();
+    await recap.locator('.stream-open').click();
     await expect(recap.locator('.x-giant')).toHaveText('17');
     await recap.screenshot({
       path: path.join(shots, 'recap-saved-streams.png'),
@@ -291,7 +291,7 @@ test('saved stream bubbles select their own stored data; calm and audio states f
       const notice = popup.locator('.audio-notice');
       await expect(notice).toBeVisible();
       await expect(
-        popup.getByText('a few here', { exact: true }),
+        popup.getByText('few people here yet', { exact: true }),
       ).toBeVisible();
       expect(
         await popup.locator('.screen').evaluate((el) =>

@@ -17,7 +17,7 @@ describe('dot drag and snap', () => {
   );
   it('preserves normalized positions when resizing', () => {
     const dock = snap({ x: 960, y: 280 }, bounds);
-    expect(dockPoint(dock, { width: 500, height: 300 }).x).toBe(456);
+    expect(dockPoint(dock, { width: 500, height: 300 }).x).toBe(448);
     expect(dockPoint(dock, bounds).y).toBeCloseTo(280);
   });
   it('keeps extreme and tiny bounds nonnegative', () => {
@@ -28,9 +28,9 @@ describe('dot drag and snap', () => {
   it('opens the box on the side with room and clamps vertically', () => {
     expect(
       boxPoint({ x: 950, y: 550 }, bounds, { width: 300, height: 350 }),
-    ).toEqual({ x: 640, y: 242 });
+    ).toEqual({ x: 640, y: 178 });
     expect(
       boxPoint({ x: 12, y: 12 }, bounds, { width: 300, height: 350 }).x,
-    ).toBe(54);
+    ).toBe(62);
   });
 });

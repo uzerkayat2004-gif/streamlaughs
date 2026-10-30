@@ -4,7 +4,8 @@ import { useStore } from 'zustand';
 import { MICROPHONE_CONSTRAINTS } from './audio/config';
 import { checkMicrophone } from './audio/mic-check';
 import { command, connectSurface, surface } from './bridge';
-import { Backdrop, Blob, Mark, Toggle, Wave } from './components';
+import { Backdrop, Mark, Toggle, Wave } from './components';
+import { SmileLogo } from './SmileLogo';
 import { friendlyError } from './ui-status';
 
 export function Welcome() {
@@ -45,7 +46,7 @@ export function Welcome() {
           >
             {done ? (
               <>
-                <Blob decorative />
+                <SmileLogo size={190} className="welcome-smile" />
                 <h1>you’re ready.</h1>
                 <p className="sub">
                   pin the icon · open a stream · press start
@@ -54,7 +55,7 @@ export function Welcome() {
             ) : (
               slide === 0 && (
                 <>
-                  <Blob decorative />
+                  <SmileLogo size={190} className="welcome-smile" />
                   <h1>{PRODUCT.pitch}.</h1>
                 </>
               )

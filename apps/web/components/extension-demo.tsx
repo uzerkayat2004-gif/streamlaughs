@@ -1,6 +1,7 @@
 'use client';
 import { PRODUCT } from '@laughline/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { SmileLogo } from '../../extension/src/SmileLogo';
 import { LogoMark } from './brand';
 import './extension-demo.css';
 
@@ -42,49 +43,25 @@ const storyNames = [
   'share card',
 ];
 function ExtensionIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 128 128" aria-hidden="true">
-      <rect width="128" height="128" rx="32" fill="#15151d" />
-      <path
-        d="M30 68Q64 125 98 68"
-        fill="none"
-        stroke="#FFD23F"
-        strokeWidth="12"
-      />
-    </svg>
-  );
+  return <SmileLogo size={24} color="#FFD23F" />;
 }
 function ExtensionMark() {
   return (
     <div className="mark">
+      <SmileLogo size={24} color="#FFD23F" />
       <b>{PRODUCT.wordmark}</b>
-      <svg width="54" height="7" viewBox="0 0 54 7" aria-hidden="true">
-        <path
-          d="M2 1.5c6 3.6 14 4.6 25 4.6s19-1 25-4.6"
-          fill="none"
-          stroke="#FFD23F"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-        />
-      </svg>
     </div>
   );
 }
-function ReactionBlob({ count = 0 }: { count?: number }) {
+function ReactionSmile({ count = 0 }: { count?: number }) {
   return (
-    <div className="replica-blob">
-      <svg viewBox="0 0 240 240" aria-hidden="true">
-        <path d="M120 21C173 6 225 61 220 115C231 171 188 222 132 218C75 237 16 185 22 130C6 77 65 14 120 21Z" />
-      </svg>
-      {count ? (
+    <div className="replica-smile">
+      <SmileLogo size={100} />
+      {count > 0 && (
         <>
           <strong>{count}</strong>
           <span>laughing now</span>
         </>
-      ) : (
-        <svg className="replica-face" viewBox="0 0 100 85" aria-hidden="true">
-          <path d="M27 25v8m46-8v8M22 51q28 33 56 0" />
-        </svg>
       )}
     </div>
   );
@@ -121,6 +98,13 @@ function RecapStories({
             </i>
           ))}
         </div>
+        <header className="replica-recap-heading">
+          <span>P</span>
+          <div>
+            <b>pixelcamp</b>
+            <small>demo · 30 October 2026</small>
+          </div>
+        </header>
         <div
           className={`x-st is-on ${['x-st--sun', 'x-st--sea', 'x-st--word', 'x-st--hard', 'x-st--style', 'x-st--share'][story]}`}
         >
@@ -235,6 +219,9 @@ function RecapStories({
             </>
           )}
         </div>
+        <footer className="replica-recap-brand">
+          <SmileLogo size={18} /> {PRODUCT.wordmark}
+        </footer>
       </div>
       <div className="replica-story-nav">
         <button
@@ -254,7 +241,7 @@ function RecapStories({
         </button>
       </div>
       <div className="replica-past">
-        <span>past streams</span>
+        <span>my streamers · pixelcamp</span>
         {[76, 41, 18].map((count, i) => (
           <button
             key={count}
@@ -297,7 +284,7 @@ export function ExtensionDemo() {
     py: number;
     moved: boolean;
   } | null>(null);
-  const [dot, setDot] = useState({ x: 88, y: 14 });
+  const [dot, setDot] = useState({ x: 90, y: 75 });
   const active = step >= 2 && step < 4,
     reacted = step >= 3;
   const go = useCallback((next: number) => {
@@ -590,7 +577,10 @@ export function ExtensionDemo() {
                             if (!drag.current?.moved) setFanBox(!fanBox);
                             drag.current = null;
                           }}
-                        />
+                        >
+                          <SmileLogo size={24} />
+                          <i className="replica-recording-dot" />
+                        </button>
                         {fanBox && (
                           <div className="replica-fanbox">
                             <button
@@ -601,12 +591,13 @@ export function ExtensionDemo() {
                             >
                               ×
                             </button>
-                            <ReactionBlob count={reacted ? 12 : 0} />
+                            <ReactionSmile count={reacted ? 12 : 0} />
                             <span className="replica-top-word">
                               {reacted ? 'lmao' : 'a few here'}
                             </span>
                             <span className="you-pill">
-                              ♫　you <b>{reacted ? 7 : 0}</b>
+                              <SmileLogo size={16} /> <b>{reacted ? 7 : 0}</b>{' '}
+                              laughs
                             </span>
                             <div className="replica-live-controls">
                               <button
@@ -717,7 +708,7 @@ export function ExtensionDemo() {
                   </div>
                 ) : (
                   <>
-                    <ReactionBlob count={active && reacted ? 12 : 0} />
+                    <ReactionSmile count={active && reacted ? 12 : 0} />
                     {!active ? (
                       <>
                         <h3>{PRODUCT.pitch}.</h3>
@@ -738,7 +729,8 @@ export function ExtensionDemo() {
                     ) : (
                       <div className="replica-live-controls">
                         <span className="you-pill">
-                          ♫　you <b>{reacted ? 7 : 0}</b>
+                          <SmileLogo size={16} /> <b>{reacted ? 7 : 0}</b>{' '}
+                          laughs
                         </span>
                         <button
                           type="button"

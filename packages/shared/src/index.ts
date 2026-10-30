@@ -41,6 +41,8 @@ export const CrowdSummarySchema = z.object({
 export const MySessionSchema = z.object({
   id: z.string(),
   channel: z.string(),
+  channelUrl: z.string().max(200).optional(),
+  displayName: z.string().max(100).optional(),
   tabId: z.number().int(),
   startedAt: z.number(),
   endedAt: z.number().nullable(),
@@ -88,12 +90,17 @@ export const RecapSchema = z.object({
   id: z.string(),
   sessionId: z.string(),
   channel: z.string(),
+  channelUrl: z.string().max(200).optional(),
+  displayName: z.string().max(100).optional(),
+  startedAt: z.number().optional(),
+  durationSeconds: z.number().nonnegative().optional(),
   createdAt: z.number(),
   totalLaughs: z.number().int().nonnegative(),
   crowdViewers: z.number().int().nonnegative(),
   topWord: z.string(),
   wordCount: z.number().int().nonnegative(),
   hardestLaughAt: z.number().nonnegative(),
+  hasBestMoment: z.boolean().optional(),
   othersAtPeak: z.number().int().nonnegative(),
   style: z.string(),
   delaySeconds: z.number(),
@@ -133,7 +140,11 @@ export const CommandSchema = z.discriminatedUnion('type', [
   }),
   z.object({ type: z.literal('SETTINGS'), settings: SettingsSchema.partial() }),
   z.object({ type: z.literal('DELETE_DATA') }),
-  z.object({ type: z.literal('OPEN_RECAP'), id: z.string().optional() }),
+  z.object({
+    type: z.literal('OPEN_RECAP'),
+    id: z.string().optional(),
+    view: z.literal('streamers').optional(),
+  }),
 ]);
 export type Command = z.infer<typeof CommandSchema>;
 export type Reply =
@@ -226,6 +237,13 @@ export function createRecap(session: MySession, now: number): Recap {
     id: session.id,
     sessionId: session.id,
     channel: session.channel,
+    channelUrl: session.channelUrl,
+    displayName: session.displayName,
+    startedAt: session.startedAt,
+    durationSeconds: Math.max(
+      0,
+      Math.floor(((session.endedAt ?? now) - session.startedAt) / 1000),
+    ),
     createdAt: now,
     totalLaughs: session.laughCount,
     crowdViewers: session.crowdViewers,
@@ -234,6 +252,7 @@ export function createRecap(session: MySession, now: number): Recap {
     hardestLaughAt: peak
       ? Math.max(0, Math.floor((peak.ts - session.startedAt) / 1000))
       : 0,
+    hasBestMoment: !!peak && session.laughCount > 0,
     othersAtPeak: peak?.crowd ?? 0,
     style: laughStyle(session),
     delaySeconds: session.personal.lagCount

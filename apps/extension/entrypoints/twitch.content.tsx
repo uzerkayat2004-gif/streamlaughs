@@ -1,3 +1,4 @@
+import { parseChannel } from '@laughline/shared';
 import { createRoot } from 'react-dom/client';
 import { Overlay } from '../src/Overlay';
 import css from '../src/styles.css?inline';
@@ -5,6 +6,30 @@ import css from '../src/styles.css?inline';
 export default defineContentScript({
   matches: ['https://www.twitch.tv/*'],
   main(ctx) {
+    const channelInfo = (
+      message: { type?: string },
+      sender: chrome.runtime.MessageSender,
+      reply: (value: unknown) => void,
+    ) => {
+      if (
+        message?.type !== 'STREAMER_CONTEXT' ||
+        sender.id !== chrome.runtime.id
+      )
+        return;
+      const channel = parseChannel(location.href);
+      if (!channel) return;
+      const name =
+        document
+          .querySelector('[data-a-target="channel-header-display-name"]')
+          ?.textContent?.trim() ||
+        document
+          .querySelector(
+            `[data-a-target="channel-info-content"] a[href="/${channel}"]`,
+          )
+          ?.textContent?.trim();
+      reply({ channel, displayName: name?.slice(0, 100) || channel });
+    };
+    chrome.runtime.onMessage.addListener(channelInfo);
     const host = document.createElement('laughline-overlay');
     host.style.cssText =
       'position:fixed;inset:0;z-index:2147483646;pointer-events:none;';
@@ -38,6 +63,7 @@ export default defineContentScript({
     root.render(<Overlay getPlayer={getPlayer} />);
     ctx.addEventListener(document, 'fullscreenchange', placeHost);
     ctx.onInvalidated(() => {
+      chrome.runtime.onMessage.removeListener(channelInfo);
       root.unmount();
       host.remove();
       fontStyle.remove();

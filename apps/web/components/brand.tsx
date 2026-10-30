@@ -1,5 +1,6 @@
 import { PRODUCT } from '@laughline/shared';
 import Link from 'next/link';
+import { SmileLogo } from '../../extension/src/SmileLogo';
 export function Brand() {
   return (
     <Link href="/" className="brand" aria-label={`${PRODUCT.name} home`}>
@@ -19,25 +20,7 @@ export function Brand() {
   );
 }
 export function LogoMark({ size = 40 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 128 128"
-      fill="none"
-      aria-hidden="true"
-    >
-      <circle cx="64" cy="64" r="59" fill="#FFD23F" />
-      <ellipse cx="44" cy="49" rx="6" ry="9" fill="#090b10" />
-      <ellipse cx="84" cy="49" rx="6" ry="9" fill="#090b10" />
-      <path
-        d="M32 76Q64 113 96 76"
-        stroke="#090b10"
-        strokeWidth="8"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
+  return <SmileLogo size={size} color="#FFD23F" />;
 }
 export function Arrow() {
   return (

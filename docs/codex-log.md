@@ -1,5 +1,14 @@
 # Build log
 
+## v0.7.0 · calm glass UI (2026-10-30)
+
+- Replaced product marks/icons with one rounded smile curve in white/yellow transparent variants. The extension public key, IDs and legacy database/protocol identifiers stay unchanged.
+- Added a smaller glass overlay, 40px launcher, white Stop control, tiny recording dot, four-second fade, keyboard/drag positioning and local position memory. Popup retains capture/update/settings flows and adds last recap / my streamers.
+- Added in-place Dexie v2 metadata migration, URL-based canonical channel grouping, optional signed-in cached public avatars, per-stream/channel deletion and offline initials. Ended sessions without an old recap remain visible; active checkpoints are protected.
+- Polished dark phone stories, keyboard/half-card navigation and per-slide avatar/date/branding. Added locally drawn 1080×1920 PNG preview/download/clipboard/native-share with safe text fallback; no audio, face capture or complete transcripts.
+- Targeted unit and production-package UI checks and build evidence: [v0.7.0 verification](ui-v070.md). No full e2e suite, tags, releases, Worker deployment or store uploads performed for this pass.
+
+
 - Part 14: prepared v0.6.4 with downloads removed only from store manifests (required and optional permission lists). Website ZIPs retain the fixed key and downloads permission. Added a ZIP-ID guard directly at the downloads API boundary, tests proving store/unknown installs never access the missing namespace, and a permissionless store-ID browser fixture. Added an independent final-archive verifier to both artifact workflows: one root manifest.json, no key and no downloads. No new permissions, Worker changes, tags, releases or store publication. Verification and artifact results are recorded separately.
 
 - Part 13: added the confirmed Edge store origin alongside the unchanged ZIP origin, keeping SQLite bindings/migrations and production test-traffic policy stable. Renamed model receipt metadata to model-files.json and rejected nested manifests. Added a separate keyless Edge store pack command and artifact-only CI on main; tag-release artifacts stay separate from website/ZIP releases. ZIP update checks/buttons/download/reload commands are restricted to the fixed ZIP ID, with an emulated store-ID popup regression and background/unit coverage. Added the empty edgeStoreUrl config and hidden Install-only link, store-aware public metadata CORS, packaging/origin regressions, and store handoff documentation. Prepared v0.6.3 without store submission, tags or releases. Final local/production results are in verification-part13.txt.
