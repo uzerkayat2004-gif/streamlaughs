@@ -108,6 +108,7 @@ const User = z.object({
       z.object({
         id: z.string().regex(/^\d{1,32}$/),
         login: z.string().regex(/^[a-z0-9_]{1,25}$/),
+        display_name: z.string().min(1).max(100),
       }),
     )
     .length(1),

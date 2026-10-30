@@ -1,33 +1,51 @@
 import { PRODUCT } from '@laughline/shared';
 import type { Metadata } from 'next';
+import { Arrow } from '../../components/brand';
 import { InstallDownload } from '../../components/install-download';
 import { InstallGuide } from '../../components/install-guide';
-export const metadata: Metadata = { title: 'a little setup, a lot of laughs' };
+export const metadata: Metadata = { title: `add ${PRODUCT.name} in 2 minutes` };
 export default async function Install({
   searchParams,
 }: {
   searchParams: Promise<{ downloaded?: string | string[] }>;
 }) {
   const automatic = (await searchParams).downloaded === '1';
+  const stores = Boolean(PRODUCT.chromeStoreUrl || PRODUCT.edgeStoreUrl);
   return (
     <main className="standard-page install-page">
       <header className="page-intro">
-        <p className="eyebrow">one tiny extension. six little steps.</p>
+        <p className="eyebrow">A LITTLE SETUP. A LOT OF LAUGHS.</p>
         <h1>
-          make room
+          add {PRODUCT.name}
           <br />
-          for the <em>crowd.</em>
+          <em>in 2 minutes.</em>
         </h1>
-        <p>one ZIP for Windows, Mac and Linux. your audio stays on your PC.</p>
-        <InstallDownload automatic={automatic} />
-        <p className="download-browser-note">also works in Edge / Brave</p>
-        {PRODUCT.edgeStoreUrl && (
-          <a className="text-link" href={PRODUCT.edgeStoreUrl}>
-            Get it on Edge
-          </a>
+        <p>Free. Works in Chrome, Edge and Brave.</p>
+        {stores && (
+          <div className="store-buttons">
+            {PRODUCT.chromeStoreUrl && (
+              <a className="button yellow" href={PRODUCT.chromeStoreUrl}>
+                Add to Chrome <Arrow />
+              </a>
+            )}
+            {PRODUCT.edgeStoreUrl && (
+              <a className="button yellow" href={PRODUCT.edgeStoreUrl}>
+                Add to Edge <Arrow />
+              </a>
+            )}
+          </div>
         )}
+        {!stores && <InstallDownload automatic={automatic} />}
       </header>
-      <InstallGuide />
+      <section className="manual-install" aria-label="manual install">
+        {stores && (
+          <>
+            <h2>manual install</h2>
+            <InstallDownload automatic={automatic} />
+          </>
+        )}
+        <InstallGuide />
+      </section>
     </main>
   );
 }

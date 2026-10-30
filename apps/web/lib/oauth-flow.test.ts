@@ -45,7 +45,9 @@ beforeEach(() => {
         'Bearer local-access-token',
       );
       expect(new Headers(init?.headers).get('Client-Id')).toBe('local-client');
-      return reply({ data: [{ id: '123', login: 'mychannel' }] });
+      return reply({
+        data: [{ id: '123', login: 'mychannel', display_name: 'MyChannel' }],
+      });
     }
     return reply({}, 404);
   });
@@ -103,12 +105,18 @@ it('runs login, state-cookie round trip, token exchange, validation and Helix be
     sameSite: 'lax',
     path: '/',
   });
-  expect(await unseal(session.value, sessionSecret)).toMatchObject({
+  expect(await unseal(session.value, sessionSecret)).toEqual({
     kind: 'session',
     login: 'mychannel',
     userId: '123',
+    displayName: 'MyChannel',
   });
   expect(fetchMock).toHaveBeenCalledTimes(4);
+  cookie.value = session.value;
+  fetchMock.mockClear();
+  const { authenticated } = await import('./auth');
+  expect(await authenticated()).toEqual({ login: 'mychannel', userId: '123' });
+  expect(fetchMock).not.toHaveBeenCalled();
   expect(warnings).not.toHaveBeenCalled();
 });
 it('rejects missing or expired state cookies without contacting Twitch', async () => {

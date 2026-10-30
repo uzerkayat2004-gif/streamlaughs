@@ -53,8 +53,11 @@ export default async function ChannelDashboard({
       ) : (
         <div className="quiet-empty">
           <span>◡</span>
-          <h2>your crowd is coming soon.</h2>
-          <p>sign-in is ready. past streams will appear after crowd setup.</p>
+          <h2>your fans are coming soon.</h2>
+          <p>
+            sign-in is ready. past streams will appear after fan reactions are
+            set up.
+          </p>
           <Link href="/demo">explore the demo ↗</Link>
         </div>
       )}

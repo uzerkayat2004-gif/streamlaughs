@@ -7,7 +7,7 @@ import {
   sourceUrl,
   twitchOrigin,
 } from './config';
-import { ownsChannel, seal, unseal } from './session-crypto';
+import { AuthSchema, ownsChannel, seal, unseal } from './session-crypto';
 
 const secret = 'local-session-test-key-0000000000000000000000000000000';
 afterEach(() => vi.unstubAllEnvs());
@@ -52,24 +52,24 @@ it('uses the selected public defaults while keeping site and repository configur
   expect(callbackUrl()).toBe('https://renamed.vercel.app/auth/callback');
   expect(sourceUrl()).toBe('https://github.com/another-owner/another-name');
 });
-it('permits only the validated identity’s exact channel', () => {
+it('permits only the validated identityâ€™s exact channel', () => {
   expect(ownsChannel({ login: 'mychannel' }, 'mychannel')).toBe(true);
   expect(ownsChannel({ login: 'other' }, 'mychannel')).toBe(false);
   expect(ownsChannel(null, 'mychannel')).toBe(false);
   expect(ownsChannel({ login: 'mychannel' }, 'MYCHANNEL')).toBe(false);
 });
-it('encrypts session tokens and rejects forged, expired and wrong-key cookies', async () => {
+it('encrypts identity-only sessions and rejects forged, expired and wrong-key cookies', async () => {
   const value = await seal(
     {
       kind: 'session',
       login: 'mychannel',
       userId: '123',
-      accessToken: 'private-token',
+      displayName: 'MyChannel',
     },
     secret,
     60,
   );
-  expect(value).not.toContain('private-token');
+  expect(value).not.toContain('MyChannel');
   expect(await unseal(value, secret)).toMatchObject({
     login: 'mychannel',
     kind: 'session',
@@ -96,4 +96,16 @@ it('never enables a mock provider in production, and builds configured release/c
   );
   vi.stubEnv('RELEASE_REPO_NAME', '');
   expect(sourceUrl()).toBeNull();
+});
+
+it('rejects legacy token-bearing sessions instead of retaining Twitch credentials', () => {
+  expect(
+    AuthSchema.safeParse({
+      kind: 'session',
+      login: 'mychannel',
+      userId: '123',
+      displayName: 'MyChannel',
+      accessToken: 'obsolete-token',
+    }).success,
+  ).toBe(false);
 });

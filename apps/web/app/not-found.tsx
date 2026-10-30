@@ -10,7 +10,7 @@ export default function NotFound() {
       </h1>
       <p>Streamers can only see their own channel.</p>
       <Link className="button yellow" href="/dashboard">
-        back to your crowd ↗
+        back to your fans ↗
       </Link>
     </main>
   );

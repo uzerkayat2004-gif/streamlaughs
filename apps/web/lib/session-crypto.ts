@@ -7,12 +7,14 @@ export const AuthSchema = z.discriminatedUnion('kind', [
     kind: z.literal('oauth'),
     state: z.string().regex(/^[a-f0-9]{64}$/),
   }),
-  z.object({
-    kind: z.literal('session'),
-    login: Login,
-    userId: z.string().regex(/^\d{1,32}$/),
-    accessToken: z.string().min(1).max(2048),
-  }),
+  z
+    .object({
+      kind: z.literal('session'),
+      login: Login,
+      userId: z.string().regex(/^\d{1,32}$/),
+      displayName: z.string().min(1).max(100),
+    })
+    .strict(),
 ]);
 export type Auth = z.infer<typeof AuthSchema>;
 async function key(secret: string) {
@@ -43,7 +45,10 @@ export async function unseal(
       keyManagementAlgorithms: ['dir'],
       contentEncryptionAlgorithms: ['A256GCM'],
     });
-    return AuthSchema.parse(payload);
+    const auth = { ...payload };
+    for (const claim of ['iss', 'aud', 'iat', 'exp', 'nbf', 'jti'])
+      delete auth[claim];
+    return AuthSchema.parse(auth);
   } catch {
     return null;
   }

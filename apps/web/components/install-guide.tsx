@@ -1,87 +1,215 @@
 'use client';
 import { PRODUCT } from '@laughline/shared';
 import { useState } from 'react';
+
+function InstallPicture({ step, address }: { step: number; address: string }) {
+  return (
+    <div className={`install-picture picture-${step}`} aria-hidden="true">
+      <svg viewBox="0 0 400 220" fill="none" aria-hidden="true">
+        {step === 1 ? (
+          <>
+            <rect
+              x="60"
+              y="32"
+              width="112"
+              height="150"
+              rx="12"
+              fill="#171b21"
+              stroke="#667077"
+            />
+            <path
+              d="M116 33v111m-6-98h12m-12 15h12m-12 15h12m-12 15h12m-12 15h12"
+              stroke="#FFD23F"
+              strokeWidth="5"
+            />
+            <path
+              d="m211 104 24 0m-9-9 9 9-9 9"
+              stroke="#2EE6C5"
+              strokeWidth="3"
+            />
+            <path d="M263 75h39l10 13h43v83h-92Z" fill="#FFD23F" />
+            <path d="M263 100h92" stroke="#b99728" strokeWidth="2" />
+            <text x="78" y="165" fill="#f4f2ed" fontSize="16">
+              .zip
+            </text>
+          </>
+        ) : step === 2 ? (
+          <>
+            <rect
+              x="30"
+              y="27"
+              width="340"
+              height="166"
+              rx="12"
+              fill="#171b21"
+              stroke="#59616b"
+            />
+            <path d="M30 62h340" stroke="#59616b" />
+            <circle cx="47" cy="44" r="3" fill="#FF5C5C" />
+            <circle cx="60" cy="44" r="3" fill="#FFD23F" />
+            <text x="79" y="49" fill="#f4f2ed" fontSize="13">
+              {address}
+            </text>
+            <text x="49" y="102" fill="#f4f2ed" fontSize="17">
+              Extensions
+            </text>
+            <text x="233" y="99" fill="#bbc0c7" fontSize="11">
+              Developer mode
+            </text>
+            <rect x="319" y="85" width="31" height="17" rx="9" fill="#2EE6C5" />
+            <circle cx="341" cy="93.5" r="6" fill="#090b10" />
+            <rect
+              x="49"
+              y="127"
+              width="118"
+              height="33"
+              rx="5"
+              stroke="#FFD23F"
+            />
+            <text x="59" y="149" fill="#FFD23F" fontSize="12">
+              Load unpacked
+            </text>
+          </>
+        ) : step === 3 ? (
+          <>
+            <rect
+              x="46"
+              y="28"
+              width="308"
+              height="165"
+              rx="12"
+              fill="#171b21"
+              stroke="#59616b"
+            />
+            <path d="M46 64h308" stroke="#59616b" />
+            <text x="64" y="51" fill="#bbc0c7" fontSize="12">
+              Choose a folder
+            </text>
+            <path d="M67 82h22l6 8h36v28H67Z" fill="#FFD23F" />
+            <text x="144" y="106" fill="#f4f2ed" fontSize="16">
+              {PRODUCT.name}
+            </text>
+            <text x="80" y="145" fill="#2EE6C5" fontSize="13">
+              ↳ manifest.json
+            </text>
+            <rect
+              x="246"
+              y="154"
+              width="87"
+              height="25"
+              rx="5"
+              fill="#2EE6C5"
+            />
+            <text x="259" y="171" fill="#090b10" fontSize="11">
+              Select folder
+            </text>
+          </>
+        ) : (
+          <>
+            <rect
+              x="32"
+              y="30"
+              width="336"
+              height="160"
+              rx="12"
+              fill="#171b21"
+              stroke="#59616b"
+            />
+            <path d="M32 66h336" stroke="#59616b" />
+            <text x="52" y="54" fill="#bbc0c7" fontSize="13">
+              a live Twitch stream
+            </text>
+            <circle cx="341" cy="48" r="10" fill="#FFD23F" />
+            <path d="M336 49q5 8 10 0" stroke="#090b10" strokeWidth="2" />
+            <circle cx="338" cy="45" r="1" fill="#090b10" />
+            <circle cx="344" cy="45" r="1" fill="#090b10" />
+            <rect
+              x="202"
+              y="77"
+              width="149"
+              height="95"
+              rx="9"
+              fill="#090b10"
+              stroke="#FFD23F"
+            />
+            <text x="216" y="100" fill="#f4f2ed" fontSize="13">
+              {PRODUCT.wordmark}
+            </text>
+            <rect
+              x="216"
+              y="120"
+              width="120"
+              height="31"
+              rx="16"
+              fill="#FFD23F"
+            />
+            <text x="265" y="141" fill="#090b10" fontSize="14">
+              start
+            </text>
+            <path d="m100 102 27 20-27 20Z" fill="#2EE6C5" />
+          </>
+        )}
+      </svg>
+    </div>
+  );
+}
+
 export function InstallGuide() {
-  const [browser, setBrowser] = useState<'chrome' | 'edge' | 'brave'>('chrome'),
+  const browsers = ['chrome', 'edge', 'brave'] as const;
+  const [browser, setBrowser] = useState<(typeof browsers)[number]>('chrome'),
     [copied, setCopied] = useState(false);
   const address = `${browser}://extensions`;
   return (
     <>
-      <div className="browser-tabs" role="tablist" aria-label="browser">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={browser === 'chrome'}
-          onClick={() => {
-            setBrowser('chrome');
-            setCopied(false);
-          }}
-        >
-          Chrome
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={browser === 'edge'}
-          onClick={() => {
-            setBrowser('edge');
-            setCopied(false);
-          }}
-        >
-          Edge
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={browser === 'brave'}
-          onClick={() => {
-            setBrowser('brave');
-            setCopied(false);
-          }}
-        >
-          Brave
-        </button>
+      <div className="browser-tabs" role="tablist" aria-label="your browser">
+        {browsers.map((name, index) => (
+          <button
+            key={name}
+            type="button"
+            role="tab"
+            id={`${name}-tab`}
+            aria-selected={browser === name}
+            aria-controls="manual-instructions"
+            tabIndex={browser === name ? 0 : -1}
+            onClick={() => {
+              setBrowser(name);
+              setCopied(false);
+            }}
+            onKeyDown={(event) => {
+              if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft')
+                return;
+              event.preventDefault();
+              const next = (index + (event.key === 'ArrowRight' ? 1 : 2)) % 3;
+              setBrowser(browsers[next]!);
+              setCopied(false);
+              const nextButton =
+                event.currentTarget.parentElement?.children[next];
+              if (nextButton instanceof HTMLButtonElement) nextButton.focus();
+            }}
+          >
+            {name[0]!.toUpperCase() + name.slice(1)}
+          </button>
+        ))}
       </div>
-      <div className="install-steps">
+      <div
+        id="manual-instructions"
+        role="tabpanel"
+        aria-labelledby={`${browser}-tab`}
+        className="install-steps"
+      >
         <article className="install-step">
-          <div className="step-art art-download" aria-hidden="true">
-            <div className="zip-icon">
-              .zip
-              <svg viewBox="0 0 30 30" aria-hidden="true">
-                <path d="M15 3v18m-7-7 7 7 7-7M5 25h20" />
-              </svg>
-            </div>
-            <span>↙ yours to keep</span>
-          </div>
-          <p className="eyebrow">01 · give it a home</p>
-          <h2>unzip the download.</h2>
+          <InstallPicture step={1} address={address} />
+          <p className="eyebrow">01</p>
+          <h2>unzip it.</h2>
           <p>
-            Windows: right-click the ZIP → <strong>Extract All</strong>. Keep
-            the extracted folder somewhere permanent.
+            Right-click the downloaded file → <strong>Extract All</strong>.
           </p>
-          <p className="os-note">
-            Mac: double-click the ZIP in Finder. Linux: use Extract here in your
-            file manager.
-          </p>
+          <small>Mac: double-click. Keep the folder.</small>
         </article>
         <article className="install-step">
-          <div className="step-art art-browser" aria-hidden="true">
-            <div className="mini-browser">
-              <i />
-              <i />
-              <i />
-              <div>
-                extensions <span className="mini-switch" />
-              </div>
-              <small>developer mode · on</small>
-            </div>
-          </div>
-          <p className="eyebrow">02 · make a little room</p>
+          <InstallPicture step={2} address={address} />
+          <p className="eyebrow">02</p>
           <h2>open extensions.</h2>
-          <p>
-            Paste this address in your browser. Switch{' '}
-            <strong>Developer mode</strong> on.
-          </p>
           <button
             type="button"
             className="copy-address"
@@ -93,130 +221,63 @@ export function InstallGuide() {
                 setCopied(false);
               }
             }}
+            aria-label={`copy ${address}`}
           >
             {address}
-            <span>{copied ? 'copied ✓' : 'copy ↗'}</span>
+            <span aria-live="polite">{copied ? 'copied ✓' : 'copy ↗'}</span>
           </button>
-        </article>
-        <article className="install-step">
-          <div className="step-art art-folder" aria-hidden="true">
-            <div className="folder-icon">♥</div>
-            <span>hello, crowd.</span>
-          </div>
-          <p className="eyebrow">03 · let us in</p>
-          <h2>load unpacked.</h2>
           <p>
-            Choose <strong>Load unpacked</strong>, then select the extracted{' '}
-            folder containing <code>manifest.json</code>.
-          </p>
-          <p className="folder-trap">
-            folder inside a folder? open the inner one until you can see{' '}
-            <code>manifest.json</code>, then pick that folder.
+            Paste it in your address bar, then turn on{' '}
+            <strong>Developer mode</strong> (top-right).
           </p>
         </article>
         <article className="install-step">
-          <div className="step-art" aria-hidden="true">
-            <div className="toolbar-illustration">
-              <span>extensions</span>
-              <svg
-                className="setup-glyph"
-                viewBox="0 0 64 64"
-                aria-hidden="true"
-              >
-                <path d="m25 8 28 28-8 3-11-11-9 9-2 12-8-8 12-2 9-9L25 19Z M23 41 10 54" />
-              </svg>
-              <small>pinned ✓</small>
-            </div>
-          </div>
-          <p className="eyebrow">04 · keep us close</p>
-          <h2>pin the icon.</h2>
+          <InstallPicture step={3} address={address} />
+          <p className="eyebrow">03</p>
+          <h2>load it.</h2>
           <p>
-            Open your browser’s extensions menu (the puzzle piece). Pin{' '}
-            {PRODUCT.name} so its icon stays beside the address bar.
+            Click <strong>Load unpacked</strong> and choose the {PRODUCT.name}{' '}
+            folder.
           </p>
+          <small>Pick the folder that has the files inside, not the ZIP.</small>
         </article>
         <article className="install-step">
-          <div className="step-art" aria-hidden="true">
-            <div className="permission-illustration">
-              <svg
-                className="setup-glyph"
-                viewBox="0 0 64 64"
-                aria-hidden="true"
-              >
-                <rect x="24" y="8" width="16" height="30" rx="8" />
-                <path d="M17 30v4a15 15 0 0 0 30 0v-4 M32 49v9 M23 58h18" />
-              </svg>
-              <span>allow mic ↗</span>
-            </div>
-          </div>
-          <p className="eyebrow">05 · your laugh stays yours</p>
-          <h2>say hello in Welcome.</h2>
+          <InstallPicture step={4} address={address} />
+          <p className="eyebrow">04</p>
+          <h2>start laughing.</h2>
           <p>
-            Choose <strong>allow mic</strong> in Welcome, then allow the browser
-            permission. Audio stays on your PC. Sharing with the crowd is a
-            separate choice.
+            Pin the icon, open a live Twitch stream, click {PRODUCT.name} →{' '}
+            <strong>Start</strong>.
           </p>
-        </article>
-        <article className="install-step">
-          <div className="step-art" aria-hidden="true">
-            <div className="player-illustration">
-              <span>● live</span>
-              <svg
-                className="setup-glyph"
-                viewBox="0 0 64 64"
-                aria-hidden="true"
-              >
-                <path d="m25 17 24 15-24 15Z" />
-              </svg>
-              <small>your little crowd is here.</small>
-            </div>
-          </div>
-          <p className="eyebrow">06 · find your people</p>
-          <h2>open a live stream.</h2>
-          <p>
-            Open a live Twitch stream. Click the {PRODUCT.name} toolbar icon,
-            then <strong>start</strong>. Give the local models a moment to warm
-            up.
-          </p>
+          <small>
+            First time, say yes to the mic permission in Welcome. Your audio
+            never leaves your PC.
+          </small>
         </article>
       </div>
-      <aside
-        className="update-note install-help"
-        aria-labelledby="install-help-heading"
-      >
-        <span className="little-star">✳</span>
+      <details className="install-help">
+        <summary>
+          something not working? <span>+</span>
+        </summary>
         <div>
-          <h2 id="install-help-heading">stuck?</h2>
-          <h3>manifest error?</h3>
+          <h3>“Manifest file is missing”</h3>
           <p>
-            pick the folder with <code>manifest.json</code> inside it, not the
-            ZIP or its outer folder.
+            You picked the wrong folder. Open it until you see files like{' '}
+            <code>manifest.json</code>, and choose that one.
           </p>
-          <h3>keep its little home.</h3>
+          <h3>{PRODUCT.name} disappeared</h3>
           <p>
-            don’t delete or move the extracted folder. your browser loads the
-            extension from there.
+            Don’t delete or move the unzipped folder. Your browser runs it from
+            there.
           </p>
-          <h3>time for an update?</h3>
+          <h3>how do I update?</h3>
           <p>
-            open the {PRODUCT.name} toolbar icon and choose “update to v…”.
-            unzip the download, copy everything into the same existing folder
-            and replace its files, then press “finish update” on the update
-            page. your recaps and settings stay saved. refresh Twitch
-            afterwards.
-          </p>
-          <h3>files not replaced yet?</h3>
-          <p>
-            copy into the folder you originally loaded. if the ZIP has a nested
-            folder, open it until you see <code>manifest.json</code> and copy
-            those contents, not the outer folder. keep the original folder.
-          </p>
-          <p>
-            older version without an update button? download here, replace the
-            same folder’s contents and click reload on the extensions page once.
+            Click the {PRODUCT.name} icon → update. Download, replace the files
+            in the same folder, then press finish. Your recaps stay saved. Store
+            installs update through your browser’s store.
           </p>
         </div>
-      </aside>
+      </details>
     </>
   );
 }

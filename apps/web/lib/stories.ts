@@ -120,7 +120,7 @@ export function streamStories(
       const vod = vodAt(minutes[0]!.minute, vods);
       return {
         id,
-        title: vod?.title || 'a night with your crowd',
+        title: vod?.title || 'a night with your fans',
         start: minutes[0]!.minute,
         end: minutes.at(-1)!.minute + 60000,
         approximate: !vod,

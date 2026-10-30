@@ -71,7 +71,7 @@ export function PastStreams({
         <span>◡</span>
         <h2>
           {unavailable
-            ? 'your crowd’s taking a breather.'
+            ? 'your fans are taking a breather.'
             : 'the next stream is a new story.'}
         </h2>
         <p>

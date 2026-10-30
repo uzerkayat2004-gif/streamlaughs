@@ -2,8 +2,8 @@ import { PRODUCT } from '@laughline/shared';
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import Link from 'next/link';
-import { Brand } from '../components/brand';
-import { siteUrl, sourceUrl } from '../lib/config';
+import { Brand, LogoMark } from '../components/brand';
+import { siteUrl } from '../lib/config';
 import './globals.css';
 
 const display = localFont({
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   title: { default: PRODUCT.name, template: `%s · ${PRODUCT.name}` },
   description: PRODUCT.pitch,
   applicationName: PRODUCT.name,
-  icons: { icon: '/icon.svg', shortcut: '/icon.svg' },
+  icons: { icon: '/icon.svg', shortcut: '/icon.svg', apple: '/apple-icon' },
   openGraph: {
     title: PRODUCT.name,
     siteName: PRODUCT.name,
@@ -49,26 +49,29 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <header className="site-header">
           <Brand />
           <nav aria-label="main navigation">
-            <Link href="/for-streamers">for streamers</Link>
+            <Link href="/try">the demo</Link>
+            <Link href="/streamers">for streamers</Link>
             <Link href="/privacy">privacy</Link>
             <Link className="nav-cta" href="/install?downloaded=1">
-              get the extension <span>↗</span>
+              Download <span>↗</span>
             </Link>
           </nav>
         </header>
         <div id="content">{children}</div>
         <footer className="site-footer">
-          <Brand />
-          <p>your audio stays yours. the good bits bring us together.</p>
-          <div>
-            <Link href="/privacy">privacy</Link>
-            <Link href="/demo">try the demo ↗</Link>
-            {sourceUrl() && (
-              <a href={sourceUrl()!} target="_blank" rel="noreferrer">
-                source code ↗
-              </a>
-            )}
+          <div className="footer-identity">
+            <LogoMark />
+            <Brand />
+            <p>{PRODUCT.pitch}.</p>
           </div>
+          <nav aria-label="footer navigation">
+            <Link href="/try">demo</Link>
+            <Link href="/streamers">for streamers</Link>
+            <Link href="/install">install help</Link>
+            <Link href="/privacy">privacy</Link>
+            <a href="mailto:kayatuzair525@gmail.com">contact ↗</a>
+          </nav>
+          <p className="copyright">© 2026 {PRODUCT.name}</p>
         </footer>
       </body>
     </html>

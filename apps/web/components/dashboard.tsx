@@ -25,11 +25,11 @@ export function LiveCrowd({
     few = crowd?.state === 'few',
     setupPending = !api && !snapshot;
   return (
-    <section className="live-scene" aria-label="live crowd">
+    <section className="live-scene" aria-label="live fans">
       <div className="scene-label">
         <span className={`connection-dot ${live ? 'is-live' : ''}`} />
         {setupPending
-          ? 'crowd setup pending'
+          ? 'fan reactions setup pending'
           : snapshot
             ? 'recorded test snapshot'
             : live
@@ -53,7 +53,7 @@ export function LiveCrowd({
         </strong>
         <span>
           {setupPending
-            ? 'your crowd will join after setup'
+            ? 'your fans will join after setup'
             : live
               ? 'laughing right now'
               : few
@@ -61,7 +61,7 @@ export function LiveCrowd({
                 : 'we’ll reconnect when we can'}
         </span>
       </CrowdArt>
-      <section className="live-words" aria-label="live crowd words">
+      <section className="live-words" aria-label="live fan words">
         {live &&
           crowd.topWords.map((p) => (
             <span key={p.word}>
@@ -105,7 +105,7 @@ export function Dashboard({
           </p>
           <h1>
             {demo ? (
-              'a night with the crowd.'
+              'a night with the fans.'
             ) : (
               <>
                 hey, <span>{channel}.</span>
@@ -125,14 +125,14 @@ export function Dashboard({
       </div>
       {!demo && !api && (
         <p className="soft-note" role="status">
-          you’re signed in. crowd reactions and past streams aren’t set up yet.{' '}
+          you’re signed in. fan reactions and past streams aren’t set up yet.{' '}
           <a href="/demo">explore the demo ↗</a>
         </p>
       )}
       {demo && (
         <p className="soft-note">
-          Recorded aggregates from real local crowd-sim API traffic. Simulated
-          people, clearly marked. No Twitch login needed.
+          Recorded aggregates from the local simulator. Simulated people,
+          clearly marked. No Twitch login needed.
         </p>
       )}
       <div

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Arrow } from '../../components/brand';
-import { CrowdArt } from '../../components/crowd-art';
+import { FansPlayground } from '../../components/fans-playground';
 import { callbackUrl, dashboardConfigured } from '../../lib/config';
 import { loginErrorMessage } from '../../lib/oauth-errors';
 export default async function Streamers({
@@ -14,7 +14,7 @@ export default async function Streamers({
       <main className="standard-page streamer-page">
         <section className="streamer-hero auth-retry" role="alert">
           <div>
-            <p className="eyebrow">let’s get you back to your crowd.</p>
+            <p className="eyebrow">let’s get you back to your fans.</p>
             <h1>your sign-in didn’t finish.</h1>
             <p className="auth-note">{loginErrorMessage(query.reason)}</p>
             {query.reason === 'redirect_mismatch' && (
@@ -33,7 +33,7 @@ export default async function Streamers({
               </Link>
             </p>
           </div>
-          <CrowdArt illustration calm />
+          <FansPlayground />
         </section>
       </main>
     );
@@ -44,7 +44,7 @@ export default async function Streamers({
         <div>
           <p className="eyebrow">for the person making the moments.</p>
           <h1>
-            your crowd has
+            your fans have
             <br />a <em>laugh track.</em>
           </h1>
           <p>
@@ -64,6 +64,14 @@ export default async function Streamers({
           <span className="under-button">
             nothing to install · just your channel
           </span>
+          <aside className="oauth-trust">
+            <h2>Sign in with Twitch, safely.</h2>
+            <p>
+              You log in on twitch.tv, so we never see your password. We only
+              get your Twitch name and ID to show your own stats. You can remove
+              access anytime in Twitch Settings → Connections.
+            </p>
+          </aside>
           {(!configured || query.login) && (
             <p className="auth-note" role="status">
               {!configured || query.login === 'unconfigured'
@@ -72,10 +80,10 @@ export default async function Streamers({
             </p>
           )}
           <Link className="text-link" href="/demo">
-            or wander through the demo ↗
+            see a sample dashboard ↗
           </Link>
         </div>
-        <CrowdArt illustration />
+        <FansPlayground />
       </section>
       <section className="streamer-copy">
         <h2>
@@ -90,7 +98,7 @@ export default async function Streamers({
             one’s available.
           </p>
           <p>
-            Only anonymous crowd summaries with three or more contributors. No
+            Only anonymous fan summaries with three or more contributors. No
             viewer recordings, identities or transcripts. Your channel is yours
             to see.
           </p>

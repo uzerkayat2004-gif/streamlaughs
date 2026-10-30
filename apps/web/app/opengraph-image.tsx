@@ -1,5 +1,6 @@
 import { PRODUCT } from '@laughline/shared';
 import { ImageResponse } from 'next/og';
+import { LogoMark } from '../components/brand';
 
 export const alt = `${PRODUCT.name} — ${PRODUCT.pitch}`;
 export const size = { width: 1200, height: 630 };
@@ -22,8 +23,17 @@ export default function SocialImage() {
       <div
         style={{ display: 'flex', flexDirection: 'column', marginBottom: 55 }}
       >
-        <div style={{ fontSize: 58, fontWeight: 800, letterSpacing: -3 }}>
-          {PRODUCT.wordmark}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 24,
+            fontSize: 58,
+            fontWeight: 800,
+            letterSpacing: -3,
+          }}
+        >
+          <LogoMark size={100} /> {PRODUCT.wordmark}
         </div>
         <svg width="190" height="26" viewBox="0 0 190 26" aria-hidden="true">
           <path

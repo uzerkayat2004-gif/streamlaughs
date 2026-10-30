@@ -2,7 +2,6 @@ import 'server-only';
 import { cookies } from 'next/headers';
 import { secret, siteUrl } from './config';
 import { unseal } from './session-crypto';
-import { validateIdentity } from './twitch';
 export const authCookie = () =>
   siteUrl().startsWith('https:') ? '__Host-laughline-auth' : 'laughline-auth';
 export const cookieOptions = (maxAge: number) => ({
@@ -19,10 +18,7 @@ export async function authenticated() {
       secret('SESSION_SECRET'),
     );
     if (session?.kind !== 'session') return null;
-    const current = await validateIdentity(session.accessToken);
-    return current.user_id === session.userId && current.login === session.login
-      ? { login: current.login, userId: current.user_id }
-      : null;
+    return { login: session.login, userId: session.userId };
   } catch {
     return null;
   }

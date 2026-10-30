@@ -15,7 +15,7 @@ export async function GET(
     );
   if (!crowdConfigured())
     return Response.json(
-      { error: 'crowd features aren’t set up yet' },
+      { error: 'fan reactions aren’t set up yet' },
       { status: 503, headers: { 'Cache-Control': 'no-store' } },
     );
   try {
@@ -27,7 +27,7 @@ export async function GET(
     });
   } catch {
     return Response.json(
-      { error: 'Crowd history is unavailable. Try again shortly.' },
+      { error: 'Fan history is unavailable. Try again shortly.' },
       { status: 503, headers: { 'Cache-Control': 'no-store' } },
     );
   }

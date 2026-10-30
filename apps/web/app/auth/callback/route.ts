@@ -48,7 +48,7 @@ export async function GET(request: Request) {
           kind: 'session',
           login: user.login,
           userId: user.id,
-          accessToken: token.access_token,
+          displayName: user.display_name,
         },
         secret('SESSION_SECRET'),
         seconds,

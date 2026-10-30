@@ -13,7 +13,7 @@ export async function report(
   const to = Date.now(),
     from = to - days * 86400000,
     api = workerUrl();
-  if (!api) throw new Error('Crowd API is not configured');
+  if (!api) throw new Error('Fan server is not configured');
   const requests: (() => Promise<import('@laughline/shared').CrowdMinute[]>)[] =
     [];
   for (let start = from; start < to; start += 86400000) {

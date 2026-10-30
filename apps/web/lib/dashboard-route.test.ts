@@ -28,7 +28,7 @@ it('shows a signed-in owner a setup-pending response without invoking the Worker
   expect(response.status).toBe(503);
   expect(response.headers.get('Cache-Control')).toBe('no-store');
   expect(await response.json()).toEqual({
-    error: 'crowd features aren’t set up yet',
+    error: 'fan reactions aren’t set up yet',
   });
   expect(report).not.toHaveBeenCalled();
 });
