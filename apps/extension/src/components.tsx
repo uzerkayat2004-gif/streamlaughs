@@ -7,20 +7,20 @@ import {
   useRef,
   useState,
 } from 'react';
-import { SmileLogo } from './SmileLogo';
+import { AppIcon } from './AppIcon';
 
 export function crowdLabel(crowd: CrowdState | null) {
-  if (crowd?.source === 'fake') return 'simulated crowd · 3+ people';
+  if (crowd?.source === 'fake') return 'test fans · 3+ people';
   if (crowd?.state === 'live')
     return crowd.testTraffic ? 'live · test traffic' : 'live';
-  return crowd?.state === 'few' ? 'few people here yet' : 'offline';
+  return crowd?.state === 'few' ? 'waiting for fans' : 'offline';
 }
 
 export function Mark() {
   return (
     <div className="mark">
-      <SmileLogo size={24} />
-      <b>{PRODUCT.wordmark}</b>
+      <AppIcon size={24} />
+      <b className="text-wordmark">{PRODUCT.wordmark}</b>
     </div>
   );
 }
@@ -166,7 +166,7 @@ export function Blob({
               </strong>
               <p>
                 {crowd?.state === 'few'
-                  ? 'waiting for the crowd'
+                  ? 'waiting for fans'
                   : 'reconnecting when available'}
               </p>
             </>
@@ -189,10 +189,7 @@ export function Words({
   compact?: boolean;
 }) {
   return (
-    <section
-      className={compact ? 'x-cwords' : 'words'}
-      aria-label="crowd words"
-    >
+    <section className={compact ? 'x-cwords' : 'words'} aria-label="fan words">
       {(crowd?.source === 'fake' || crowd?.state === 'live'
         ? visibleWords(crowd).filter(
             (w) => crowd?.source === 'fake' || w.word !== '—',

@@ -2,7 +2,7 @@ import { PRODUCT } from '@laughline/shared';
 import { z } from 'zod';
 import identity from '../../../../extension/extension-identity.json';
 import { authenticated } from '../../../lib/auth';
-import { getPublicProfile } from '../../../lib/twitch';
+import { getPublicProfile, getVods } from '../../../lib/twitch';
 export const dynamic = 'force-dynamic';
 function cors(request: Request) {
   const origin = request.headers.get('Origin');
@@ -69,8 +69,17 @@ export async function POST(request: Request) {
       throw new Error('image unavailable');
     const bytes = await response.arrayBuffer();
     if (bytes.byteLength > 262144) throw new Error('image unavailable');
+    const vods = await getVods(
+      profile.userId,
+      Date.now() - 60 * 24 * 3600 * 1000,
+    ).catch(() => []);
     return Response.json(
       {
+        vods: vods.map(({ id, created_at, duration }) => ({
+          id,
+          created_at,
+          duration,
+        })),
         login,
         displayName: profile.displayName,
         avatarDataUrl: `data:${mime};base64,${Buffer.from(bytes).toString('base64')}`,

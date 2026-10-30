@@ -228,6 +228,7 @@ export async function getPublicProfile(login: string) {
       data: z
         .array(
           z.object({
+            id: z.string().regex(/^\d+$/),
             login: z.string(),
             display_name: z.string().max(100),
             profile_image_url: z.string().url(),
@@ -246,5 +247,10 @@ export async function getPublicProfile(login: string) {
     url.password
   )
     throw new Error('profile unavailable');
-  return { login, displayName: profile.display_name, avatarUrl: url.href };
+  return {
+    userId: profile.id,
+    login,
+    displayName: profile.display_name,
+    avatarUrl: url.href,
+  };
 }

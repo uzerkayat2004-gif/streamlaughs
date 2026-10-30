@@ -55,6 +55,20 @@ export function createDatabase(name?: string) {
           .table('streamerProfiles')
           .bulkPut([...profiles.values()]);
     });
+  db.version(3)
+    .stores({
+      sessions: 'id,channel,startedAt,endedAt',
+      recaps: 'id,sessionId,channel,createdAt',
+      streamerProfiles: 'login,fetchedAt',
+    })
+    .upgrade(async (tx) => {
+      await tx
+        .table('recaps')
+        .toCollection()
+        .modify((r: Recap) => {
+          r.seenAt ??= r.createdAt;
+        });
+    });
   return db;
 }
 export const db = createDatabase();

@@ -100,6 +100,7 @@ it('upgrades an actual v1 IndexedDB database without dropping any sessions, reca
     });
     expect(await upgraded.recaps.get(original.id)).toMatchObject({
       ...original,
+      seenAt: original.createdAt,
       channel: 'grimm',
       channelUrl: 'https://www.twitch.tv/grimm',
       displayName: 'grimm',
@@ -151,6 +152,41 @@ it('deletes only the selected saved streams and leaves live checkpoints and othe
     expect(await db.streamerProfiles.get('grimm')).toBeUndefined();
   } finally {
     db.close();
+    await Dexie.delete(name);
+  }
+});
+
+it('upgrades v2 recaps as already seen and preserves new unread recaps until opened', async () => {
+  const name = `unread-${crypto.randomUUID()}`,
+    old = new Dexie(name);
+  old
+    .version(2)
+    .stores({
+      sessions: 'id,channel,startedAt,endedAt',
+      recaps: 'id,sessionId,channel,createdAt',
+      streamerProfiles: 'login,fetchedAt',
+    });
+  const a = session('a', 'grimm'),
+    legacy = createRecap(a, 61000);
+  delete legacy.seenAt;
+  await old.table('sessions').put(a);
+  await old.table('recaps').put(legacy);
+  old.close();
+  const upgraded = createDatabase(name);
+  try {
+    expect((await upgraded.recaps.get('a'))?.seenAt).toBe(61000);
+    const b = session('b', 'grimm');
+    await upgraded.recaps.put(createRecap(b, 62000));
+    expect(await upgraded.recaps.filter((r) => r.seenAt === null).count()).toBe(
+      1,
+    );
+    await upgraded.recaps.update('b', { seenAt: 63000 });
+    expect(await upgraded.recaps.filter((r) => r.seenAt === null).count()).toBe(
+      0,
+    );
+    expect(await upgraded.sessions.count()).toBe(1);
+  } finally {
+    upgraded.close();
     await Dexie.delete(name);
   }
 });

@@ -5,14 +5,14 @@ import {
   RecapSchema,
 } from '@laughline/shared';
 import { liveQuery } from 'dexie';
-import { useCallback, useEffect, useState } from 'react';
+import { type CSSProperties, useCallback, useEffect, useState } from 'react';
 import { CountUp, formatTime, Mark, useReducedMotion } from './components';
 import { db } from './db';
 import { HistoryView, StreamerAvatar } from './HistoryView';
 import { completeRecaps, groupHistory, type StreamerProfile } from './history';
 import { ShareSheet } from './ShareSheet';
-import { SmileLogo } from './SmileLogo';
-
+import { AppIcon } from './AppIcon';
+import { duration, momentLink, STORY_COLORS, storyData } from './recap-story';
 export function Recap() {
   const reduce = useReducedMotion();
   const [view, setView] = useState(
@@ -22,44 +22,37 @@ export function Recap() {
   );
   const [sessions, setSessions] = useState<MySession[]>([]),
     [profiles, setProfiles] = useState<StreamerProfile[]>([]),
-    [share, setShare] = useState<{
-      recap: RecapData;
-      profile?: StreamerProfile;
-    } | null>(null);
-  const [recaps, setRecaps] = useState<RecapData[]>([]),
-    [selected, setSelected] = useState<string | null>(
-      new URLSearchParams(location.search).get('session'),
-    );
-  const [requestedStory, setStory] = useState(0),
+    [recaps, setRecaps] = useState<RecapData[]>([]);
+  const [selected, setSelected] = useState<string | null>(
+    new URLSearchParams(location.search).get('session'),
+  );
+  const [index, setIndex] = useState(0),
     [cycle, setCycle] = useState(0),
-    [message, setMessage] = useState(''),
     [loading, setLoading] = useState(true),
-    [reverse, setReverse] = useState(false);
-  const recap = recaps.find((item) => item.id === selected) ?? recaps[0];
-  const groups = groupHistory(sessions, recaps, profiles);
-  const profile = profiles.find((p) => p.login === recap?.channel);
-  const displayName =
-    profile?.displayName || recap?.displayName || recap?.channel || '';
-  const hasCrowd = !!recap?.crowdSummary;
-  const story = requestedStory === 1 && !hasCrowd ? 2 : requestedStory;
-  const stories = hasCrowd ? [0, 1, 2, 3, 4, 5] : [0, 2, 3, 4, 5];
-  const crowdDescription =
-    recap?.crowdSummary?.source === 'fake'
-      ? 'simulated crowd'
-      : recap?.crowdSummary
-        ? `live crowd${recap.crowdSummary.testTraffic ? ' · test traffic' : ''}`
-        : 'no crowd data';
+    [message, setMessage] = useState(''),
+    [sharing, setSharing] = useState(false);
+  const recap = recaps.find((r) => r.id === selected) ?? recaps[0];
+  const groups = groupHistory(sessions, recaps, profiles),
+    group = groups.find((g) => g.login === recap?.channel);
+  const session = sessions.find((s) => s.id === recap?.sessionId),
+    profile = group?.profile;
+  const data = recap ? storyData(recap, session, group) : null;
+  const storyIndex = Math.min(index, (data?.slides.length ?? 1) - 1),
+    slide = data?.slides[storyIndex];
+  const color = STORY_COLORS[storyIndex % STORY_COLORS.length]!;
   const go = useCallback(
     (next: number) => {
-      setReverse(next < story);
-      const target = !hasCrowd && next === 1 ? (next < story ? 0 : 2) : next;
-      setStory(Math.max(0, Math.min(5, target)));
-      setCycle(cycle + 1);
+      setIndex(Math.max(0, Math.min((data?.slides.length ?? 1) - 1, next)));
+      setCycle((n) => n + 1);
     },
-    [story, cycle, hasCrowd],
+    [data?.slides.length],
   );
+  const historyView = () => {
+    setView('streamers');
+    history.replaceState(null, '', '?view=streamers');
+  };
   useEffect(() => {
-    const subscription = liveQuery(() =>
+    const sub = liveQuery(() =>
       Promise.all([
         db.sessions.toArray(),
         db.recaps.orderBy('createdAt').reverse().toArray(),
@@ -71,73 +64,71 @@ export function Recap() {
         setRecaps(
           completeRecaps(
             saved,
-            items.map((item) => RecapSchema.parse(item)),
+            items.map((r) => RecapSchema.parse(r)),
           ).sort((a, b) => b.createdAt - a.createdAt),
         );
         setProfiles(people);
         setLoading(false);
       },
       error: () => {
-        setMessage('recaps couldn’t load · reload this page to retry');
+        setMessage('recaps couldn’t load · reload to retry');
         setLoading(false);
       },
     });
-    return () => subscription.unsubscribe();
+    return () => sub.unsubscribe();
   }, []);
   useEffect(() => {
-    if (!recap || story === 5 || reduce || view !== 'story' || share) return;
-    const timer = setTimeout(() => go(story + 1), 5000);
-    return () => clearTimeout(timer);
-  }, [story, recap, go, reduce, view, share]);
+    if (view === 'story' && recap?.seenAt === null)
+      void db.recaps.put({ ...recap, seenAt: Date.now() });
+  }, [view, recap?.id, recap?.seenAt]);
   useEffect(() => {
-    if (view !== 'story' || share) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
-        event.preventDefault();
-        go(story + (event.key === 'ArrowRight' ? 1 : -1));
+    if (
+      reduce ||
+      view !== 'story' ||
+      sharing ||
+      slide === 'final' ||
+      slide === 'empty'
+    )
+      return;
+    const t = setTimeout(() => go(storyIndex + 1), 5000);
+    return () => clearTimeout(t);
+  }, [reduce, view, sharing, slide, storyIndex, go, cycle]);
+  useEffect(() => {
+    if (view !== 'story' || sharing) return;
+    const key = (e: KeyboardEvent) => {
+      if (['ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.preventDefault();
+        go(storyIndex + (e.key === 'ArrowRight' ? 1 : -1));
       }
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [story, go, view, share]);
-  useEffect(() => {
-    if (!message) return;
-    const timer = setTimeout(() => setMessage(''), 3500);
-    return () => clearTimeout(timer);
-  }, [message]);
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, [view, sharing, storyIndex, go]);
   if (view === 'streamers')
     return (
       <HistoryView
         groups={groups}
-        onSelect={(item) => {
-          setSelected(item.id);
+        onSelect={(r) => {
+          setSelected(r.id);
+          setIndex(0);
           setView('story');
           history.replaceState(
             null,
             '',
-            `?session=${encodeURIComponent(item.id)}`,
+            `?session=${encodeURIComponent(r.id)}`,
           );
-          go(0);
         }}
         onLast={() => {
           setView('story');
-          history.replaceState(
-            null,
-            '',
-            recap ? `?session=${encodeURIComponent(recap.id)}` : '?',
-          );
+          setIndex(0);
         }}
       />
     );
-  if (!recap)
+  if (!recap || !data)
     return (
       <main className="empty-recap">
         <Mark />
-        <button
-          type="button"
-          className="textbtn"
-          onClick={() => setView('streamers')}
-        >
+        <button type="button" className="textbtn" onClick={historyView}>
           my streamers
         </button>
         <h1>
@@ -156,60 +147,59 @@ export function Recap() {
         </a>
       </main>
     );
+  const name = profile?.displayName || recap.displayName || recap.channel;
+  const vod = data.moment
+    ? momentLink(
+        recap.startedAt ?? recap.createdAt,
+        data.moment.seconds,
+        profile,
+      )
+    : null;
+  const micCheck = (
+    <a
+      className="x-pill"
+      href={chrome.runtime.getURL('/mic-test.html')}
+      target="_blank"
+      rel="noreferrer"
+    >
+      test my mic
+    </a>
+  );
   return (
     <main
-      className="x-rc"
+      className="x-rc colourful-recap"
       aria-label="Session recap"
-      style={
-        {
-          '--recap-glow': [
-            '#FFD23F15',
-            '#2FE0C212',
-            '#ffffff08',
-            '#a677770f',
-            '#FFD23F12',
-            '#ffffff08',
-          ][story],
-        } as React.CSSProperties
-      }
+      style={{ '--story-color': color } as CSSProperties}
     >
       <div className="recap-ambient" aria-hidden="true" />
       <header className="recap-topbar">
         <Mark />
-        <button
-          type="button"
-          className="textbtn"
-          onClick={() => {
-            setView('streamers');
-            history.replaceState(null, '', '?view=streamers');
-          }}
-        >
+        <button type="button" className="textbtn" onClick={historyView}>
           my streamers ↗
         </button>
       </header>
       <div
         className="x-card"
-        data-tone={story < 2 ? 'light' : 'dark'}
-        data-dir={reverse ? 'back' : 'fwd'}
+        data-tone="light"
         tabIndex={0}
         role="group"
         aria-roledescription="story"
-        aria-label={`your recap · story ${stories.indexOf(story) + 1} of ${stories.length} · click right for next, left for back, or use the arrow keys`}
-        onClick={(event) => {
-          if ((event.target as Element).closest('button,a')) return;
-          const bounds = event.currentTarget.getBoundingClientRect();
-          go(story + (event.clientX - bounds.left < bounds.width / 2 ? -1 : 1));
+        aria-label={`your recap · story ${storyIndex + 1} of ${data.slides.length} · arrow keys or tap either half`}
+        onClick={(e) => {
+          if ((e.target as Element).closest('button,a')) return;
+          const b = e.currentTarget.getBoundingClientRect();
+          go(storyIndex + (e.clientX - b.left < b.width / 2 ? -1 : 1));
         }}
       >
         <header className="recap-streamer">
           <StreamerAvatar
             login={recap.channel}
-            name={displayName}
+            name={name}
             profile={profile}
-            size={34}
+            size={38}
           />
           <div>
-            <b>{displayName}</b>
+            <b>{name}</b>
             <small>
               {new Date(recap.startedAt ?? recap.createdAt).toLocaleDateString(
                 undefined,
@@ -221,272 +211,233 @@ export function Recap() {
         <div
           className="x-bars"
           aria-hidden="true"
-          key={`${recap.id}-${story}-${cycle}`}
+          key={`${recap.id}-${storyIndex}-${cycle}`}
         >
-          {stories.map((n) => (
+          {data.slides.map((s, n) => (
             <i
-              key={n}
-              className={n < story ? 'is-done' : n === story ? 'is-run' : ''}
+              key={s}
+              className={
+                n < storyIndex ? 'is-done' : n === storyIndex ? 'is-run' : ''
+              }
             >
               <b />
             </i>
           ))}
         </div>
-        <div
-          key={`${story}-${recap.id}-${cycle}`}
-          className={`x-st is-on ${['x-st--sun', 'x-st--sea', 'x-st--word', 'x-st--hard', 'x-st--style', 'x-st--share'][story]}`}
+        <section
+          key={`${recap.id}-${slide}-${cycle}`}
+          data-slide={slide}
+          className="x-st is-on story-content"
         >
-          {story === 0 && (
+          {slide === 'empty' && (
+            <>
+              <AppIcon size={96} />
+              <h1 className="x-ln story-title">
+                we didn’t hear anything this time
+              </h1>
+              <p className="x-ln x-sub">
+                let’s check your mic before the next stream.
+              </p>
+              <div className="x-ln">{micCheck}</div>
+            </>
+          )}
+          {slide === 'intro' && (
+            <>
+              <StreamerAvatar
+                login={recap.channel}
+                name={name}
+                profile={profile}
+                size={92}
+              />
+              <p className="x-ln x-kick">you + {name}</p>
+              <h1 className="x-ln story-title">
+                you watched
+                <br />
+                <strong>{duration(data.seconds)}</strong>
+              </h1>
+              <p className="x-ln x-sub">
+                a little time. a whole lot of moments.
+              </p>
+            </>
+          )}
+          {slide === 'laughs' && (
             <>
               <p className="x-ln x-kick">you laughed</p>
-              <p
-                className="x-ln x-giant"
-                style={{
-                  fontSize: `${Math.min(36, 132 / recap.totalLaughs.toLocaleString('en-US').length)}cqw`,
-                }}
-              >
+              <p className="x-ln story-number">
                 <CountUp value={recap.totalLaughs} />
               </p>
-              <p className="x-ln x-sub">times with {recap.channel}</p>
-            </>
-          )}
-          {story === 1 && (
-            <>
-              <div className="x-rain" aria-hidden="true">
-                {Array.from({ length: 26 }, (_, i) => (
-                  <i
-                    key={i}
-                    style={{
-                      left: `${(i * 41) % 100}%`,
-                      width: 4 + (i % 7),
-                      height: 4 + (i % 7),
-                      opacity: 0.3 + (i % 4) * 0.15,
-                      animationDuration: `${2.4 + (i % 5) * 0.5}s`,
-                      animationDelay: `-${i % 6}s`,
-                    }}
-                  />
-                ))}
-              </div>
-              <p className="x-ln x-kick">
-                {recap.crowdSummary?.source === 'fake'
-                  ? "you weren't alone"
-                  : 'you vs crowd'}
-              </p>
-              <p
-                className="x-ln x-giant"
-                style={{
-                  fontSize: `${Math.min(29, 132 / String(recap.crowdSummary?.peakLaughingNow ?? 0).length)}cqw`,
-                }}
-              >
-                <CountUp value={recap.crowdSummary?.peakLaughingNow ?? 0} />
-              </p>
-              <p className="x-ln x-sub">
-                {crowdDescription} · peak laughing together
-              </p>
-              <p className="x-ln x-yours">
-                you: {recap.totalLaughs} laughs this session · highest share
-                laughing: {recap.crowdSummary?.peakLaughPercent}% · up to{' '}
-                {recap.crowdSummary?.peakSharing} sharing
-              </p>
-            </>
-          )}
-          {story === 2 && (
-            <>
-              <div className="x-float" aria-hidden="true">
-                {[recap.topWord, ...recap.maskedSwears.map((w) => w.text)]
-                  .filter((w) => w !== '—')
-                  .slice(0, 6)
-                  .map((word, i) => (
-                    <span
-                      key={word}
-                      style={{
-                        ...[
-                          { top: '11%', left: '8%' },
-                          { top: '15%', right: '9%' },
-                          { top: '26%', left: '34%' },
-                          { bottom: '18%', right: '8%' },
-                          { bottom: '9%', left: '10%' },
-                          { bottom: '12%', left: '44%' },
-                        ][i],
-                        animationDelay: `-${i * 0.8}s`,
-                      }}
-                    >
-                      {word}
-                    </span>
-                  ))}
-              </div>
-              <p className="x-ln x-kick">your word of the night</p>
-              <p className={`x-ln ${recap.wordCount ? 'x-giant' : 'x-big'}`}>
-                {recap.wordCount
-                  ? `“${recap.topWord.toUpperCase()}”`
-                  : 'all laughs. no words yet.'}
-              </p>
-              <p className="x-ln x-sub">
-                {recap.wordCount
-                  ? `said ${recap.wordCount.toLocaleString('en-US')} times`
-                  : 'a quiet mic can still be a good night.'}
-              </p>
-              <p className="x-ln x-yours">
-                {recap.swears} masked swears · {recap.hype} hype shouts ·{' '}
-                {recap.screams} screams · {recap.gasps} gasps
-              </p>
-            </>
-          )}
-          {story === 3 && (
-            <>
-              <p className="x-ln x-kick">your hardest laugh</p>
-              <p className={`x-ln ${recap.totalLaughs ? 'x-giant' : 'x-big'}`}>
-                {recap.totalLaughs ? (
-                  <CountUp value={recap.hardestLaughAt} format={formatTime} />
-                ) : (
-                  'next time.'
-                )}
-              </p>
-              <p className="x-ln x-sub">
-                {!recap.totalLaughs
-                  ? 'no laughs caught this session'
-                  : recap.crowdSummary
-                    ? `${recap.othersAtPeak} ${crowdDescription} reactions at that moment`
-                    : 'your personal moment'}
-              </p>
-              {recap.totalLaughs > 0 && (
-                <button
-                  type="button"
-                  className="x-ln x-pill x-pill--white"
-                  onClick={async () => {
-                    try {
-                      await navigator.clipboard.writeText(
-                        formatTime(recap.hardestLaughAt),
-                      );
-                      setMessage('time copied');
-                    } catch {
-                      setMessage('couldn’t copy · focus this tab and retry');
-                    }
-                  }}
-                >
-                  copy time
-                </button>
+              <h1 className="x-ln x-sub">times with {name}</h1>
+              {data.perHour !== undefined && (
+                <p className="x-ln story-note">about {data.perHour} an hour</p>
+              )}
+              {data.aboveUsual !== undefined && data.aboveUsual > 0 && (
+                <p className="x-ln story-note">
+                  {data.aboveUsual} more than usual with {name}
+                </p>
               )}
             </>
           )}
-          {story === 4 && (
+          {slide === 'moment' && data.moment && (
             <>
-              <svg className="x-sq" viewBox="0 0 400 200" aria-hidden="true">
-                <path
-                  d="M-10 130C40 20 95 20 120 100S205 185 240 95 330 10 410 80"
-                  fill="none"
-                  stroke="#FFD23F"
-                  strokeWidth="16"
-                  strokeLinecap="round"
-                />
-              </svg>
-              <p className="x-ln x-kick">your laugh style</p>
-              <p className="x-ln x-big">{recap.style}</p>
-              <p className="x-ln x-sub">
-                {recap.style === 'the delayed cackler'
-                  ? `about ${recap.delaySeconds} sec after tab laughter`
-                  : 'from your local reactions this session'}
+              <p className="x-ln x-kick">your biggest minute</p>
+              <p className="x-ln story-number moment-time">
+                {formatTime(data.moment.seconds)}
               </p>
+              <h1 className="x-ln story-title">
+                you laughed {data.moment.count}{' '}
+                {data.moment.count === 1 ? 'time' : 'times'} in a minute
+              </h1>
+              {vod ? (
+                <a
+                  className="x-ln x-pill"
+                  href={vod}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  open this moment ↗
+                </a>
+              ) : (
+                <p className="x-ln story-note">
+                  your local session time ·{' '}
+                  {profile?.vods
+                    ? 'no saved replay for this moment'
+                    : 'connect Twitch photos to look for a replay'}
+                </p>
+              )}
             </>
           )}
-          {story === 5 && (
+          {slide === 'words' && (
             <>
-              <div className="x-glow share-glow-teal" />
-              <div className="x-glow share-glow-yellow" />
-              <p className="x-ln x-wm">{PRODUCT.wordmark}</p>
-              <p className="x-ln x-giant">
-                <CountUp value={recap.totalLaughs} />
-              </p>
-              <p className="x-ln x-kick">laughs</p>
-              <p className="x-ln x-sub">{recap.channel}</p>
-              <svg
-                className="x-ln x-wave"
-                viewBox="0 0 270 60"
-                aria-hidden="true"
+              <p className="x-ln x-kick">your words of the night</p>
+              <ol className="story-words">
+                {data.words.map((w) => (
+                  <li className="x-ln" key={w.word}>
+                    <b>“{w.word}”</b>
+                    <small>{w.count}×</small>
+                  </li>
+                ))}
+              </ol>
+              <div className="story-chips">
+                {data.chips.map(([n, label]) => (
+                  <span key={label}>
+                    {n} {label}
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
+          {slide === 'history' && (
+            <>
+              <p className="x-ln x-kick">you + {name}</p>
+              <h1 className="x-ln story-title">
+                your {data.ordinal} stream
+                <br />
+                with {name}
+              </h1>
+              <p className="x-ln story-number history-total">{data.together}</p>
+              <p className="x-ln x-sub">laughs together</p>
+              <div
+                className="past-stream-bars"
+                aria-label="laughs in your saved streams"
               >
-                <path
-                  d="M10 30Q35 6 60 30T110 30 160 30 210 30 260 30"
-                  fill="none"
-                  stroke="#FFD23F"
-                  strokeWidth="5"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M10 30Q35 54 60 30T110 30 160 30 210 30 260 30"
-                  fill="none"
-                  stroke="#2EE6C5"
-                  strokeWidth="5"
-                  strokeLinecap="round"
-                />
-              </svg>
+                {data.streams.map((s, n) => (
+                  <i
+                    key={s.id}
+                    style={{
+                      height: Math.max(
+                        4,
+                        (s.laughs /
+                          Math.max(1, ...data.streams.map((t) => t.laughs))) *
+                          74,
+                      ),
+                    }}
+                    title={`stream ${n + 1}: ${s.laughs} laughs`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+          {slide === 'final' && (
+            <>
+              <AppIcon size={96} />
+              <h1 className="x-ln story-title">
+                one stream.
+                <br />
+                your kind of people.
+              </h1>
               <div className="x-ln x-acts">
                 <button
                   type="button"
-                  className="x-pill x-pill--yellow"
-                  onClick={() => setShare({ recap, profile })}
+                  className="x-pill"
+                  disabled={!recap.totalLaughs}
+                  onClick={() => setSharing(true)}
                 >
                   share
                 </button>
                 <button
                   type="button"
-                  className="x-pill x-pill--line"
-                  onClick={() => go(0)}
+                  className="x-pill story-secondary"
+                  onClick={historyView}
                 >
-                  replay
+                  see all my streamers
                 </button>
               </div>
+              {!recap.totalLaughs && <div className="x-ln">{micCheck}</div>}
+              <button type="button" className="textbtn" onClick={() => go(0)}>
+                replay
+              </button>
             </>
           )}
-        </div>
+        </section>
         <footer className="recap-card-brand">
-          <SmileLogo size={21} />
-          <span>{PRODUCT.wordmark}</span>
+          <AppIcon size={25} />
+          <span className="text-wordmark">{PRODUCT.wordmark}</span>
         </footer>
       </div>
-      <div className="story-navigation">
+      <nav className="story-navigation" aria-label="recap navigation">
         <button
           type="button"
           className="textbtn"
-          disabled={story === 0}
-          onClick={() => go(story - 1)}
+          disabled={storyIndex === 0}
+          onClick={() => go(storyIndex - 1)}
         >
           previous
         </button>
         <span>
-          {stories.indexOf(story) + 1} / {stories.length}
+          {storyIndex + 1} / {data.slides.length}
         </span>
         <button
           type="button"
           className="textbtn"
-          disabled={story === 5}
-          onClick={() => go(story + 1)}
+          disabled={storyIndex === data.slides.length - 1}
+          onClick={() => go(storyIndex + 1)}
         >
           next
         </button>
-      </div>
-      <button
-        type="button"
-        className="textbtn recap-share-link"
-        onClick={() => setShare({ recap, profile })}
-      >
-        share recap ↑
-      </button>
+      </nav>
+      {!data.empty && (
+        <button
+          type="button"
+          className="textbtn recap-share-link"
+          disabled={!recap.totalLaughs}
+          onClick={() => setSharing(true)}
+        >
+          share recap ↑
+        </button>
+      )}
       <p className="preview-label">
         {recap.source === 'local'
-          ? `real personal reactions · ${crowdDescription}`
-          : 'legacy simulated session'}{' '}
+          ? 'real personal reactions'
+          : 'demo · simulated stats'}{' '}
         · stored on this browser
       </p>
-      {message && (
-        <div className="x-toast x-glass is-on" role="status">
-          {message}
-        </div>
-      )}
-      {share && (
+      {sharing && (
         <ShareSheet
-          recap={share.recap}
-          profile={share.profile}
-          close={() => setShare(null)}
+          recap={recap}
+          profile={profile}
+          ordinal={data.ordinal}
+          bestMoment={data.moment?.seconds}
+          close={() => setSharing(false)}
         />
       )}
     </main>

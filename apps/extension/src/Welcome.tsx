@@ -5,7 +5,7 @@ import { MIC_CONSENT_KEY, MICROPHONE_CONSTRAINTS } from './audio/config';
 import { checkMicrophone } from './audio/mic-check';
 import { command, connectSurface, surface } from './bridge';
 import { Backdrop, Mark, Toggle, Wave } from './components';
-import { SmileLogo } from './SmileLogo';
+import { AppIcon } from './AppIcon';
 import { friendlyError } from './ui-status';
 
 export function Welcome() {
@@ -46,7 +46,7 @@ export function Welcome() {
           >
             {done ? (
               <>
-                <SmileLogo size={190} className="welcome-smile" />
+                <AppIcon size={190} className="welcome-smile" />
                 <h1>you’re ready.</h1>
                 <p className="sub">
                   pin the icon · open a stream · press start
@@ -55,7 +55,7 @@ export function Welcome() {
             ) : (
               slide === 0 && (
                 <>
-                  <SmileLogo size={190} className="welcome-smile" />
+                  <AppIcon size={190} className="welcome-smile" />
                   <h1>{PRODUCT.pitch}.</h1>
                 </>
               )
@@ -99,7 +99,7 @@ export function Welcome() {
                     </span>
                   ))}
                 </div>
-                <h1>share with the crowd?</h1>
+                <h1>share with the fans?</h1>
                 {micPeak !== null && (
                   <div
                     className="welcome-mic-check"
@@ -129,7 +129,7 @@ export function Welcome() {
                   </div>
                 )}
                 <Toggle
-                  title="share with the crowd"
+                  title="share with the fans"
                   detail="counts + approved phrases · shown with 3+ sharing"
                   on={snapshot.settings.share}
                   click={() =>

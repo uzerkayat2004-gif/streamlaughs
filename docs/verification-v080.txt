@@ -1,0 +1,144 @@
+StreamLaughs v0.8.0 FINAL verification — Windows / Node 24.11.1 / pnpm 10.33.2
+No full test suite/general e2e, store upload, tag or GitHub release. Worker build is dry-run only. All UI fixture counts are labelled test/demo.
+
+Phase 1 gated commit: 732aefb4af3010c7b1ab9a06ed2193fc2560cc02
+63 targeted Phase 1 unit tests passed before UI work. See detection-v080.md.
+
+Workspace typecheck (pnpm -r typecheck)
+Scope: 7 of 8 workspace projects
+packages/shared typecheck$ tsc --noEmit
+tools/crowd-sim typecheck$ node --check cli.mjs && node --check record-demo.mjs
+tools/eval typecheck$ node --check cli.mjs && node --check browser.mjs && node --check wav.mjs && node --check metrics.mjs
+tools/release typecheck$ node --check config.mjs && node --check version.mjs && node --check verify-production.mjs && node --check branding.mjs && node --check offline-preview.mjs && node --check pack.mjs && node --check dependency-notices.mjs && node --check web-download.mjs && node --check ../build-web.mjs && python -m py_compile pack.py verify-store.py
+tools/crowd-sim typecheck: Done
+tools/eval typecheck: Done
+tools/release typecheck: Done
+packages/shared typecheck: Done
+workers/api typecheck$ tsc --noEmit
+apps/extension typecheck$ wxt prepare && tsc --noEmit
+apps/web typecheck$ node ../../tools/next-local.mjs typegen && tsc --noEmit
+apps/web typecheck: Generating route types...
+apps/web typecheck: ✓ Types generated successfully
+apps/extension typecheck: WXT 0.21.5
+apps/extension typecheck: i Generating types...
+apps/extension typecheck:  WARN  The following entrypoints have been skipped:
+apps/extension typecheck: - debug
+apps/extension typecheck: √ Finished in 574 ms
+workers/api typecheck: Done
+apps/web typecheck: Done
+apps/extension typecheck: Done
+
+Final phase 2 unit cohort (8 specific files)
+
+ RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/apps/extension
+
+
+ Test Files  8 passed (8)
+      Tests  35 passed (35)
+   Start at  19:04:14
+   Duration  1.46s (transform 1.26s, setup 0ms, import 3.41s, tests 1.05s, environment 1ms)
+
+
+Website profile/VOD boundary tests (one file)
+
+ RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/apps/web
+
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  19:02:04
+   Duration  490ms (transform 115ms, setup 0ms, import 253ms, tests 31ms, environment 0ms)
+
+
+Headed production ZIP: human WAV normal/loud/speech-only + popup mic check
+[WebServer] (node:6268) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 1 worker
+
+(node:8112) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+production audio: normal capture requested
+production audio: normal local models ready
+{"case":"normal","counts":{"laughs":1,"words":6},"micFrames":1679,"tabFrames":1679,"micFps":51,"drops":0,"lowPower":false,"models":{"vad":{"phase":"ready","error":"","ms":2016.800000000745},"yamnet":{"phase":"ready","error":"","ms":693.0999999977648},"whisper":{"phase":"ready","error":"","ms":3925.800000000745}},"peakClasses":{"Silence":0.80078125,"Speech":0.99609375,"Cough":0.4140625,"Sigh":0.19921875,"Sneeze":0.80078125,"Laughter":0.5859375,"Wheeze":0.26171875,"Hiccup":0.66796875,"Crying, sobbing":0.19921875,"Whimper":0.1484375,"Animal":0.91796875,"Roaring cats (lions, tigers)":0.1484375}}
+  ok 1 tests\production-audio.spec.ts:135:3 › production ZIP detects real recorded laughs and speech with normal tab playback (47.7s)
+production audio: loud capture requested
+production audio: loud local models ready
+{"case":"loud","counts":{"laughs":1,"words":6},"micFrames":511,"tabFrames":511,"micFps":51,"drops":0,"lowPower":false,"models":{"vad":{"phase":"ready","error":"","ms":942.6000000014901},"yamnet":{"phase":"ready","error":"","ms":479.30000000074506},"whisper":{"phase":"ready","error":"","ms":1779}},"peakClasses":{"waiting":0,"Sine wave":0.95703125,"Busy signal":0.66796875,"Tuning fork":0.5,"Speech":0.73828125,"Sonar":0.8515625,"Chirp tone":0.5859375,"Music":0.19921875,"Laughter":0.5859375,"Sneeze":0.5859375,"Hiccup":0.1484375}}
+  ok 2 tests\production-audio.spec.ts:135:3 › production ZIP detects real recorded laughs and speech with loud tab playback (23.6s)
+production audio: speech only capture requested
+production audio: speech only local models ready
+{"case":"speech only","counts":{"laughs":0,"words":9},"micFrames":1068,"tabFrames":1068,"micFps":50,"drops":0,"lowPower":false,"models":{"vad":{"phase":"ready","error":"","ms":1061.5},"yamnet":{"phase":"ready","error":"","ms":510.80000000074506},"whisper":{"phase":"ready","error":"","ms":2274.900000002235}},"peakClasses":{}}
+  ok 3 tests\production-audio.spec.ts:135:3 › production ZIP detects real recorded laughs and speech with speech only tab playback (34.1s)
+
+  ok 4 tests\production-audio.spec.ts:453:1 › production popup mic check detects the recorded voice without creating a saved session (17.7s)
+
+  4 passed (2.1m)
+
+Headed UI regression: one specific file, two cases; glass fit, real stop save/badge/discard, migration-backed history, keyboard/empty stories, actual PNG, DPR 1.25 simulation
+[WebServer] (node:22184) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:5456) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+  ok 1 tests\ui-v080.spec.ts:62:1 › v0.8 production website ZIP: glass fade/drag, grouped history, keyboard stories and real canvas PNG (21.4s)
+  ok 2 tests\ui-v080.spec.ts:440:1 › popup fits the 380px surface at 125% browser device scaling (1.9s)
+
+  2 passed (24.8s)
+
+Full production build (Worker dry-run + Chrome + Edge + universal ZIP + Next + branding), then store archive
+✓ Compiled successfully in 10.9s
+  Running TypeScript ...
+  Finished TypeScript in 9.0s ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/16) ...
+  Generating static pages using 11 workers (4/16)
+  Generating static pages using 11 workers (8/16)
+  Generating static pages using 11 workers (12/16)
+✓ Generating static pages using 11 workers (16/16) in 2.8s
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/dashboard/[channel]
+├ ƒ /api/extension-profile
+├ ○ /apple-icon
+├ ƒ /auth/callback
+├ ƒ /auth/login
+├ ƒ /auth/logout
+├ ƒ /dashboard
+├ ƒ /dashboard/[channel]
+├ ƒ /demo
+├ ƒ /for-streamers
+├ ○ /icon.svg
+├ ƒ /install
+├ ○ /opengraph-image
+├ ○ /privacy
+├ ƒ /streamers
+├ ○ /try
+└ ƒ /version.json
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+StreamLaughs source, docs and requested website output branding checks passed.
+
+> laughline-monorepo@ release:edge-store C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline
+> node tools/release/pack.mjs --edge-store
+
+Verified flat edge ZIP: streamlaughs-edge-store-v0.8.0.zip
+Prepared Edge store CI artifact in releases/edge-store; no publication performed.
+
+Universal local metadata: {"version": "0.8.0", "filename": "streamlaughs.zip", "versionedFilename": "streamlaughs-v0.8.0.zip", "sha256": "6cce83c51ef4a50a5144d106e11396237089eeceb33355c3d93847820cf2173e", "bytes": 40762529}
+
+Store archive verification: PASS — exactly one root manifest.json, version 0.8.0, no key, no downloads permission. Fixed ZIP public-key ID checked by build and identity tests. No secret/audio payload in generated UI artifacts.
+
+Physical microphone acoustics, real Windows scaling, native OS sharing/clipboard approvals and optional real Twitch-photo consent remain manual acceptance in ui-v080.md. No signed-in user browser or cookies were inspected.

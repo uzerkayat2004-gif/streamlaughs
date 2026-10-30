@@ -1,6 +1,11 @@
 import { createRecap, MySessionSchema } from '@laughline/shared';
 import { expect, it } from 'vitest';
-import { SHARE_SIZE, shareCardData, shareText } from './share-card';
+import {
+  SHARE_SIZE,
+  shareCardData,
+  shareText,
+  renderShareCard,
+} from './share-card';
 
 const recap = (laughs: number) =>
   createRecap(
@@ -36,9 +41,10 @@ it('exports story dimensions and only explicitly selected safe summary fields', 
     shareCardData({ ...recap(1), topWord: 'alice private name' }).word,
   ).toBeNull();
 });
-it('makes an all-zero session friendly, with no fictitious best moment or transcript', () => {
+it('disables zero-laugh PNG exports before any canvas or model can be read', async () => {
   const data = shareCardData(recap(0));
-  expect(data.heading).toContain('a quiet laugh track');
+  expect(data.canShare).toBe(false);
+  await expect(renderShareCard(recap(0))).rejects.toThrow('no laughs to share');
   expect(data.bestMoment).toBeNull();
   expect(shareText(recap(0))).toContain('Some nights are just for watching.');
   expect(shareText(recap(0))).not.toContain('0 times');

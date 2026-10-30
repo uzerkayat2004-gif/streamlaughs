@@ -113,7 +113,7 @@ export default defineConfig({
     name: product.name,
     version: product.version,
     key: identity.publicKey,
-    description: `${product.name} — ${product.pitch}. Local audio processing and anonymous crowd counts.`,
+    description: `${product.name} — ${product.pitch}. Local audio processing and anonymous fan counts.`,
     minimum_chrome_version: '120',
     permissions: [
       'storage',

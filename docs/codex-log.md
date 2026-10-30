@@ -112,3 +112,10 @@
 - Verified the built extension across drag persistence, fullscreen, privacy, pause sync, stop/recap, SPA navigation, tab-close saves, onboarding and confirmed deletion.
 - Polished keyboard/focus behavior, count-up stories and live reduced-motion handling; captured the four approved surfaces and prepared the load-unpacked documentation.
 - Final verification passed: pnpm install, recursive typecheck, 25 Vitest tests, Chrome MV3 build, Biome and the headed Playwright extension smoke test. Packaged source with the prebuilt extension.
+
+
+## v0.8.0 FINAL — Phase 2
+
+Phase 1 was independently proven/committed before UI work. Added the shared yellow laughing-face icon (text smile underline retained), fans wording, compact glass meter, primary-action popup face, mic status, saved-stream actions/discard confirmation and unread toolbar/history badges. Dexie v3 preserves old sessions/settings and marks legacy recaps read. Replaced dark recap with colourful real-data stories, rolling minute moments, positive reaction chips, historical channel totals/ordinals, empty mic check and zero-share guard. Added colourful streamer cards, actual per-stream sparkline data and local coral 1080×1920 canvas export. Optional profile lookup returns public VOD metadata; channel-only request and local matching preserve privacy. Unknown fan totals/coincidence are deliberately skipped rather than inferred from concurrent peaks.
+
+Bumped product version to 0.8.0. Rebuilt universal production and store archives; no identity change, store upload, tag, release or Worker deployment. Targeted proof, limitations, screenshot paths and exact same-folder update steps: docs/ui-v080.md and docs/verification-v080.txt. Main push uses the requested separate Phase 2 commit and existing Vercel auto-deployment.

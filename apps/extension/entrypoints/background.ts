@@ -30,7 +30,8 @@ import {
 import { TabEndedSchema } from '../src/audio/protocol';
 import { captureTransition } from '../src/audio/state-machine';
 import { type CrowdSource, makeCrowdSource } from '../src/crowd-source';
-import { db } from '../src/db';
+import { db, deleteSavedStreams } from '../src/db';
+import { liveQuery } from 'dexie';
 import { SITE_URL, UPDATE_KEY } from '../src/site';
 import {
   isZipInstall,
@@ -43,6 +44,15 @@ import { checkVersion } from '../src/version-check';
 
 export default defineBackground(() => {
   let state: Snapshot = initialSnapshot();
+  liveQuery(() => db.recaps.filter((r) => r.seenAt === null).count()).subscribe(
+    {
+      next: (n) => {
+        void chrome.action?.setBadgeText({ text: n ? '•' : '' });
+        void chrome.action?.setBadgeBackgroundColor({ color: '#FFD23F' });
+      },
+      error: () => {},
+    },
+  );
   let activeOwnerId: string | null = null;
   const source: CrowdSource = makeCrowdSource();
   let sourceSessionId: string | null = null;
@@ -169,7 +179,15 @@ export default defineBackground(() => {
         await db.sessions.put(session);
         await db.recaps.put(recap);
       });
-      state = { ...state, lastRecapId: recap.id };
+      state = {
+        ...state,
+        lastRecapId: recap.id,
+        lastSaved: {
+          id: recap.id,
+          durationSeconds: recap.durationSeconds ?? 0,
+          laughs: recap.totalLaughs,
+        },
+      };
     }
     state = {
       ...state,
@@ -530,6 +548,13 @@ export default defineBackground(() => {
         const revision = state.revision;
         await chrome.storage.local.clear();
         state = { ...initialSnapshot(), revision };
+        await publish();
+        break;
+      }
+      case 'DISCARD_RECAP': {
+        await deleteSavedStreams([message.id]);
+        if (state.lastRecapId === message.id) state.lastRecapId = null;
+        if (state.lastSaved?.id === message.id) state.lastSaved = null;
         await publish();
         break;
       }

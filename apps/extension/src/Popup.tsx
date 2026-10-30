@@ -10,7 +10,11 @@ import { useStore } from 'zustand';
 import { command, connectSurface, surface } from './bridge';
 import { Backdrop, crowdLabel, Mark, Sheet, Timer, Toggle } from './components';
 import { MicTest } from './MicTest';
-import { SmileLogo } from './SmileLogo';
+import { AppIcon } from './AppIcon';
+import { StopSaved } from './StopSaved';
+import { StreamerAvatar } from './HistoryView';
+import { db } from './db';
+import type { StreamerProfile } from './history';
 import { SITE_URL, UPDATE_KEY } from './site';
 import { audioNotice, friendlyError } from './ui-status';
 import {
@@ -108,6 +112,20 @@ export function Popup() {
       setBusy(false);
     }
   }
+  const [profile, setProfile] = useState<StreamerProfile>();
+  useEffect(() => {
+    if (activeChannel)
+      void db.streamerProfiles.get(activeChannel).then(setProfile);
+  }, [activeChannel]);
+  async function primary() {
+    if (busy || !ready) return;
+    if (session) {
+      const current = session;
+      if (await act({ type: 'STOP' })) setEnded(current);
+    } else if (updateAvailable && !later) await openUpdate();
+    else if (channel) await act({ type: 'START', tabId });
+    else await chrome.tabs.create({ url: 'https://www.twitch.tv/directory' });
+  }
   return (
     <main className="popup">
       <Backdrop />
@@ -132,7 +150,12 @@ export function Popup() {
         </header>
         {activeChannel && (
           <div className="who">
-            <span className="av">{activeChannel[0]?.toUpperCase()}</span>
+            <StreamerAvatar
+              login={activeChannel}
+              name={session?.displayName || activeChannel}
+              profile={profile}
+              size={36}
+            />
             <p title={session?.displayName || activeChannel}>
               {session?.displayName || activeChannel}
             </p>
@@ -154,13 +177,29 @@ export function Popup() {
         {session ? (
           <>
             <div className="popup-session-main">
-              <SmileLogo size={110} />
+              <button
+                type="button"
+                className="smile-trigger"
+                aria-label="stop session"
+                disabled={busy}
+                onClick={() => void primary()}
+              >
+                <AppIcon size={110} />
+              </button>
+              <span
+                className={`mic-level-dot ${snapshot.capture.metrics.micLevel > 0.005 ? 'heard' : ''}`}
+                aria-label={
+                  snapshot.capture.metrics.micLevel > 0.005
+                    ? 'mic receiving sound'
+                    : 'mic quiet'
+                }
+              />
               <strong>{session.laughCount}</strong>
               <p>laughs so far</p>
             </div>
             <div className="bottom">
               <span className="glass-laugh-chip">
-                <SmileLogo size={18} />
+                <AppIcon size={18} />
                 {session.laughCount} laughs
               </span>
               <button
@@ -199,15 +238,18 @@ export function Popup() {
               <button
                 type="button"
                 className="smile-trigger"
-                aria-label="open Twitch"
-                onClick={() =>
-                  void chrome.tabs.create({
-                    url: 'https://www.twitch.tv/directory',
-                  })
+                aria-label={
+                  updateAvailable && !later
+                    ? `update to v${update?.latest}`
+                    : channel
+                      ? 'start session'
+                      : 'open Twitch'
                 }
+                disabled={busy || !ready}
+                onClick={() => void primary()}
               >
                 <span className="smile-breath">
-                  <SmileLogo size={190} />
+                  <AppIcon size={190} />
                 </span>
               </button>
               <h1>
@@ -406,7 +448,7 @@ export function Popup() {
                 }
               />
               <Toggle
-                title="share with the crowd"
+                title="share with the fans"
                 detail="anonymous"
                 on={snapshot.settings.share}
                 click={() =>
@@ -466,16 +508,16 @@ export function Popup() {
         </Sheet>
       )}
       {ended && (
-        <Sheet title="nice session" close={() => setEnded(null)}>
-          <p className="big">{ended.laughCount} laughs</p>
-          <p className="sub">with {ended.channel}</p>
-          <button
-            type="button"
-            className="btn"
-            onClick={() => void act({ type: 'OPEN_RECAP', id: ended.id })}
-          >
-            see recap
-          </button>
+        <Sheet title="saved for you" close={() => setEnded(null)}>
+          <StopSaved
+            id={ended.id}
+            seconds={
+              snapshot.lastSaved?.durationSeconds ??
+              (Date.now() - ended.startedAt) / 1000
+            }
+            laughs={ended.laughCount}
+            close={() => setEnded(null)}
+          />
         </Sheet>
       )}
     </main>

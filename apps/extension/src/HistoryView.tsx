@@ -1,5 +1,5 @@
 import type { Recap } from '@laughline/shared';
-import { useEffect, useState } from 'react';
+import { type CSSProperties, useEffect, useState } from 'react';
 import { formatTime, Mark, Sheet } from './components';
 import { deleteSavedStreams } from './db';
 import {
@@ -10,6 +10,7 @@ import {
 } from './history';
 import { connectProfilePhotos, refreshProfilePhotos } from './profile-photos';
 import { SITE_URL } from './site';
+import { duration, sparkline } from './recap-story';
 export function StreamerAvatar({
   login,
   name,
@@ -68,6 +69,24 @@ export function HistoryView({
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState('');
   const group = groups.find((g) => g.login === selected);
+  const totalStreams = groups.reduce((n, g) => n + g.streams.length, 0);
+  const funniest = [...groups]
+    .filter(
+      (g) => g.totalLaughs > 0 && g.streams.some((s) => s.durationSeconds > 0),
+    )
+    .sort(
+      (a, b) =>
+        b.totalLaughs /
+          Math.max(
+            1,
+            b.streams.reduce((n, s) => n + s.durationSeconds, 0),
+          ) -
+        a.totalLaughs /
+          Math.max(
+            1,
+            a.streams.reduce((n, s) => n + s.durationSeconds, 0),
+          ),
+    )[0];
   const logins = groups.map((g) => g.login).join(',');
   useEffect(() => {
     if (logins) void refreshProfilePhotos(logins.split(',')).catch(() => {});
@@ -85,6 +104,23 @@ export function HistoryView({
         <h1>my streamers</h1>
         <p className="sub">your watching history stays in this browser.</p>
       </div>
+      <div className="history-summary">
+        <span>
+          <b>{groups.length}</b> streamers
+        </span>
+        <span>
+          <b>{totalStreams}</b> streams
+        </span>
+        <span>
+          <b>{groups.reduce((n, g) => n + g.totalLaughs, 0)}</b> laughs
+        </span>
+        {funniest && (
+          <span>
+            your funniest streamer <b>{funniest.displayName}</b>
+            <small>most laughs per hour</small>
+          </span>
+        )}
+      </div>
       {group ? (
         <>
           <button
@@ -97,7 +133,10 @@ export function HistoryView({
           >
             ← all streamers
           </button>
-          <section className="streamer-detail-heading">
+          <section
+            className="streamer-detail-heading"
+            style={{ background: avatarColor(group.login) }}
+          >
             <StreamerAvatar
               login={group.login}
               name={group.displayName}
@@ -135,7 +174,7 @@ export function HistoryView({
                 >
                   <span>
                     <b>{watched(stream.startedAt)}</b>
-                    <small>{formatTime(stream.durationSeconds)} watched</small>
+                    <small>{duration(stream.durationSeconds)} watched</small>
                   </span>
                   <span>
                     <b>{stream.laughs} laughs</b>
@@ -145,6 +184,26 @@ export function HistoryView({
                         : 'no words yet'}
                     </small>
                   </span>
+                  <svg
+                    className="laugh-sparkline"
+                    viewBox="0 0 160 34"
+                    role="img"
+                    aria-label="laughs through this stream"
+                  >
+                    <polyline
+                      points={sparkline(
+                        stream.laughTimes,
+                        stream.durationSeconds,
+                      )}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  {stream.recap.seenAt === null && (
+                    <small className="new-recap">new recap</small>
+                  )}
                   <span aria-hidden="true">↗</span>
                 </button>
                 <button
@@ -172,6 +231,9 @@ export function HistoryView({
               type="button"
               key={g.login}
               className="streamer-card"
+              style={
+                { '--streamer-color': avatarColor(g.login) } as CSSProperties
+              }
               onClick={() => {
                 setSelected(g.login);
                 history.replaceState(
@@ -185,9 +247,12 @@ export function HistoryView({
                 login={g.login}
                 name={g.displayName}
                 profile={g.profile}
-                size={64}
+                size={80}
               />
               <h2>{g.displayName}</h2>
+              {g.streams.some((s) => s.recap.seenAt === null) && (
+                <span className="new-recap">new recap</span>
+              )}
               <p>
                 {g.streams.length}{' '}
                 {g.streams.length === 1 ? 'stream' : 'streams'} watched{' '}
@@ -217,7 +282,8 @@ export function HistoryView({
           </a>
         </div>
       )}
-      <footer className="history-photos">
+      <details className="history-photos">
+        <summary>settings · photos & replays</summary>
         <button
           type="button"
           className="textbtn"
@@ -236,7 +302,7 @@ export function HistoryView({
             }
           }}
         >
-          connect Twitch profile photos ↗
+          connect Twitch photos ↗
         </button>
         {SITE_URL && (
           <a
@@ -252,14 +318,14 @@ export function HistoryView({
           {message ||
             'optional · sign in on our website first. initials always work offline.'}
         </p>
-      </footer>
+      </details>
       {remove && (
         <Sheet
           title="delete these saved moments?"
           close={() => !busy && setRemove(null)}
         >
           <p className="sub space-top">
-            This removes {remove.label} from this browser. Your other streamers
+            this removes {remove.label} from this browser. your other streamers
             and settings stay saved.
           </p>
           <button

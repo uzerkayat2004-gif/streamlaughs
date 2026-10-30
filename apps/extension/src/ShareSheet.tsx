@@ -7,17 +7,21 @@ export function ShareSheet({
   recap,
   profile,
   close,
+  ordinal,
+  bestMoment,
 }: {
   recap: Recap;
   profile?: StreamerProfile;
   close: () => void;
+  ordinal?: string;
+  bestMoment?: number;
 }) {
   const [image, setImage] = useState<{ blob: Blob; url: string }>(),
     [message, setMessage] = useState('drawing your little story…');
   useEffect(() => {
     let alive = true,
       url: string | undefined;
-    void renderShareCard(recap, profile)
+    void renderShareCard(recap, profile, { ordinal, bestMoment })
       .then((blob) => {
         if (!alive) return;
         url = URL.createObjectURL(blob);
@@ -32,7 +36,7 @@ export function ShareSheet({
       alive = false;
       if (url) URL.revokeObjectURL(url);
     };
-  }, [recap, profile]);
+  }, [recap, profile, ordinal, bestMoment]);
   const filename = `${PRODUCT.wordmark}-${recap.channel}-${new Date(recap.createdAt).toISOString().slice(0, 10)}.png`;
   const file = image
     ? new File([image.blob], filename, { type: 'image/png' })
@@ -93,7 +97,7 @@ export function ShareSheet({
                 await navigator.share({ files: [file!], title: PRODUCT.name });
                 setMessage('shared');
               } catch {
-                setMessage('share cancelled · try again');
+                setMessage('share closed · try again');
               }
             }}
           >

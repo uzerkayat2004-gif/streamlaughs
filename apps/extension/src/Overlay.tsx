@@ -20,7 +20,8 @@ import {
 } from './geometry';
 import { newLaugh, OVERLAY_FADE_MS, overlayOpacity } from './overlay-behavior';
 import { PipelineDebug } from './PipelineDebug';
-import { SmileLogo } from './SmileLogo';
+import { AppIcon } from './AppIcon';
+import { StopSaved } from './StopSaved';
 import { audioNotice, friendlyError } from './ui-status';
 
 const PANEL_KEY = 'streamlaughs:overlay-panel';
@@ -353,7 +354,7 @@ export function Overlay({
         }}
       >
         <span key={bounce} className={bounce ? 'smile-bounce' : ''}>
-          <SmileLogo size={24} />
+          <AppIcon mono size={24} />
         </span>
         {status === 'recording' && <i className="recording-dot" />}
       </button>
@@ -363,7 +364,7 @@ export function Overlay({
           ref={boxElement}
           className="x-cbox x-glass is-open glass-panel"
           role="dialog"
-          aria-label="crowd box"
+          aria-label="fans box"
           onMouseEnter={() => {
             setHovered(true);
             wake();
@@ -411,7 +412,20 @@ export function Overlay({
             </button>
           </div>
           <div className="panel-smile" key={bounce}>
-            <SmileLogo size={40} className={bounce ? 'smile-bounce' : ''} />
+            <AppIcon mono size={40} className={bounce ? 'smile-bounce' : ''} />
+          </div>
+          <div className="laugh-meter" aria-label="live laugh meter">
+            {[0, 1, 2, 3, 4].map((n) => (
+              <i
+                key={n}
+                className={
+                  (bounce > 0 && clock - activeAt < 1600) ||
+                  (room?.laughingNow ?? 0) > n * 2
+                    ? 'lit'
+                    : ''
+                }
+              />
+            ))}
           </div>
           <p className="panel-live-count">
             {status === 'idle' ? (
@@ -420,7 +434,7 @@ export function Overlay({
               'paused'
             ) : room?.state === 'live' ? (
               <>
-                <b>{room.laughingNow}</b> laughing now
+                <b>{room.laughingNow}</b> fans laughing now
               </>
             ) : room?.state === 'few' ? (
               'a few here'
@@ -439,7 +453,7 @@ export function Overlay({
                   ))}
               </div>
               <span className="glass-laugh-chip">
-                <SmileLogo size={17} />
+                <AppIcon mono size={17} />
                 {count} {count === 1 ? 'laugh' : 'laughs'}
               </span>
               <div className="x-cfoot">
@@ -497,16 +511,18 @@ export function Overlay({
       )}
       {toast && (
         <div className="x-toast x-glass is-on recap-toast" role="status">
-          <button type="button" onClick={() => void act('OPEN_RECAP', toast)}>
-            see recap
-          </button>
-          <button
-            type="button"
-            aria-label="dismiss recap toast"
-            onClick={() => setToast(null)}
-          >
-            ×
-          </button>
+          <StopSaved
+            id={toast}
+            seconds={
+              snapshot.lastSaved?.id === toast
+                ? snapshot.lastSaved.durationSeconds
+                : 0
+            }
+            laughs={
+              snapshot.lastSaved?.id === toast ? snapshot.lastSaved.laughs : 0
+            }
+            close={() => setToast(null)}
+          />
         </div>
       )}
     </div>

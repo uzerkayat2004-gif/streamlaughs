@@ -1,9 +1,10 @@
 import { PRODUCT } from '@laughline/shared';
 import Link from 'next/link';
-import { SmileLogo } from '../../extension/src/SmileLogo';
+import { AppIcon } from '../../extension/src/AppIcon';
 export function Brand() {
   return (
     <Link href="/" className="brand" aria-label={`${PRODUCT.name} home`}>
+      <AppIcon size={32} />
       {PRODUCT.wordmark === 'streamlaughs' ? (
         // The bundled Bricolage letterforms are outlined, so the logo needs no font load.
         // biome-ignore lint/performance/noImgElement: A small vector logo with explicit dimensions.
@@ -20,7 +21,7 @@ export function Brand() {
   );
 }
 export function LogoMark({ size = 40 }: { size?: number }) {
-  return <SmileLogo size={size} color="#FFD23F" />;
+  return <AppIcon size={size} />;
 }
 export function Arrow() {
   return (

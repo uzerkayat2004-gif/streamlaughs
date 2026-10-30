@@ -1,3 +1,5 @@
+> Latest update: use the [v0.8 final manual steps](ui-v080.md#final-manual-acceptance-1015-minutes), including same-folder replacement → extension reload → Twitch refresh. Never Remove.
+
 # StreamLaughs final manual acceptance · one 30-minute pass
 
 This is the canonical final checklist. It is a smoke/acceptance pass, not an accuracy benchmark or a two-hour soak. Mark only things you observe. Record date, Chrome/Edge versions, OS, build version, configured origins and result beside each item. No private audio, cookies, tokens or OAuth codes in evidence.

@@ -10,6 +10,7 @@ export type StreamerProfile = {
   displayName: string;
   avatarDataUrl?: string;
   fetchedAt?: number;
+  vods?: { id: string; created_at: string; duration: string }[];
 };
 export type SavedStream = {
   id: string;
@@ -20,6 +21,7 @@ export type SavedStream = {
   laughs: number;
   word: string;
   recap: Recap;
+  laughTimes: number[];
 };
 export type StreamerHistory = {
   login: string;
@@ -94,6 +96,9 @@ export function groupHistory(
       laughs: recap.totalLaughs,
       word: recap.topWord,
       recap,
+      laughTimes: (session?.laughEvents ?? []).map((e) =>
+        Math.max(0, (e.at - startedAt) / 1000),
+      ),
     });
     group.totalLaughs += recap.totalLaughs;
     group.lastWatched = Math.max(
@@ -125,7 +130,7 @@ export function completeRecaps(
 
 export function avatarColor(login: string) {
   const hash = [...login].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 0);
-  return ['#494535', '#344f4a', '#4f3c41', '#374552'][hash % 4]!;
+  return ['#FFD23F', '#FF5C5C', '#2EE6C5'][hash % 3]!;
 }
 export const safeAvatar = (value?: string) =>
   !!value &&

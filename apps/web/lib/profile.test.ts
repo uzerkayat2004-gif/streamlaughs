@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { GET, OPTIONS, POST } from '../app/api/extension-profile/route';
 import { authenticated } from './auth';
-import { getPublicProfile } from './twitch';
+import { getPublicProfile, getVods } from './twitch';
 
 vi.mock('./auth', () => ({ authenticated: vi.fn() }));
-vi.mock('./twitch', () => ({ getPublicProfile: vi.fn() }));
+vi.mock('./twitch', () => ({ getPublicProfile: vi.fn(), getVods: vi.fn() }));
 const origin = 'chrome-extension://fkocldgggcmhihelohiicoakcfomhepg';
 const request = (method = 'GET', body?: unknown, from = origin) =>
   new Request('https://streamlaughs.vercel.app/api/extension-profile', {
@@ -13,8 +13,10 @@ const request = (method = 'GET', body?: unknown, from = origin) =>
     body: body ? JSON.stringify(body) : undefined,
   });
 beforeEach(() => {
+  vi.mocked(getVods).mockResolvedValue([]);
   vi.mocked(authenticated).mockResolvedValue({ login: 'owner', userId: '123' });
   vi.mocked(getPublicProfile).mockResolvedValue({
+    userId: '1234',
     login: 'grimm',
     displayName: 'Grimm',
     avatarUrl: 'https://static-cdn.jtvnw.net/avatar.png',
@@ -55,7 +57,9 @@ it('returns a locally cacheable image, never a Twitch token or viewer identity',
   const response = await POST(request('POST', { login: 'grimm' }));
   expect(response.status).toBe(200);
   expect(response.headers.get('Cache-Control')).toBe('no-store');
+  expect(getVods).toHaveBeenCalledWith('1234', expect.any(Number));
   expect(await response.json()).toEqual({
+    vods: [],
     login: 'grimm',
     displayName: 'Grimm',
     avatarDataUrl: 'data:image/png;base64,iVBORw==',

@@ -95,6 +95,7 @@ export const RecapSchema = z.object({
   startedAt: z.number().optional(),
   durationSeconds: z.number().nonnegative().optional(),
   createdAt: z.number(),
+  seenAt: z.number().nullable().optional(),
   totalLaughs: z.number().int().nonnegative(),
   crowdViewers: z.number().int().nonnegative(),
   topWord: z.string(),
@@ -124,6 +125,14 @@ export const SnapshotSchema = z.object({
   crowd: CrowdStateSchema.nullable(),
   settings: SettingsSchema,
   lastRecapId: z.string().nullable(),
+  lastSaved: z
+    .object({
+      id: z.string(),
+      durationSeconds: z.number().nonnegative(),
+      laughs: z.number().int().nonnegative(),
+    })
+    .nullable()
+    .optional(),
   capture: CaptureStateSchema.default(initialCaptureState),
   inference: InferenceHealthSchema.default(emptyInferenceHealth),
 });
@@ -132,6 +141,7 @@ export const CommandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('GET_STATE') }),
   z.object({ type: z.literal('START'), tabId: z.number().int().optional() }),
   z.object({ type: z.literal('STOP') }),
+  z.object({ type: z.literal('DISCARD_RECAP'), id: z.string() }),
   z.object({ type: z.literal('PAUSE') }),
   z.object({ type: z.literal('RETRY_MIC') }),
   z.object({ type: z.literal('MIC_TEST_START') }),
@@ -247,6 +257,7 @@ export function createRecap(session: MySession, now: number): Recap {
       Math.floor(((session.endedAt ?? now) - session.startedAt) / 1000),
     ),
     createdAt: now,
+    seenAt: null,
     totalLaughs: session.laughCount,
     crowdViewers: session.crowdViewers,
     topWord: word?.word ?? '—',

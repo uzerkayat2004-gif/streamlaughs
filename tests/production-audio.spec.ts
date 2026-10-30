@@ -403,9 +403,7 @@ for (const [label, volume] of [
         .getByRole('button', { name: 'see recap', exact: true })
         .click();
       const recapPage = await recapOpened;
-      await expect(
-        recapPage.getByText('you laughed', { exact: true }),
-      ).toBeVisible();
+      await expect(recapPage.locator('[data-slide="intro"]')).toBeVisible();
       const persisted = await recapPage.evaluate(
         async (id) =>
           new Promise<{ matches: boolean; laughs: number; words: number }>(

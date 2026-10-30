@@ -9,7 +9,7 @@ import {
 } from '../packages/shared/src/index';
 
 const id = 'fkocldgggcmhihelohiicoakcfomhepg';
-const shots = path.resolve('.test-runtime/v070-shots');
+const shots = path.resolve('.test-runtime/v080-shots');
 const launchFlags = [
   '--disable-features=CalculateNativeWinOcclusion',
   '--disable-background-timer-throttling',
@@ -29,12 +29,25 @@ const saved = (
     displayName,
     tabId: 1,
     startedAt: at,
-    endedAt: at + 3600000,
+    endedAt: at + 4320000,
     laughCount: laughs,
-    laughEvents: [],
+    laughEvents: laughs
+      ? [
+          0, 120, 400, 800, 1200, 1800, 2400, 2530, 2536, 2542, 2554, 2560,
+          2588, 2700, 2900, 3100, 3300, 3500, 3700, 3900, 4000, 4100, 4200,
+        ]
+          .slice(0, laughs)
+          .map((seconds) => ({ at: at + seconds * 1000, crowd: 0 }))
+      : [],
     peakCrowd: 0,
     crowdViewers: 0,
-    topWords: laughs ? [{ word: 'bro', count: 9 }] : [],
+    topWords: laughs
+      ? [
+          { word: 'lets go', count: 9 },
+          { word: 'bro', count: 6 },
+          { word: 'wow', count: 2 },
+        ]
+      : [],
     source: 'fake',
   });
   value.personal.hype = laughs ? 4 : 0;
@@ -46,9 +59,9 @@ const saved = (
   return value;
 };
 
-test('v0.7 production website ZIP: glass fade/drag, grouped history, keyboard stories and real canvas PNG', async () => {
+test('v0.8 production website ZIP: glass fade/drag, grouped history, keyboard stories and real canvas PNG', async () => {
   await mkdir(shots, { recursive: true });
-  const extension = await mkdtemp(path.resolve('.test-runtime/v070-unpacked-'));
+  const extension = await mkdtemp(path.resolve('.test-runtime/v080-unpacked-'));
   execFileSync(
     process.platform === 'win32' ? 'python' : 'python3',
     [
@@ -63,7 +76,7 @@ test('v0.7 production website ZIP: glass fade/drag, grouped history, keyboard st
   const manifest = JSON.parse(
     await readFile(path.join(extension, 'manifest.json'), 'utf8'),
   );
-  expect(manifest.version).toBe('0.7.0');
+  expect(manifest.version).toBe('0.8.0');
   expect(manifest.key).toBeTruthy();
   const context = await chromium.launchPersistentContext('', {
     channel: 'chromium',
@@ -113,7 +126,7 @@ test('v0.7 production website ZIP: glass fade/drag, grouped history, keyboard st
       .locator('.popup')
       .screenshot({ path: path.join(shots, 'popup-idle.png') });
     const stream = await context.newPage();
-    await stream.goto('https://www.twitch.tv/nightowl_tv');
+    await stream.goto('https://www.twitch.tv/grimm');
     await stream.bringToFront();
     const launcher = stream.locator('.glass-launcher');
     await expect(launcher).toBeVisible();
@@ -123,22 +136,57 @@ test('v0.7 production website ZIP: glass fade/drag, grouped history, keyboard st
     expect(launcherBox!.y + launcherBox!.height).toBeLessThanOrEqual(
       player!.y + player!.height - 64,
     );
+    // A real crowd-only start/stop exercises saving, the toolbar badge and confirmed discard.
+    const tabId = await stream
+      .evaluate(() => 0)
+      .then(() =>
+        worker.evaluate(
+          async () =>
+            (
+              await chrome.tabs.query({ url: 'https://www.twitch.tv/grimm' })
+            )[0]!.id!,
+        ),
+      );
+    await popup.evaluate(async (tabId) => {
+      await chrome.runtime.sendMessage({
+        type: 'SETTINGS',
+        settings: { listen: false },
+      });
+      await chrome.runtime.sendMessage({ type: 'START', tabId });
+    }, tabId);
+    await expect(stream.locator('.recording-dot')).toBeVisible();
+    await popup.evaluate(() => chrome.runtime.sendMessage({ type: 'STOP' }));
+    const realToast = stream.locator('.recap-toast');
+    await expect(realToast).toContainText('stream saved');
+    await expect
+      .poll(() => worker.evaluate(() => chrome.action.getBadgeText({})))
+      .toBe('•');
+    await realToast
+      .getByRole('button', { name: 'discard', exact: true })
+      .click();
+    await realToast
+      .getByRole('button', { name: 'keep it', exact: true })
+      .click();
+    await realToast
+      .getByRole('button', { name: 'discard', exact: true })
+      .click();
+    await realToast
+      .getByRole('button', { name: 'discard', exact: true })
+      .click();
+    await expect(realToast).toHaveCount(0);
+    await expect
+      .poll(() => worker.evaluate(() => chrome.action.getBadgeText({})))
+      .toBe('');
     const snapshot = initialSnapshot();
-    snapshot.revision = 100000;
+    snapshot.revision = Date.now() + 1000;
     snapshot.session = {
-      ...saved(
-        'ui-active',
-        'nightowl_tv',
-        'NightOwl_TV',
-        Date.now() - 720000,
-        23,
-      ),
+      ...saved('four', 'grimm', 'Grimm', Date.now() - 720000, 23),
       endedAt: null,
     };
     snapshot.status = 'recording';
     snapshot.settings.listen = false; // This controlled UI fixture never captures audio or starts inference.
     snapshot.crowd = {
-      channel: 'nightowl_tv',
+      channel: 'grimm',
       source: 'fake',
       state: 'live',
       laughingNow: 12,
@@ -150,10 +198,14 @@ test('v0.7 production website ZIP: glass fade/drag, grouped history, keyboard st
       (state) => chrome.storage.local.set({ 'laughline:state': state }),
       snapshot,
     );
+    await stream.screenshot({ path: path.join(shots, 'launcher.png') });
     await launcher.click();
-    const panel = stream.getByRole('dialog', { name: 'crowd box' });
+    const panel = stream.getByRole('dialog', { name: 'fans box' });
     await expect(panel.getByText('23 laughs', { exact: true })).toBeVisible();
     await expect(panel).toHaveCSS('background-color', 'rgba(15, 15, 20, 0.35)');
+    expect(
+      await panel.evaluate((el) => el.scrollHeight - el.clientHeight),
+    ).toBeLessThanOrEqual(1);
     const stop = await panel
       .getByRole('button', { name: 'stop session' })
       .boundingBox();
@@ -212,11 +264,16 @@ test('v0.7 production website ZIP: glass fade/drag, grouped history, keyboard st
 
     const at = Date.UTC(2026, 9, 30, 18);
     const sessions = [
-      saved('one', 'grimm', 'Grimm', at, 23),
-      saved('two', 'grimm', 'Grimm', at - 86400000, 7),
-      saved('three', 'pixelcamp', 'pixelcamp', at - 172800000, 0),
+      saved('four', 'grimm', 'Grimm', at, 23),
+      saved('three', 'grimm', 'Grimm', at - 86400000, 8),
+      saved('two', 'grimm', 'Grimm', at - 172800000, 18),
+      saved('one', 'grimm', 'Grimm', at - 259200000, 12),
+      saved('empty', 'pixelcamp', 'pixelcamp', at - 345600000, 0),
     ];
-    const recaps = sessions.map((s) => createRecap(s, s.endedAt!));
+    const recaps = sessions.map((s) => ({
+      ...createRecap(s, s.endedAt!),
+      seenAt: s.id === 'four' ? null : s.endedAt,
+    }));
     const recap = await context.newPage();
     await recap.emulateMedia({ reducedMotion: 'reduce' });
     await recap.goto(`chrome-extension://${id}/recap.html`);
@@ -252,24 +309,70 @@ test('v0.7 production website ZIP: glass fade/drag, grouped history, keyboard st
         }),
       { sessions, recaps },
     );
+    // Drive the actual content-script snapshot transition; fixture numbers are clearly labelled.
+    snapshot.lastRecapId = 'four';
+    snapshot.lastSaved = { id: 'four', durationSeconds: 4320, laughs: 23 };
+    snapshot.session = null;
+    snapshot.status = 'idle';
+    snapshot.revision++;
+    await stream.bringToFront();
+    await worker.evaluate(
+      (state) => chrome.storage.local.set({ 'laughline:state': state }),
+      snapshot,
+    );
+    const toast = stream.locator('.recap-toast');
+    await expect(toast).toContainText('stream saved · 1h 12m · 23 laughs');
+    await expect(
+      toast.getByRole('button', { name: 'see recap', exact: true }),
+    ).toBeVisible();
+    await toast.getByRole('button', { name: 'discard', exact: true }).click();
+    await expect(toast).toContainText('discard this saved stream?');
+    await toast.getByRole('button', { name: 'keep it', exact: true }).click();
+    await stream.screenshot({ path: path.join(shots, 'stop-flow.png') });
+    await toast.getByRole('button', { name: 'later', exact: true }).click();
+    await expect(toast).toHaveCount(0);
+    await recap.bringToFront();
     await recap.goto(`chrome-extension://${id}/recap.html?view=streamers`);
     await expect(recap.locator('.streamer-card')).toHaveCount(2);
     await expect(recap.locator('.streamer-card').first()).toContainText(
-      '2 streams watched · 30 laughs',
+      '4 streams watched · 61 laughs',
+    );
+    await expect(recap.locator('.streamer-card').first()).toContainText(
+      'new recap',
     );
     await recap.screenshot({ path: path.join(shots, 'my-streamers.png') });
     await recap.locator('.streamer-card').first().click();
-    await expect(recap.locator('.saved-stream-row')).toHaveCount(2);
+    await expect(recap.locator('.saved-stream-row')).toHaveCount(4);
+    await expect(recap.locator('.laugh-sparkline')).toHaveCount(4);
+    await recap.screenshot({ path: path.join(shots, 'streamer-timeline.png') });
     await recap.locator('.stream-open').first().click();
-    await expect(recap.locator('.x-giant')).toHaveText('23');
-    await expect(recap.locator('.recap-streamer')).toContainText('Grimm');
+    await expect(recap.locator('[data-slide="intro"]')).toContainText('1h 12m');
+    await expect
+      .poll(() => worker.evaluate(() => chrome.action.getBadgeText({})))
+      .toBe('');
+    await recap.screenshot({ path: path.join(shots, 'recap-1-intro.png') });
     await recap.keyboard.press('ArrowRight');
     await expect(
-      recap.getByText('your word of the night', { exact: true }),
-    ).toBeVisible();
-    await recap.keyboard.press('ArrowLeft');
-    await expect(recap.locator('.x-giant')).toHaveText('23');
-    await recap.screenshot({ path: path.join(shots, 'recap.png') });
+      recap.locator('[data-slide="laughs"] .story-number'),
+    ).toHaveText('23');
+    await expect(recap.locator('[data-slide="laughs"]')).toContainText(
+      'about 19 an hour',
+    );
+    await recap.screenshot({ path: path.join(shots, 'recap-2-laughs.png') });
+    await recap.keyboard.press('ArrowRight');
+    await expect(recap.locator('[data-slide="moment"]')).toContainText('42:10');
+    await expect(recap.locator('[data-slide="moment"]')).toContainText(
+      '6 times in a minute',
+    );
+    await recap.screenshot({ path: path.join(shots, 'recap-3-moment.png') });
+    await recap.keyboard.press('ArrowRight');
+    await expect(recap.locator('.story-words li')).toHaveCount(3);
+    await expect(recap.locator('.story-chips')).not.toContainText('0 masked');
+    await recap.keyboard.press('ArrowRight');
+    await expect(recap.locator('[data-slide="history"]')).toContainText(
+      '4th stream',
+    );
+    await expect(recap.locator('[data-slide="history"]')).toContainText('61');
     await recap.getByRole('button', { name: 'share recap' }).click();
     const preview = recap.getByAltText('your share card preview');
     await expect(preview).toBeVisible();
@@ -279,17 +382,14 @@ test('v0.7 production website ZIP: glass fade/drag, grouped history, keyboard st
         img.naturalHeight,
       ]),
     ).toEqual([1080, 1920]);
-    const download = recap.waitForEvent('download');
+    const png = recap.waitForEvent('download');
     await recap
       .getByRole('link', { name: 'download image', exact: true })
       .click();
-    await (await download).saveAs(path.join(shots, 'share-card-1080x1920.png'));
-    await recap
-      .getByRole('button', { name: 'copy image', exact: true })
-      .click();
-    await expect(recap.getByRole('status')).toContainText(
-      /image copied|download the image instead/,
-    );
+    await (await png).saveAs(path.join(shots, 'share-card-1080x1920.png'));
+    await expect(
+      recap.getByRole('button', { name: 'copy image', exact: true }),
+    ).toBeEnabled(); // OS clipboard approval is a manual acceptance check.
     await recap.getByRole('button', { name: 'close', exact: true }).click();
     await recap.getByRole('button', { name: 'my streamers' }).click();
     await recap
@@ -297,13 +397,41 @@ test('v0.7 production website ZIP: glass fade/drag, grouped history, keyboard st
       .filter({ hasText: 'pixelcamp' })
       .click();
     await recap.locator('.stream-open').click();
-    await recap.getByRole('button', { name: 'share recap' }).click();
-    await expect(preview).toBeVisible();
-    const zeroDownload = recap.waitForEvent('download');
-    await recap
-      .getByRole('link', { name: 'download image', exact: true })
-      .click();
-    await (await zeroDownload).saveAs(path.join(shots, 'share-card-zero.png'));
+    await expect(recap.locator('[data-slide="empty"]')).toContainText(
+      'we didn’t hear anything this time',
+    );
+    await expect(
+      recap.getByRole('link', { name: 'test my mic' }),
+    ).toBeVisible();
+    await expect(
+      recap.getByRole('button', { name: 'share recap' }),
+    ).toHaveCount(0);
+    await expect(recap.locator('.story-navigation')).toContainText('1 / 1');
+    // Exercise confirmed discard through the real background handler, preserving other recaps/settings.
+    await stream.bringToFront();
+    snapshot.session = { ...sessions[4]!, channel: 'grimm', endedAt: null };
+    snapshot.status = 'recording';
+    snapshot.revision++;
+    await worker.evaluate(
+      (state) => chrome.storage.local.set({ 'laughline:state': state }),
+      snapshot,
+    );
+    await expect(stream.locator('.recording-dot')).toBeVisible();
+    snapshot.session = null;
+    snapshot.status = 'idle';
+    snapshot.lastRecapId = 'empty';
+    snapshot.lastSaved = { id: 'empty', durationSeconds: 4320, laughs: 0 };
+    snapshot.revision++;
+    await worker.evaluate(
+      (state) => chrome.storage.local.set({ 'laughline:state': state }),
+      snapshot,
+    );
+    await expect(toast).toBeVisible();
+    await toast.getByRole('button', { name: 'discard', exact: true }).click();
+    await toast.getByRole('button', { name: 'discard', exact: true }).click();
+    await expect(toast).toHaveCount(0);
+    await recap.reload();
+    await expect(recap.locator('[data-slide="empty"]')).toHaveCount(0);
   } finally {
     await context.close();
   }

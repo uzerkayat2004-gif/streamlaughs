@@ -130,7 +130,7 @@ export class RealCrowdSource implements CrowdSource {
           cache: 'no-store',
           signal: this.abort.signal,
         });
-        if (!response.ok) throw new Error('crowd unavailable');
+        if (!response.ok) throw new Error('fans unavailable');
         const token = SessionResponseSchema.parse(await response.json());
         if (generation !== this.generation) return;
         this.token = token;

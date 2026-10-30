@@ -29,6 +29,7 @@ it('the built Chrome manifest has the fixed key and expected ID', () => {
   expect(manifest.action.default_title).toBe(PRODUCT.name);
   expect(manifest.description).toContain(PRODUCT.name);
   expect(manifest.description).toContain(PRODUCT.pitch);
+  expect(manifest.description).not.toMatch(/crowd/i);
   expect(JSON.stringify(manifest)).not.toMatch(/laughline|__PRODUCT_NAME__/i);
 });
 it('the actual production build has no debug page, simulator or reference controls', () => {
@@ -51,4 +52,14 @@ it('rejects a stale content script even when the manifest version and key are cu
     'const oldUi="green blob, red stop button";',
   );
   expect(() => verifyProduction(directory)).toThrow('Stale Twitch UI bundle');
+});
+
+it('shares the same generated laughing-face SVG across extension and website', () => {
+  const extension = readFileSync('public/brand/app-icon.svg', 'utf8'),
+    website = readFileSync('../web/public/brand/app-icon.svg', 'utf8');
+  expect(extension).toBe(website);
+  expect(extension).toContain('fill="#FFD23F"');
+  expect(extension).toContain('M15 25Q21 17 27 25M37 25Q43 17 49 25');
+  expect(extension).toContain('M14 34H50C49 56 15 56 14 34Z');
+  expect(readFileSync('src/styles.css', 'utf8')).not.toMatch(/#2fe0c2/i);
 });
