@@ -1,0 +1,150 @@
+StreamLaughs v0.8.1 verification — 2026-11-01 (client date)
+Windows / Node 24.11.1 / pnpm 10.33.2
+Targeted units only. No full suite or e2e runner. Browser use limited to the classifier microbenchmark and labelled UI screenshots in an isolated profile. No real user account, real mic recording, store upload, tag, release or Worker deployment.
+
+Targeted changed paths: 14 files
+
+ RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/apps/extension
+
+
+ Test Files  14 passed (14)
+      Tests  81 passed (81)
+   Start at  10:57:40
+   Duration  2.15s (transform 2.33s, setup 0ms, import 7.02s, tests 2.25s, environment 2ms)
+
+
+Resampling/normalization/assets and fixed identity: 3 files
+
+ RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/apps/extension
+
+
+ Test Files  3 passed (3)
+      Tests  24 passed (24)
+   Start at  10:58:26
+   Duration  822ms (transform 277ms, setup 0ms, import 518ms, tests 391ms, environment 0ms)
+
+
+Workspace typecheck
+Scope: 7 of 8 workspace projects
+packages/shared typecheck$ tsc --noEmit
+tools/crowd-sim typecheck$ node --check cli.mjs && node --check record-demo.mjs
+tools/eval typecheck$ node --check cli.mjs && node --check browser.mjs && node --check wav.mjs && node --check metrics.mjs
+tools/release typecheck$ node --check config.mjs && node --check version.mjs && node --check verify-production.mjs && node --check branding.mjs && node --check offline-preview.mjs && node --check pack.mjs && node --check dependency-notices.mjs && node --check web-download.mjs && node --check ../build-web.mjs && python -m py_compile pack.py verify-store.py
+tools/crowd-sim typecheck: Done
+tools/eval typecheck: Done
+tools/release typecheck: Done
+packages/shared typecheck: Done
+apps/extension typecheck$ wxt prepare && tsc --noEmit
+apps/web typecheck$ node ../../tools/next-local.mjs typegen && tsc --noEmit
+workers/api typecheck$ tsc --noEmit
+apps/web typecheck: Generating route types...
+apps/web typecheck: ✓ Types generated successfully
+apps/extension typecheck: WXT 0.21.5
+apps/extension typecheck: i Generating types...
+apps/extension typecheck:  WARN  The following entrypoints have been skipped:
+apps/extension typecheck: - debug
+apps/extension typecheck: √ Finished in 668 ms
+workers/api typecheck: Done
+apps/web typecheck: Done
+apps/extension typecheck: Done
+
+Production build: Worker dry-run, Chrome/Edge, universal download, Next website, then store ZIP
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 4.8s
+  Running TypeScript ...
+  Finished TypeScript in 3.3s ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/16) ...
+  Generating static pages using 11 workers (4/16)
+  Generating static pages using 11 workers (8/16)
+  Generating static pages using 11 workers (12/16)
+✓ Generating static pages using 11 workers (16/16) in 1603ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/dashboard/[channel]
+├ ƒ /api/extension-profile
+├ ○ /apple-icon
+├ ƒ /auth/callback
+├ ƒ /auth/login
+├ ƒ /auth/logout
+├ ƒ /dashboard
+├ ƒ /dashboard/[channel]
+├ ƒ /demo
+├ ƒ /for-streamers
+├ ○ /icon.svg
+├ ƒ /install
+├ ○ /opengraph-image
+├ ○ /privacy
+├ ƒ /streamers
+├ ○ /try
+└ ƒ /version.json
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+StreamLaughs source, docs and requested website output branding checks passed.
+
+> laughline-monorepo@ release:edge-store C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline
+> node tools/release/pack.mjs --edge-store
+
+Verified flat edge ZIP: streamlaughs-edge-store-v0.8.1.zip
+Prepared Edge store CI artifact in releases/edge-store; no publication performed.
+
+Measured same-fixture two-input YAMNet worker benchmark (model initialization excluded; six seconds per setting; CDP process CPU, not whole Twitch):
+[
+  {
+    "hopMs": 250,
+    "jobs": 48,
+    "wallMs": 6007.200000000186,
+    "serviceMs": 1227.299999999581,
+    "serviceMsPerSecond": 204.54999999993015,
+    "chromeCpuMsPerSecond": 360.51006153334436
+  },
+  {
+    "hopMs": 500,
+    "jobs": 24,
+    "wallMs": 6007.5,
+    "serviceMs": 743.600000000326,
+    "serviceMsPerSecond": 123.93333333338767,
+    "chromeCpuMsPerSecond": 187.77284812229985
+  }
+]
+
+Visual preview measurements (fake input for device listing only):
+{
+  "panel": {
+    "background": "rgba(20, 20, 26, 0.94)",
+    "opacity": "1",
+    "scrollHeight": 362,
+    "clientHeight": 362
+  },
+  "input": {
+    "name": "Fake Default Audio Input",
+    "sampleRate": 44100,
+    "echoCancellation": false,
+    "noiseSuppression": false,
+    "autoGainControl": false
+  }
+}
+
+Local universal ZIP metadata:
+{
+  "version": "0.8.1",
+  "filename": "streamlaughs.zip",
+  "versionedFilename": "streamlaughs-v0.8.1.zip",
+  "sha256": "3380d8915b57a1aa0018b32185f232f752f628dc3ad5326dec69731994594ae5",
+  "bytes": 40769147
+}
+
+
+Store archive PASS: one root manifest, no key, no downloads permission. Fixed ZIP ID fkocldgggcmhihelohiicoakcfomhepg; normal Chrome/Edge packages byte-identical. New solid-v081 content marker verified.
+
+Limits: real Windows driver/HFP behavior, physical mic sensitivity/acoustics and actual display scaling remain manual. The quiet human-recording unit regression now saves a laugh with models unavailable; its matched-tab negative control stays at zero. No universal accuracy claim. Follow fixes-v081.md for the exact retest and copy-diagnostics steps.

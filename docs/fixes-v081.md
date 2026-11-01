@@ -33,3 +33,17 @@ An isolated headed-Chromium microbenchmark used the same bundled recorded-human 
 ## Part 4: readable overlay
 
 The opened panel is a 94%-opaque near-black card with a 12% white border, 20px corners, strong shadow and no fade. It uses >=13px labels, a large teal fan count, live bars, a coral fan-word chip only above the privacy floor, a yellow personal count and an actionable teal/grey/coral mic indicator. With fewer than three contributors it says “you're one of the first fans here.” The collapsed 40px launcher is 90%-opaque near-black with the yellow icon/ring and never fades below 70%. Drag memory/control clearance remain. The mic button opens the visible extension mic-check page through the background. Render, floor, no-page-audio and opacity/geometry checks pass. The old broad UI test expectations were adapted but were not executed as an e2e suite.
+
+## Part 5: popup polish and delivery
+
+The top-left wordmark opens the configured website in a full tab. Bottom actions are white semibold 14px pills with 36px tap targets and neat wrapping. Mic check opens a visible extension page. A pending/unknown tab never flashes a misleading Open Twitch action. Version is 0.8.1; extension identities and internal storage/protocol names stay unchanged. Store builds omit key/downloads and contain one manifest. No store upload, tag or release. See verification-v081.txt; screenshots are local ignored files in releases/ui-v0.8.1.
+
+## Manual retest
+
+1. Download the latest website ZIP. Unzip and replace all files in the **same existing installed folder**, the one containing manifest.json. Avoid an extra nested folder and keep the installed folder on disk.
+2. Open **chrome://extensions**, click **reload**, then **refresh the Twitch tab**. **Never click Remove.** Confirm v0.8.1 and your prior settings/recaps.
+3. On a real channel, confirm the popup shows its name and yellow Start. Try bare/mobile hosts or an available VOD if used. A missing content receiver is recovered automatically.
+4. Open **test my mic**, pick the right input and start the visible check. Use the laptop/wired mic if Bluetooth/Hands-Free affects sound. Allow access if prompted. Laugh and say **“let’s go”**. Check the meter, actual device name and heard-laugh/approved-word result. Initial model loading can take longer on slow laptops; DSP is independent.
+5. Test headphones, then speakers at a normal level. Check continuous Twitch audio, independent laugh counts and no personal count from stream playback alone. Pause/resume and unplug/retry the input. Physical HFP, drivers and Windows communications settings still need this real test.
+6. If it fails, press **copy diagnostics** in mic check or Alt+Shift+D and send the text. It contains local status, a device label, session ID and the last approved phrase, with no audio or full transcript. It is never sent automatically. Check the open panel on bright footage and the popup at your Windows scaling.
+7. A service-worker restart resyncs a surviving owner. If the offscreen document itself was terminated, press toolbar Start again on Twitch; fresh tab capture requires a user action.

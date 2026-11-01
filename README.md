@@ -89,3 +89,9 @@ Original code: [MIT](LICENSE). Models, fonts, runtimes and dependencies retain t
 The microphone pipeline was reproduced with the packaged production extension before the UI changed. See [the diagnosis and headed WAV proof](docs/detection-v080.md) and [the v0.8 UI/data notes and final acceptance steps](docs/ui-v080.md). The new laughing-face icon, glass live meter, mic check, saved-stream actions, unread recap badge, yellow/coral/teal stories, grouped streamer history and local PNG export ship together. Missing facts are skipped; fan peaks are never presented as fan totals or personal coincidence.
 
 **Updating a ZIP install:** download from the website, unzip and replace the files in the **same existing installed folder**, click **reload** in `chrome://extensions`, then **refresh the Twitch tab**. Never click Remove. Your browser keeps its existing local recaps and settings. The popup and hidden debug panel show v0.8.0; an update also offers a glass refresh note on already open Twitch tabs.
+
+### Latest: v0.8.1 real-device fixes
+
+Robust Twitch/VOD popup detection, a selectable mic, visible permission check, model-independent DSP fallback, isolated tab replay and a readable solid panel. See [the diagnosis, CPU measurement scope and manual retest](docs/fixes-v081.md) and [targeted verification](docs/verification-v081.txt).
+
+Replace files in the **same installed folder** → **reload** in chrome://extensions → **refresh Twitch** → open **test my mic** → pick the right input → laugh and say “let’s go”. **Never click Remove.** If it fails, use **copy diagnostics** and share the text. No audio or full transcript is copied or uploaded automatically.

@@ -62,6 +62,7 @@ export function Popup() {
     chrome.storage.onChanged.addListener(changed);
     return () => chrome.storage.onChanged.removeListener(changed);
   }, []);
+  const [contextLoading, setContextLoading] = useState(true);
   const [onTwitch, setOnTwitch] = useState(false),
     [contextName, setContextName] = useState('');
   const [channel, setChannel] = useState<string | null>(null),
@@ -83,12 +84,17 @@ export function Popup() {
         const context = await resolveWatchContext(tab ?? {});
         if (live) {
           setChannel(context.channel);
-          setOnTwitch(context.onTwitch);
+          setOnTwitch(context.onTwitch || context.unknown === true);
+          setContextLoading(false);
           setContextName(context.displayName || '');
           setTabId(tab?.id);
         }
       } catch {
-        if (live) setError('couldn’t read this tab · reopen the popup');
+        if (live) {
+          setContextLoading(false);
+          setOnTwitch(true);
+          setError('couldn’t read this tab · reopen the popup');
+        }
       }
     };
     void refresh();
@@ -138,7 +144,7 @@ export function Popup() {
       void db.streamerProfiles.get(activeChannel).then(setProfile);
   }, [activeChannel]);
   async function primary() {
-    if (busy || !ready) return;
+    if (busy || !ready || (contextLoading && !session)) return;
     if (session) {
       const current = session;
       if (await act({ type: 'STOP' })) setEnded(current);
@@ -153,7 +159,15 @@ export function Popup() {
       <Backdrop />
       <section className="screen" aria-label="Live">
         <header className="top">
-          <Mark />
+          <a
+            className="popup-brand"
+            href={SITE_URL || PRODUCT.siteUrl}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={`${PRODUCT.name} website`}
+          >
+            <Mark />
+          </a>
           <button
             type="button"
             className="iconbtn settings-gear"
@@ -267,7 +281,7 @@ export function Popup() {
                       ? 'start session'
                       : 'open Twitch'
                 }
-                disabled={busy || !ready}
+                disabled={busy || !ready || contextLoading}
                 onClick={() => void primary()}
               >
                 <span className="smile-breath">
@@ -275,11 +289,13 @@ export function Popup() {
                 </span>
               </button>
               <h1>
-                {channel
-                  ? 'ready for your next laugh?'
-                  : onTwitch
-                    ? 'finding this replay’s channel'
-                    : 'open any Twitch stream'}
+                {contextLoading
+                  ? 'finding your Twitch tab…'
+                  : channel
+                    ? 'ready for your next laugh?'
+                    : onTwitch
+                      ? 'finding this stream’s channel'
+                      : 'open any Twitch stream'}
               </h1>
               <p className="sub">
                 {channel
@@ -292,7 +308,7 @@ export function Popup() {
                 <button
                   type="button"
                   className="btn"
-                  disabled={busy || !ready}
+                  disabled={busy || !ready || contextLoading}
                   onClick={() => void openUpdate()}
                 >
                   update to v{update.latest} <ArrowRight size={17} />
@@ -315,11 +331,15 @@ export function Popup() {
               <button
                 type="button"
                 className="btn"
-                disabled={busy || !ready}
+                disabled={busy || !ready || contextLoading}
                 onClick={() => void act({ type: 'START', tabId })}
               >
                 start <ArrowRight size={17} />
               </button>
+            ) : contextLoading ? (
+              <p className="sub" role="status">
+                checking this tab…
+              </p>
             ) : onTwitch ? (
               <p role="status" className="sub">
                 refresh the Twitch tab, then reopen this popup
@@ -357,7 +377,11 @@ export function Popup() {
           <button
             type="button"
             className="textbtn"
-            onClick={() => void chrome.tabs.create({ url: chrome.runtime.getURL('/mic-test.html') })}
+            onClick={() =>
+              void chrome.tabs.create({
+                url: chrome.runtime.getURL('/mic-test.html'),
+              })
+            }
           >
             test my mic
           </button>

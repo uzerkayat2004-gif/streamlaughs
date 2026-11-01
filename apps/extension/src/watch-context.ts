@@ -8,6 +8,7 @@ export const WatchContextSchema = z.object({
     .nullable(),
   isLive: z.boolean(),
   displayName: z.string().max(100).optional(),
+  unknown: z.boolean().optional(),
 });
 export type WatchContext = z.infer<typeof WatchContextSchema>;
 export function twitchPage(url: string) {
@@ -55,6 +56,7 @@ export async function resolveWatchContext(
     onTwitch: twitchPage(tab.url ?? ''),
     channel: parseChannel(tab.url ?? ''),
     isLive: false,
+    unknown: !tab.url,
   };
   if (tab.id === undefined || (tab.url && !twitchPage(tab.url)))
     return fallback;

@@ -1,6 +1,6 @@
 import { parseChannel } from '@laughline/shared';
 import { afterEach, expect, it, vi } from 'vitest';
-import { resolveWatchContext } from './watch-context';
+import { resolveWatchContext, pageWatchContext } from './watch-context';
 afterEach(() => vi.unstubAllGlobals());
 it.each([
   ['https://www.twitch.tv/grimm', 'grimm'],
@@ -58,4 +58,33 @@ it('can resolve the content-script context even if tabs.query omits url', async 
     },
   });
   expect((await resolveWatchContext({ id: 4 })).channel).toBe('grimm');
+});
+
+it('reads a VOD owner only from the video owner header, not a recommendation', () => {
+  const doc = {
+    querySelector: (selector: string) =>
+      selector.startsWith('a[data-a-target="video-info-user-name"]')
+        ? { href: 'https://www.twitch.tv/grimm', textContent: 'Grimm' }
+        : null,
+  };
+  expect(
+    pageWatchContext(
+      'https://www.twitch.tv/videos/12345',
+      doc as Pick<Document, 'querySelector'>,
+    ),
+  ).toMatchObject({ onTwitch: true, channel: 'grimm', isLive: false });
+});
+it('keeps a missing tab URL and missing receiver as unknown instead of claiming non-Twitch', async () => {
+  vi.stubGlobal('chrome', {
+    tabs: {
+      sendMessage: async () => {
+        throw new Error('no receiver');
+      },
+    },
+    runtime: { getManifest: () => ({}) },
+  });
+  expect(await resolveWatchContext({ id: 4 })).toMatchObject({
+    unknown: true,
+    channel: null,
+  });
 });

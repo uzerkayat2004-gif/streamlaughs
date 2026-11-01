@@ -221,7 +221,7 @@ export const copyableReport = (value: unknown, phrase = '') => {
           ? 'unavailable'
           : navigator.userAgent.slice(0, 500),
       lastApprovedPhrase: phrase,
-      recentErrors: [...new Set(errors)].slice(-10),
+      recentErrors: errors.slice(-10),
     }),
     null,
     2,
