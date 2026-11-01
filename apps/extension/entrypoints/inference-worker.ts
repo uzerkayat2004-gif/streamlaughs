@@ -150,8 +150,10 @@ export default defineUnlistedScript(() => {
               words: requestSpeech,
             },
         (event) => {
-          if (events.length < 32) events.push(event);
-          else pipeline?.addDrops(1);
+          if (events.length < 32) {
+            events.push(event);
+            report();
+          } else pipeline?.addDrops(1);
         },
         AUDIO_DEBUG,
         undefined,

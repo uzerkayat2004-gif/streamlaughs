@@ -118,6 +118,7 @@ it('draws the 1080x1920 card with a filled initials circle, white letter, four l
     lineTo() {},
     quadraticCurveTo() {},
     measureText: (s: string) => ({ width: s.length * 20 }),
+    strokeText() {},
     fillText(value: string) {
       text.push({ value, color: this.fillStyle });
     },

@@ -168,7 +168,7 @@ describe('bounded scheduling and overload', () => {
   });
 });
 describe('Silero segment boundaries', () => {
-  it('merges short gaps, drops short speech, closes long gaps and splits at eight seconds', () => {
+  it('merges short gaps, drops short speech, closes long gaps and splits at the 2.4-second production limit', () => {
     const segmenter = new VadSegmenter();
     expect(segmenter.update(0.9, 0, 200)).toEqual([]);
     expect(segmenter.update(0, 200, 500)).toEqual([]);
@@ -180,7 +180,7 @@ describe('Silero segment boundaries', () => {
     ]);
     segmenter.update(0.9, 3000, 4000);
     expect(segmenter.update(0.9, 4000, 11100)).toEqual([
-      { start: 3000, end: 11000 },
+      { start: 3000, end: 5400 },
     ]);
     segmenter.reset();
     expect(segmenter.update(0, 11100, 12000)).toEqual([]);

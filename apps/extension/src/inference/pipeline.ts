@@ -521,6 +521,12 @@ export class InferencePipeline {
         if (generation !== this.speechGeneration) return;
         const result = typeof value === 'string' ? extractWords(value) : value;
         if (typeof value === 'string') text = value;
+        this.stages.wordsMatched +=
+          result.matched ??
+          result.phrases
+            .filter((p) => p.class === 'ok')
+            .reduce((n, p) => n + p.count, 0);
+        this.stages.wordsRejected += result.rejected ?? 0;
         if (this.debug) this.lastTranscript = redactDebugTranscript(text);
         if (result.phrases.length)
           this.event({ kind: 'words', ts: speech.ts, phrases: result.phrases });

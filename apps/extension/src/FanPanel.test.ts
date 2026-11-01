@@ -48,6 +48,15 @@ it('hides fan words below the floor and shows a friendly first-fan state', () =>
   expect(html).not.toContain('lets go');
   expect(html).toContain('microphone problem');
 });
+it('shows the first personal word but no fans row or floor message during a replay', () => {
+  const html = renderToStaticMarkup(
+    createElement(FanPanel, { ...props, replay: true, word: 'bro' }),
+  );
+  expect(html).toContain('replay · personal only');
+  expect(html).toContain('your word');
+  expect(html).toContain('bro');
+  expect(html).not.toMatch(/fan reactions|fans laughing|FANS|top fan word/);
+});
 it('locks opaque panel and visible launcher styling and keeps audio APIs off the Twitch page', () => {
   const css = readFileSync('src/styles.css', 'utf8');
   expect(css.replace(/\s/g, '')).toMatch(/rgba\(20,20,26,0?\.94\)/);

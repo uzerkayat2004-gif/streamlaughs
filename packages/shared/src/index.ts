@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { CaptureStateSchema, initialCaptureState } from './capture';
+import { ReplaySchema, replayPosition, replayPage } from './replay';
+import { sessionWord } from './reaction-words';
 import { isApprovedPhrase } from './privacy';
 import {
   emptyInferenceHealth,
@@ -15,6 +17,8 @@ export * from './owner-token';
 export * from './privacy';
 export * from './product';
 export * from './recap-share';
+export * from './reaction-words';
+export * from './replay';
 
 export const WordSchema = z.object({
   word: z.string().max(80),
@@ -46,10 +50,17 @@ export const MySessionSchema = z.object({
   channelUrl: z.string().max(200).optional(),
   displayName: z.string().max(100).optional(),
   tabId: z.number().int(),
+  replay: ReplaySchema.optional(),
   startedAt: z.number(),
   endedAt: z.number().nullable(),
   laughCount: z.number().int().nonnegative(),
-  laughEvents: z.array(z.object({ at: z.number(), crowd: z.number() })),
+  laughEvents: z.array(
+    z.object({
+      at: z.number(),
+      crowd: z.number(),
+      mediaAt: z.number().nonnegative().optional(),
+    }),
+  ),
   peakCrowd: z.number().int().nonnegative(),
   crowdViewers: z.number().int().nonnegative(),
   topWords: z.array(WordSchema),
@@ -57,7 +68,7 @@ export const MySessionSchema = z.object({
   wordEvents: z
     .array(
       z.object({
-        word: z.string().max(40).refine(isApprovedPhrase),
+        word: z.string().max(80).refine(isApprovedPhrase),
         count: z.number().int().positive(),
         at: z.number(),
       }),
@@ -79,6 +90,7 @@ export const MySessionSchema = z.object({
       hardest: z
         .object({
           ts: z.number(),
+          mediaAt: z.number().nonnegative().optional(),
           intensity: z.number(),
           confidence: z.number(),
           crowd: z.number(),
@@ -113,8 +125,14 @@ export const RecapSchema = z.object({
   crowdViewers: z.number().int().nonnegative(),
   topWord: z.string(),
   wordCount: z.number().int().nonnegative(),
-  funniestWord: z.string().max(40).refine(isApprovedPhrase).optional(),
+  funniestWord: z.string().max(80).refine(isApprovedPhrase).optional(),
   saving: z.boolean().optional(),
+  replay: z.boolean().optional(),
+  replayUrl: z
+    .string()
+    .max(240)
+    .refine((s) => !!replayPage(s))
+    .optional(),
   hardestLaughAt: z.number().nonnegative(),
   hasBestMoment: z.boolean().optional(),
   othersAtPeak: z.number().int().nonnegative(),
@@ -156,7 +174,14 @@ export type Snapshot = z.infer<typeof SnapshotSchema>;
 export const CommandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('GET_STATE') }),
   z.object({ type: z.literal('OPEN_MIC_TEST') }),
-  z.object({ type: z.literal('START'), tabId: z.number().int().optional() }),
+  z.object({
+    type: z.literal('START'),
+    tabId: z.number().int().optional(),
+    channel: z
+      .string()
+      .regex(/^[a-z0-9_]{1,25}$/)
+      .optional(),
+  }),
   z.object({ type: z.literal('STOP') }),
   z.object({ type: z.literal('DISCARD_RECAP'), id: z.string() }),
   z.object({ type: z.literal('PAUSE') }),
@@ -264,9 +289,12 @@ export function visibleWords(crowd: CrowdState | null): CrowdState['topWords'] {
 
 export function createRecap(session: MySession, now: number): Recap {
   const peak = session.personal.hardest;
-  const word = session.topWords
-    .filter((w) => w.count > 0 && isApprovedPhrase(w.word))
-    .sort((a, b) => b.count - a.count || a.word.localeCompare(b.word))[0];
+  const word = sessionWord({
+    ...session,
+    topWords: session.topWords.filter(
+      (w) => w.count > 0 && isApprovedPhrase(w.word),
+    ),
+  });
   return {
     id: session.id,
     sessionId: session.id,
@@ -285,8 +313,13 @@ export function createRecap(session: MySession, now: number): Recap {
     topWord: word?.word ?? '—',
     wordCount: word?.count ?? 0,
     funniestWord: funniestWord(session),
+    replay: !!session.replay,
+    replayUrl: session.replay?.url,
     hardestLaughAt: peak
-      ? Math.max(0, Math.floor((peak.ts - session.startedAt) / 1000))
+      ? Math.max(
+          0,
+          Math.floor(peak.mediaAt ?? (peak.ts - session.startedAt) / 1000),
+        )
       : 0,
     hasBestMoment: !!peak && session.laughCount > 0,
     othersAtPeak: peak?.crowd ?? 0,
@@ -377,7 +410,13 @@ export function applyPersonalEvent(
     next.laughCount++;
     next.laughEvents = [
       ...session.laughEvents.slice(-4095),
-      { at: event.ts, crowd },
+      {
+        at: event.ts,
+        crowd,
+        ...(session.replay
+          ? { mediaAt: replayPosition(session.replay, event.ts) }
+          : {}),
+      },
     ];
     p.intensitySum += event.intensity;
     const lag = event.ts - tabLaughTs;
@@ -393,6 +432,9 @@ export function applyPersonalEvent(
     )
       p.hardest = {
         ts: event.ts,
+        ...(session.replay
+          ? { mediaAt: replayPosition(session.replay, event.ts) }
+          : {}),
         intensity: event.intensity,
         confidence: event.confidence,
         crowd,

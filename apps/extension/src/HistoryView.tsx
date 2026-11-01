@@ -174,6 +174,9 @@ export function HistoryView({
                 >
                   <span>
                     <b>{watched(stream.startedAt)}</b>
+                    {stream.recap.replay && (
+                      <span className="replay-tag">replay</span>
+                    )}
                     <small>{duration(stream.durationSeconds)} watched</small>
                   </span>
                   <span>

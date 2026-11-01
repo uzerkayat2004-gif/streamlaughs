@@ -43,6 +43,22 @@ export class InferenceBridge {
   private debug: unknown = null;
   private failed = false;
   private lastPhrase = '';
+  private previewUntil = 0;
+  private speechText = '';
+  private previewTimer: ReturnType<typeof setTimeout> | undefined;
+  speechPreview() {
+    if (this.previewUntil < Date.now()) this.speechText = '';
+    clearTimeout(this.previewTimer);
+    this.previewTimer = setTimeout(() => {
+      this.speechText = '';
+    }, 1200);
+    this.previewUntil = Date.now() + 1200;
+    this.speechWorker?.postMessage({
+      type: 'preview',
+      until: this.previewUntil,
+    });
+    return this.speechText;
+  }
   private costs = {
     sound: [] as { at: number; ms: number }[],
     speech: [] as { at: number; ms: number }[],
@@ -222,6 +238,12 @@ export class InferenceBridge {
         this.activeSpeechId = null;
         this.recordCost('speech', data.computeMs);
         if (
+          this.previewUntil > Date.now() &&
+          typeof data.previewText === 'string'
+        )
+          this.speechText = data.previewText.slice(0, 1000);
+        else this.speechText = '';
+        if (
           AUDIO_DEBUG &&
           this.debug &&
           typeof this.debug === 'object' &&
@@ -351,12 +373,6 @@ export class InferenceBridge {
   }
   private publish(events: PersonalEvent[]) {
     if (!this.owner?.sessionId) return;
-    this.send({
-      type: 'INFERENCE_STATUS',
-      ownerId: this.owner.ownerId,
-      sessionId: this.owner.sessionId,
-      health: this.health,
-    });
     if (events.length)
       this.send({
         type: 'PERSONAL_EVENTS',
@@ -365,7 +381,14 @@ export class InferenceBridge {
         events,
         tabLaughTs: this.health.tabLaughTs,
       });
+    this.send({
+      type: 'INFERENCE_STATUS',
+      ownerId: this.owner.ownerId,
+      sessionId: this.owner.sessionId,
+      health: this.health,
+    });
   }
+
   debugState() {
     return AUDIO_DEBUG && this.debug && typeof this.debug === 'object'
       ? {
@@ -426,6 +449,9 @@ export class InferenceBridge {
     this.drops = 0;
     this.debug = null;
     this.lastPhrase = '';
+    this.speechText = '';
+    this.previewUntil = 0;
+    clearTimeout(this.previewTimer);
     this.health = emptyInferenceHealth();
     this.productionDiagnostics = emptyWorkerDiagnostics();
     this.speechState = modelState();

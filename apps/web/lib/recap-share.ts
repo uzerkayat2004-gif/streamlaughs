@@ -8,7 +8,7 @@ export function recapMetadata(data: RecapShare | null): Metadata {
       title: 'recap link needs a little help',
       robots: { index: false, follow: false },
     };
-  const title = `I laughed ${data.laughs} times with ${data.streamer}`;
+  const title = `I laughed ${data.laughs} times with ${data.streamer}${data.replay ? ' · watched a replay' : ''}`;
   const url = recapShareUrl(siteUrl(), data);
   const image = recapShareUrl(siteUrl(), data, true);
   return {

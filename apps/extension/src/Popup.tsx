@@ -1,4 +1,10 @@
-import { type Command, type MySession, PRODUCT } from '@laughline/shared';
+import {
+  type Command,
+  type MySession,
+  PRODUCT,
+  cleanChannel,
+  replayPage,
+} from '@laughline/shared';
 import { ArrowRight, Pause, Play, Settings } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useStore } from 'zustand';
@@ -63,6 +69,8 @@ export function Popup() {
     chrome.storage.onChanged.addListener(changed);
     return () => chrome.storage.onChanged.removeListener(changed);
   }, []);
+  const [replay, setReplay] = useState(false),
+    [typedChannel, setTypedChannel] = useState('');
   const [contextLoading, setContextLoading] = useState(true);
   const [onTwitch, setOnTwitch] = useState(false),
     [contextName, setContextName] = useState('');
@@ -85,6 +93,7 @@ export function Popup() {
         const context = await resolveWatchContext(tab ?? {});
         if (live) {
           setChannel(context.channel);
+          setReplay(context.replay === true || !!replayPage(tab?.url ?? ''));
           setOnTwitch(context.onTwitch || context.unknown === true);
           setContextLoading(false);
           setContextName(context.displayName || '');
@@ -99,11 +108,13 @@ export function Popup() {
       }
     };
     void refresh();
+    const timer = setInterval(() => void refresh(), 750);
     const updated = () => void refresh();
     chrome.tabs.onUpdated.addListener(updated);
     chrome.tabs.onActivated.addListener(updated);
     return () => {
       live = false;
+      clearInterval(timer);
       disconnect();
       chrome.tabs.onUpdated.removeListener(updated);
       chrome.tabs.onActivated.removeListener(updated);
@@ -154,9 +165,18 @@ export function Popup() {
         () => act({ type: 'STOP' }),
       );
     } else if (updateAvailable && !later) await openUpdate();
-    else if (channel) await act({ type: 'START', tabId });
+    else if (channel || (replay && cleanChannel(typedChannel)))
+      await act({
+        type: 'START',
+        tabId,
+        ...(replay && !channel ? { channel: cleanChannel(typedChannel) } : {}),
+      });
     else if (onTwitch)
-      setError('finding the channel · refresh the Twitch tab and reopen');
+      setError(
+        replay
+          ? 'add the streamer’s channel name below'
+          : 'finding the channel · refresh the Twitch tab and reopen',
+      );
     else await chrome.tabs.create({ url: 'https://www.twitch.tv/directory' });
   }
   return (
@@ -208,7 +228,9 @@ export function Popup() {
                   <i />
                   {snapshot.status === 'paused'
                     ? 'paused'
-                    : crowdLabel(snapshot.crowd)}
+                    : session.replay
+                      ? 'replay · personal only'
+                      : crowdLabel(snapshot.crowd)}
                 </span>
                 <Timer start={session.startedAt} />
               </>
@@ -225,7 +247,9 @@ export function Popup() {
                 disabled={busy}
                 onClick={() => void primary()}
               >
-                <AppIcon size={110} />
+                <span className="smile-breath">
+                  <AppIcon size={110} />
+                </span>
               </button>
               <span
                 className={`mic-level-dot ${snapshot.capture.metrics.micLevel > 0.005 ? 'heard' : ''}`}
@@ -301,14 +325,20 @@ export function Popup() {
                 {contextLoading
                   ? 'finding your Twitch tab…'
                   : channel
-                    ? 'ready for your next laugh?'
+                    ? replay
+                      ? 'ready for this replay?'
+                      : 'ready for your next laugh?'
                     : onTwitch
-                      ? 'finding this stream’s channel'
+                      ? replay
+                        ? 'a replay, your reactions.'
+                        : 'finding this stream’s channel'
                       : 'open any Twitch stream'}
               </h1>
               <p className="sub">
                 {channel
-                  ? 'your laughs. everyone’s reactions.'
+                  ? replay
+                    ? 'replay · your reactions stay personal.'
+                    : 'your laughs. everyone’s reactions.'
                   : 'your people are one stream away.'}
               </p>
             </div>
@@ -341,7 +371,7 @@ export function Popup() {
                 type="button"
                 className="btn"
                 disabled={busy || !ready || contextLoading}
-                onClick={() => void act({ type: 'START', tabId })}
+                onClick={() => void primary()}
               >
                 start <ArrowRight size={17} />
               </button>
@@ -349,6 +379,37 @@ export function Popup() {
               <p className="sub" role="status">
                 checking this tab…
               </p>
+            ) : replay ? (
+              <form
+                className="replay-channel-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void primary();
+                }}
+              >
+                <label htmlFor="replay-channel">who are you watching?</label>
+                <input
+                  id="replay-channel"
+                  aria-label="streamer channel"
+                  value={typedChannel}
+                  maxLength={25}
+                  autoComplete="off"
+                  placeholder="channel name, e.g. vernofps"
+                  onChange={(e) =>
+                    setTypedChannel(cleanChannel(e.target.value))
+                  }
+                />
+                <button
+                  className="btn"
+                  type="submit"
+                  disabled={busy || !ready || !cleanChannel(typedChannel)}
+                >
+                  start replay <ArrowRight size={17} />
+                </button>
+                <p className="sub">
+                  personal only · no fan reactions are shared
+                </p>
+              </form>
             ) : onTwitch ? (
               <p role="status" className="sub">
                 refresh the Twitch tab, then reopen this popup
@@ -451,7 +512,7 @@ export function Popup() {
             type="button"
             className="textbtn"
             disabled={busy}
-            onClick={() => void act({ type: 'START', tabId })}
+            onClick={() => void primary()}
           >
             start on {channel}
           </button>

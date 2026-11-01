@@ -68,7 +68,7 @@ it('validates Chrome-compatible versions and tag/config/repository binding', () 
 });
 it('rejects leaked controls/private files and wrong versions in a built release', () => {
   const folder = mkdtempSync(path.join(os.tmpdir(), 'release-controls-'));
-  // Copy only the public manifest; these tests inject one bad file at a time.
+  // Minimal public release fixture; inject one bad file at a time.
   const product = readProduct();
   const identity = JSON.parse(
     readFileSync(
@@ -84,10 +84,29 @@ it('rejects leaked controls/private files and wrong versions in a built release'
       action: { default_title: product.name },
       version: product.version,
       key: identity.publicKey,
-      permissions: ['storage', 'tabs', 'tabCapture', 'offscreen', 'downloads'],
-      host_permissions: ['https://www.twitch.tv/*'],
+      permissions: [
+        'storage',
+        'tabs',
+        'tabCapture',
+        'offscreen',
+        'downloads',
+        'scripting',
+      ],
+      host_permissions: [
+        'https://www.twitch.tv/*',
+        'https://twitch.tv/*',
+        'https://m.twitch.tv/*',
+        'https://clips.twitch.tv/*',
+      ],
+      content_scripts: [{ js: ['twitch.js'] }],
       content_security_policy: { extension_pages: "connect-src 'self';" },
     }),
+  );
+  writeFileSync(
+    path.join(folder, 'twitch.js'),
+    JSON.stringify(
+      'solid-v081 calm-launcher fan reactions show when 3+ fans are here fans laughing now M14 34H50C49 56 15 56 14 34Z',
+    ),
   );
   expect(() => verifyProduction(folder, product)).not.toThrow();
   writeFileSync(

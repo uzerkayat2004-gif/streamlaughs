@@ -6,7 +6,11 @@ import {
   DiagnosticsSchema,
 } from './diagnostics';
 
-export function usePipelineReport(enabled = true, preview = false) {
+export function usePipelineReport(
+  enabled = true,
+  preview = false,
+  speech = false,
+) {
   const [report, setReport] = useState<DiagnosticsReport | null>(null);
   const [phrase, setPhrase] = useState('');
   useEffect(() => {
@@ -24,8 +28,10 @@ export function usePipelineReport(enabled = true, preview = false) {
         if (preview) {
           const value = await chrome.runtime.sendMessage({
             type: 'GET_AUDIO_PREVIEW',
+            speech,
           });
-          if (alive && typeof value === 'string') setPhrase(value.slice(0, 80));
+          if (alive && typeof value === 'string')
+            setPhrase(value.slice(0, speech ? 1000 : 80));
         }
       } catch {
         /* A restarting background is retried on the next poll. */
@@ -40,7 +46,7 @@ export function usePipelineReport(enabled = true, preview = false) {
       clearInterval(timer);
       setPhrase('');
     };
-  }, [enabled, preview]);
+  }, [enabled, preview, speech]);
   return { report, phrase };
 }
 export function micProblem(report: DiagnosticsReport | null) {
@@ -81,7 +87,7 @@ export function micProblem(report: DiagnosticsReport | null) {
   return '';
 }
 export function PipelineDebug({ close }: { close: () => void }) {
-  const { report: r, phrase } = usePipelineReport(true, true);
+  const { report: r, phrase } = usePipelineReport(true, true, true);
   const ai = r?.inference,
     audio = r?.audio;
 
@@ -140,8 +146,14 @@ export function PipelineDebug({ close }: { close: () => void }) {
           .join(' · ')}
       </p>
       <p>
-        transcriptions: {ai?.stages.speechResults ?? 0} · last transcript
-        (filtered phrase): <b>{phrase || 'none yet'}</b>
+        segments sent: {ai?.stages.speechRequests ?? 0} · transcripts returned:{' '}
+        {ai?.stages.speechResults ?? 0}
+        <br />
+        words matched: {ai?.stages.wordsMatched ?? 0} · rejected:{' '}
+        {ai?.stages.wordsRejected ?? 0}
+        <br />
+        last transcript (visible here only, never saved/copied):{' '}
+        <b>{phrase || 'say a reaction while this panel is open'}</b>
       </p>
       <p>
         guard: {ai?.guard.reason ?? 'waiting'} · match{' '}
@@ -154,7 +166,11 @@ export function PipelineDebug({ close }: { close: () => void }) {
         {r?.sessionMatches ? 'matched' : 'not matched'}
       </p>
       <p role="status">{micProblem(r) || 'pipeline running'}</p>
-      <CopyDiagnostics report={r} phrase={phrase} />
+      <p>
+        laugh delivery latency: {Math.round(r?.laughPanelLatencyMs ?? 0)} ms ·
+        recognized audio frame → panel (not first-sound onset)
+      </p>
+      <CopyDiagnostics report={r} />
     </section>
   );
 }

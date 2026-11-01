@@ -7,6 +7,7 @@ import { Pause, Play } from 'lucide-react';
 import { formatTime } from './components';
 export function FanPanel({
   room,
+  replay = false,
   count,
   status,
   micLevel,
@@ -22,6 +23,7 @@ export function FanPanel({
   bestMoment,
 }: {
   room: CrowdState | null;
+  replay?: boolean;
   count: number;
   status: 'idle' | 'paused' | 'recording';
   micLevel: number;
@@ -41,6 +43,7 @@ export function FanPanel({
   const words = visibleWords(room).filter((w) => w.word !== '—');
   return (
     <div className="fan-panel-content">
+      {replay && <small className="replay-tag">replay · personal only</small>}
       <header className="reaction-header">
         <b>{channel}</b>
         <span>{formatTime(elapsed)}</span>
@@ -78,40 +81,42 @@ export function FanPanel({
           </div>
         )}
       </section>
-      {live ? (
-        <section className="reaction-fans" aria-label="fan reactions">
-          <small>FANS</small>
-          <div className="fans-count">
-            <strong>{room.laughingNow}</strong>
-            <span>fans laughing now</span>
-          </div>
-          <div className="laugh-meter" aria-label="live laugh meter">
-            {[0, 1, 2, 3, 4].map((n) => (
-              <i
-                key={n}
-                className={
-                  status === 'recording' &&
-                  room.laughingNow > n * Math.max(1, room.laughlineViewers / 5)
-                    ? 'lit'
-                    : ''
-                }
-              />
-            ))}
-          </div>
-          {words[0] && (
-            <div className="fan-word">
-              <span>top fan word</span>
-              <b>{words[0].word}</b>
+      {!replay &&
+        (live ? (
+          <section className="reaction-fans" aria-label="fan reactions">
+            <small>FANS</small>
+            <div className="fans-count">
+              <strong>{room.laughingNow}</strong>
+              <span>fans laughing now</span>
             </div>
-          )}
-        </section>
-      ) : (
-        <p className="fans-floor">
-          {room?.state === 'offline'
-            ? 'fans are offline · reconnecting'
-            : 'fan reactions show when 3+ fans are here'}
-        </p>
-      )}
+            <div className="laugh-meter" aria-label="live laugh meter">
+              {[0, 1, 2, 3, 4].map((n) => (
+                <i
+                  key={n}
+                  className={
+                    status === 'recording' &&
+                    room.laughingNow >
+                      n * Math.max(1, room.laughlineViewers / 5)
+                      ? 'lit'
+                      : ''
+                  }
+                />
+              ))}
+            </div>
+            {words[0] && (
+              <div className="fan-word">
+                <span>top fan word</span>
+                <b>{words[0].word}</b>
+              </div>
+            )}
+          </section>
+        ) : (
+          <p className="fans-floor">
+            {room?.state === 'offline'
+              ? 'fans are offline · reconnecting'
+              : 'fan reactions show when 3+ fans are here'}
+          </p>
+        ))}
       {status !== 'idle' ? (
         <div className="x-cfoot">
           <button
@@ -134,7 +139,7 @@ export function FanPanel({
       ) : (
         <p className="fans-floor">open the toolbar to start</p>
       )}
-      {(room?.source === 'fake' || room?.testTraffic) && (
+      {!replay && (room?.source === 'fake' || room?.testTraffic) && (
         <p className="fans-test-label">test fans · simulated traffic</p>
       )}
     </div>

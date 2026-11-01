@@ -9,7 +9,7 @@ import {
   type RecapShare,
 } from '@laughline/shared';
 import { EYES_PATH, MOUTH_PATH } from './AppIcon';
-import { type StreamerProfile, safeAvatar } from './history';
+import { avatarColor, type StreamerProfile, safeAvatar } from './history';
 export const SHARE_SIZE = { width: 1080, height: 1920 };
 export function shareCardData(recap: Recap, profile?: StreamerProfile) {
   const name = (
@@ -30,6 +30,7 @@ export function shareCardData(recap: Recap, profile?: StreamerProfile) {
       recap.wordCount > 0 && word.length <= 40 && isApprovedPhrase(word)
         ? word
         : null,
+    replay: recap.replay === true,
     hype: recap.hype,
     gasps: recap.gasps,
     screams: recap.screams,
@@ -58,6 +59,7 @@ export function shareLink(recap: Recap, context: ShareContext = {}) {
   const moment = context.bestMoment ?? shareCardData(recap).bestMoment;
   const data: RecapShare = {
     streamer: recap.channel,
+    ...(recap.replay ? { replay: '1' as const } : {}),
     date: localDate,
     laughs: recap.totalLaughs,
     ...(recap.durationSeconds !== undefined
@@ -80,7 +82,7 @@ export function shareText(
 ) {
   const d = shareCardData(recap, profile);
   return d.laughs
-    ? `I laughed ${d.laughs} times with ${d.name} 😂 ${shareLink(recap, context)}`
+    ? `I laughed ${d.laughs} times with ${d.name}${d.replay ? ' · watched a replay' : ''} 😂 ${shareLink(recap, context)}`
     : `A good stream with ${d.name}. Some nights are just for watching. ${SITE_URL || PRODUCT.siteUrl}`;
 }
 export function shareQr(site = SITE_URL || PRODUCT.siteUrl) {
@@ -138,6 +140,21 @@ export async function renderShareCard(
   canvas.height = 1920;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('image unavailable');
+  const chips: [string, string, string][] = [];
+  if (d.word)
+    chips.push([
+      recap.wordCount >= 2 ? 'most used word' : 'latest word',
+      `“${d.word}”`,
+      '#FFD23F',
+    ]);
+  const funniest = context.funniest ?? recap.funniestWord;
+  if (funniest && isApprovedPhrase(funniest))
+    chips.push(['funniest word', `“${funniest}”`, '#FFEAA0']);
+  const moment = context.bestMoment ?? d.bestMoment;
+  if (moment !== null && moment !== undefined)
+    chips.push(['biggest minute', time(moment), '#2EE6C5']);
+  if (d.hype > 0) chips.push(['hype shouts', String(d.hype), '#FFEAA0']);
+  const sparse = chips.length <= 2;
   // The laughs story is always coral, following the yellow intro.
   ctx.fillStyle = '#FF5C5C';
   ctx.fillRect(0, 0, 1080, 1920);
@@ -160,11 +177,7 @@ export async function renderShareCard(
   ctx.beginPath();
   ctx.arc(150, 330, 62, 0, Math.PI * 2);
   ctx.clip();
-  const palette = ['#8C6F0D', '#B73333', '#087F69'];
-  ctx.fillStyle =
-    palette[
-      [...d.channel].reduce((n, c) => n + c.charCodeAt(0), 0) % palette.length
-    ]!;
+  ctx.fillStyle = avatarColor(d.channel);
   ctx.fillRect(88, 268, 124, 124);
   let avatar: HTMLImageElement | undefined;
   if (d.avatar)
@@ -193,47 +206,50 @@ export async function renderShareCard(
     ctx.fillStyle = '#FFFFFF';
     ctx.font = '750 55px "LL Bricolage",sans-serif';
     ctx.textAlign = 'center';
+    ctx.strokeStyle = '#14141A';
+    ctx.lineWidth = 2;
+    ctx.strokeText(d.name[0]?.toUpperCase() || 'S', 150, 349);
     ctx.fillText(d.name[0]?.toUpperCase() || 'S', 150, 349);
   }
   ctx.restore();
+  ctx.beginPath();
+  ctx.arc(150, 330, 62, 0, Math.PI * 2);
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 3;
+  ctx.stroke();
   ctx.fillStyle = '#14141A';
   ctx.textAlign = 'left';
   fit(ctx, d.name, 58, 690);
   ctx.fillText(d.name, 246, 325, 690);
   ctx.font = '400 28px "LL Inter",sans-serif';
   ctx.fillText(d.date, 248, 371);
+  if (d.replay) {
+    ctx.font = '500 27px "LL Inter",sans-serif';
+    ctx.fillText('watched a replay · personal only', 248, 416);
+  }
   ctx.font = '750 68px "LL Bricolage",sans-serif';
-  ctx.fillText('I laughed', 88, 575);
-  fit(ctx, String(d.laughs), 300, 905, 800);
-  ctx.fillText(String(d.laughs), 77, 870);
+  ctx.fillText('I laughed', 88, sparse ? 610 : 575);
+  fit(ctx, String(d.laughs), sparse ? 370 : 300, 905, 800);
+  ctx.fillText(String(d.laughs), 77, sparse ? 980 : 870);
   ctx.font = '650 60px "LL Bricolage",sans-serif';
-  ctx.fillText('times with', 92, 968);
+  ctx.fillText('times with', 92, sparse ? 1080 : 968);
   fit(ctx, d.name, 88, 900);
-  ctx.fillText(d.name, 88, 1074, 900);
-  const chips: [string, string, string][] = [];
-  if (d.word) chips.push(['most used word', `“${d.word}”`, '#FFD23F']);
-  const funniest = context.funniest ?? recap.funniestWord;
-  if (funniest && isApprovedPhrase(funniest))
-    chips.push(['funniest word', `“${funniest}”`, '#FFEAA0']);
-  const moment = context.bestMoment ?? d.bestMoment;
-  if (moment !== null && moment !== undefined)
-    chips.push(['biggest minute', time(moment), '#2EE6C5']);
-  if (d.hype > 0) chips.push(['hype shouts', String(d.hype), '#FFEAA0']);
+  ctx.fillText(d.name, 88, sparse ? 1180 : 1074, 900);
   // Missing facts are omitted, never turned into zero-filled tiles.
   for (const [i, [label, value, color]] of chips.slice(0, 4).entries()) {
     const oddLast = chips.length % 2 === 1 && i === chips.length - 1;
     const x = 88 + (i % 2) * 464,
-      y = 1140 + Math.floor(i / 2) * 192;
+      y = (sparse ? 1270 : 1140) + Math.floor(i / 2) * 192;
     const width = oddLast ? 904 : 440;
     ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.roundRect(x, y, width, 168, 26);
+    ctx.roundRect(x, y, width, sparse ? 265 : 168, 26);
     ctx.fill();
     ctx.fillStyle = '#14141A';
     ctx.font = '500 26px "LL Inter",sans-serif';
     ctx.fillText(label, x + 28, y + 46);
-    fit(ctx, value, 56, width - 56);
-    ctx.fillText(value, x + 28, y + 122, width - 56);
+    fit(ctx, value, sparse ? 84 : 56, width - 56);
+    ctx.fillText(value, x + 28, y + (sparse ? 194 : 122), width - 56);
   }
   ctx.fillStyle = '#14141A';
   ctx.font = '500 33px "LL Inter",sans-serif';

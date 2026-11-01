@@ -4,7 +4,7 @@
 
 A little crowd for Twitch: your local laughs, everyone’s anonymous reactions, and a Wrapped-style recap when the stream ends.
 
-**v0.8.2:** a calm reaction dot with an attached panel, instant stop feedback, accurate recap stories, a local PNG with QR, and public stat-only share links. [What changed and how to check it](docs/polish-v082.md).
+**v0.8.3:** personal VOD/clip replays, a transparent jelly smiley, clean toolbar state, reliable reaction-word updates and readable streamer-card hover. [Causes, verification and update checks](docs/fixes-v083.md).
 
 > **Demo GIF / screenshot placeholder:** replace this line with the final crowd-blob GIF after recording. [Current extension screenshots](docs/screenshots/part6) · [Website preview](docs/screenshots/part5/home-desktop.png).
 

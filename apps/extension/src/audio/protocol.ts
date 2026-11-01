@@ -7,6 +7,7 @@ export const OwnerCommandSchema = z.discriminatedUnion('type', [
     .object({
       target: z.literal('offscreen'),
       type: z.literal('AUDIO_PREVIEW'),
+      speech: z.boolean().optional(),
     })
     .strict(),
   z

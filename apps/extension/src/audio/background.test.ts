@@ -311,6 +311,71 @@ describe('background capture integration with browser ports mocked', () => {
     expect(recovered.state.lastSaved?.saving).toBe(false);
     expect(fixture.recaps.at(-1)).toMatchObject({ saving: false });
   });
+  it('starts a replay from its owner or typed fallback, never starts the crowd source, and saves playback moments', async () => {
+    Object.assign(chrome.tabs, {
+      get: async () => ({ id: 1, url: 'https://www.twitch.tv/videos/42' }),
+      sendMessage: async () => ({
+        onTwitch: true,
+        replay: true,
+        channel: null,
+        isLive: false,
+        seconds: 600,
+        paused: false,
+        rate: 1,
+      }),
+    });
+    const started = await dispatch({
+      type: 'START',
+      tabId: 1,
+      channel: 'vernofps',
+    });
+    expect(started.ok).toBe(true);
+    expect(started.state.session?.replay?.seconds).toBe(600);
+    expect(fixture.crowdListeners).toHaveLength(0);
+    const beforeSeek = Date.now();
+    await vi.advanceTimersByTimeAsync(1000);
+    await new Promise((reply) =>
+      fixture.messages[0]!(
+        {
+          type: 'REPLAY_POSITION',
+          replay: {
+            ...started.state.session!.replay,
+            seconds: 120,
+            at: Date.now(),
+          },
+        },
+        {
+          id: fixture.extensionId,
+          tab: { id: 1 },
+          url: 'https://www.twitch.tv/videos/42',
+        },
+        reply,
+      ),
+    );
+    await dispatch(
+      {
+        type: 'PERSONAL_EVENTS',
+        ownerId: 'owner-token',
+        sessionId: started.state.session!.id,
+        events: [
+          { kind: 'laugh', ts: beforeSeek, confidence: 0.9, intensity: 2 },
+        ],
+        tabLaughTs: 0,
+      },
+      true,
+    );
+    expect(
+      (await dispatch({ type: 'GET_STATE' })).state.session?.replay?.seconds,
+    ).toBe(120);
+    await dispatch({ type: 'STOP' });
+    expect(fixture.recaps.at(-1)).toMatchObject({
+      replay: true,
+      channel: 'vernofps',
+      hardestLaughAt: 600,
+      totalLaughs: 1,
+    });
+    expect(fixture.crowdListeners).toHaveLength(0);
+  });
   it('injects a missing receiver, re-queries its context and starts the watched tab', async () => {
     const executeScript = vi.fn(async () => []);
     Object.assign(chrome, { scripting: { executeScript } });

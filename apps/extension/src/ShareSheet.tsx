@@ -88,7 +88,7 @@ export function ShareSheet({
           </button>
           <a
             className="btn btn--ghost"
-            href={`https://twitter.com/intent/tweet?${new URLSearchParams({ text: `I laughed ${recap.totalLaughs} times with ${recap.channel} 😂`, url })}`}
+            href={`https://twitter.com/intent/tweet?${new URLSearchParams({ text: `I laughed ${recap.totalLaughs} times with ${recap.channel}${recap.replay ? ' · watched a replay' : ''} 😂`, url })}`}
             target="_blank"
             rel="noreferrer"
           >

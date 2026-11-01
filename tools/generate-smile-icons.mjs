@@ -48,3 +48,15 @@ for (const size of [16, 32, 48, 128])
 console.log(
   'Laughing-face icons and smile underline assets generated; extension identity unchanged.',
 );
+
+const toolbar = svg.replace(
+  '<rect width="64" height="64" rx="18" fill="#FFD23F"/>',
+  '<circle cx="32" cy="32" r="30" fill="#FFD23F"/>',
+);
+for (const size of [16, 32])
+  await sharp(Buffer.from(toolbar))
+    .resize(size, size)
+    .png()
+    .toFile(
+      path.join(root, 'apps/extension/public/icon', `toolbar-${size}.png`),
+    );

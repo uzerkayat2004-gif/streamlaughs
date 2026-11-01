@@ -27,10 +27,12 @@ const schema = z
     moment: integer(0, 604800).optional(),
     hype: integer(1, 1000000).optional(),
     stream: integer(1, 100000),
+    replay: z.literal('1').optional(),
   })
   .strict()
   .refine(
     (d) =>
+      d.replay === '1' ||
       d.moment === undefined ||
       d.minutes === undefined ||
       d.moment < (d.minutes + 1) * 60,
@@ -69,6 +71,7 @@ export function recapShareParams(data: RecapShare) {
     'moment',
     'hype',
     'stream',
+    'replay',
   ] as const) {
     const value = data[key];
     if (value !== undefined) params.set(key, String(value));

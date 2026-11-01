@@ -13,6 +13,21 @@ import config from '../next.config';
 const valid =
   'streamer=vernofps&date=2026-11-01&laughs=16&minutes=47&word=bro&funniest=no+way&moment=760&hype=4&stream=1';
 afterEach(() => vi.unstubAllEnvs());
+it('labels a replay and permits its media position to exceed elapsed watch duration', async () => {
+  const params = new URLSearchParams(valid);
+  params.set('replay', '1');
+  params.set('minutes', '2');
+  params.set('moment', '600');
+  const data = parseRecapShare(params);
+  expect(data?.replay).toBe('1');
+  const html = renderToStaticMarkup(
+    await Page({ searchParams: Promise.resolve(Object.fromEntries(params)) }),
+  );
+  expect(html).toContain('watched a replay');
+  expect(JSON.stringify(recapMetadata(data))).toContain('watched a replay');
+  params.set('replay', 'evil');
+  expect(parseRecapShare(params)).toBeNull();
+});
 it('round-trips only public bounded stats', () => {
   const data = parseRecapShare(new URLSearchParams(valid))!;
   expect(data).toEqual({

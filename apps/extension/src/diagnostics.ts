@@ -7,7 +7,12 @@ import {
 } from '@laughline/shared';
 import { z } from 'zod';
 export const SpeechResultSchema = z
-  .object({ phrases: z.array(SafePhraseSchema).max(64), hype: z.boolean() })
+  .object({
+    phrases: z.array(SafePhraseSchema).max(64),
+    hype: z.boolean(),
+    matched: z.number().nonnegative().default(0),
+    rejected: z.number().nonnegative().default(0),
+  })
   .strict();
 export const ClassScoresSchema = z
   .object({
@@ -60,6 +65,8 @@ export const WorkerDiagnosticsSchema = z
         soundJobsSkipped: z.number().nonnegative().default(0),
         speechRequests: z.number().nonnegative(),
         speechResults: z.number().nonnegative(),
+        wordsMatched: z.number().nonnegative().default(0),
+        wordsRejected: z.number().nonnegative().default(0),
         wordEvents: z.number().nonnegative(),
         acceptedEvents: z.number().nonnegative(),
       })
@@ -119,6 +126,8 @@ export const emptyStages = () => ({
   soundJobsSkipped: 0,
   speechRequests: 0,
   speechResults: 0,
+  wordsMatched: 0,
+  wordsRejected: 0,
   wordEvents: 0,
   acceptedEvents: 0,
 });
@@ -174,6 +183,7 @@ export const DiagnosticsSchema = z
     savedWords: z.number().nonnegative().default(0),
     sessionLaughs: z.number().nonnegative().default(0),
     sessionWords: z.number().nonnegative().default(0),
+    laughPanelLatencyMs: z.number().nonnegative().default(0),
     version: z.string().max(30),
     listening: z.boolean(),
     captureState: z.string().max(32),

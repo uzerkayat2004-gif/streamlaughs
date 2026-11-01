@@ -127,6 +127,7 @@ export default defineConfig({
       'https://www.twitch.tv/*',
       'https://twitch.tv/*',
       'https://m.twitch.tv/*',
+      'https://clips.twitch.tv/*',
     ],
     optional_host_permissions: configuredSite
       ? [
@@ -141,7 +142,7 @@ export default defineConfig({
     },
     action: {
       default_title: product.name,
-      default_icon: { 16: '/icon/16.png', 32: '/icon/32.png' },
+      default_icon: { 16: '/icon/toolbar-16.png', 32: '/icon/toolbar-32.png' },
     },
     commands: {
       'toggle-recording': {
@@ -153,7 +154,15 @@ export default defineConfig({
       extension_pages: `script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; connect-src 'self'${apiConnections}${siteConnections}; worker-src 'self'; font-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'`,
     },
     web_accessible_resources: [
-      { resources: ['fonts/*'], matches: ['https://www.twitch.tv/*'] },
+      {
+        resources: ['fonts/*'],
+        matches: [
+          'https://www.twitch.tv/*',
+          'https://twitch.tv/*',
+          'https://m.twitch.tv/*',
+          'https://clips.twitch.tv/*',
+        ],
+      },
     ],
   },
 });

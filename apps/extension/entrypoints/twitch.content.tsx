@@ -1,3 +1,4 @@
+import { replayPage } from '@laughline/shared';
 import { pageWatchContext } from '../src/watch-context';
 import { createRoot } from 'react-dom/client';
 import { Overlay } from '../src/Overlay';
@@ -8,8 +9,38 @@ export default defineContentScript({
     'https://www.twitch.tv/*',
     'https://twitch.tv/*',
     'https://m.twitch.tv/*',
+    'https://clips.twitch.tv/*',
   ],
+  allFrames: true,
   main(ctx) {
+    if (window !== top) {
+      const tick = () => {
+        const page = replayPage(location.href),
+          context = pageWatchContext();
+        if (page && context.seconds !== undefined)
+          void chrome.runtime
+            .sendMessage({
+              type: 'REPLAY_POSITION',
+              replay: {
+                ...page,
+                seconds: context.seconds,
+                at: Date.now(),
+                rate: context.rate ?? 1,
+                paused: context.paused ?? false,
+              },
+            })
+            .catch(() => {});
+      };
+      const timer = setInterval(tick, 500);
+      const events = ['seeked', 'ratechange', 'pause', 'play'];
+      for (const event of events) document.addEventListener(event, tick, true);
+      ctx.onInvalidated(() => {
+        clearInterval(timer);
+        for (const event of events)
+          document.removeEventListener(event, tick, true);
+      });
+      return;
+    }
     const previous = globalThis as typeof globalThis & {
       streamlaughsCleanup?: () => void;
     };

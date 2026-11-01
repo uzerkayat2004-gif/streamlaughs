@@ -12,6 +12,7 @@ export default defineUnlistedScript(() => {
   let ready = false,
     busy = false,
     stopped = false;
+  let previewUntil = 0;
   const status = () =>
     self.postMessage({
       type: 'speech_status',
@@ -21,7 +22,9 @@ export default defineUnlistedScript(() => {
     });
   const timer = setInterval(status, 250);
   self.onmessage = async ({ data }) => {
-    if (data.type === 'init') {
+    if (data.type === 'preview') {
+      previewUntil = Math.min(Date.now() + 1200, Number(data.until) || 0);
+    } else if (data.type === 'init') {
       try {
         await models.loadSpeech(data.base, INFERENCE_CONFIG.preferredBackend);
         ready = true;
@@ -41,6 +44,7 @@ export default defineUnlistedScript(() => {
         )
           throw new Error('local speech model unavailable');
         busy = true;
+        const includePreview = previewUntil > Date.now();
         const start = performance.now();
         text = await models.words(samples);
         models.status.whisper.error = '';
@@ -51,6 +55,7 @@ export default defineUnlistedScript(() => {
             computeMs: performance.now() - start,
             id: data.id,
             result,
+            ...(includePreview ? { previewText: text.slice(0, 1000) } : {}),
             ...(AUDIO_DEBUG
               ? { debugTranscript: redactDebugTranscript(text) }
               : {}),

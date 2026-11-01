@@ -96,9 +96,12 @@ it('never colors or populates the toolbar action badge; navigation bypasses stop
     'utf8',
   );
   expect(source).not.toContain('setBadgeBackgroundColor');
-  expect(source.match(/setBadgeText\([^)]*\)/g)).toEqual([
-    "setBadgeText({ text: '' })",
-  ]);
+  expect(source).toContain('clearToolbar()');
+  const toolbar = readFileSync(
+    new URL('./toolbar.ts', import.meta.url),
+    'utf8',
+  );
+  expect(toolbar).not.toContain('setBadgeBackgroundColor');
   expect(source).toContain("parsed.data.type === 'OPEN_RECAP' ||");
 });
 it('attaches below top-right and above bottom-left with an 8px margin', () => {

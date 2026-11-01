@@ -1,4 +1,4 @@
-import { parseChannel } from '@laughline/shared';
+import { parseChannel, replayPage, cleanChannel } from '@laughline/shared';
 import { z } from 'zod';
 export const WatchContextSchema = z.object({
   onTwitch: z.boolean(),
@@ -9,31 +9,97 @@ export const WatchContextSchema = z.object({
   isLive: z.boolean(),
   displayName: z.string().max(100).optional(),
   unknown: z.boolean().optional(),
+  replay: z.boolean().optional(),
+  seconds: z.number().finite().nonnegative().optional(),
+  rate: z.number().min(0.25).max(4).optional(),
+  paused: z.boolean().optional(),
 });
 export type WatchContext = z.infer<typeof WatchContextSchema>;
 export function twitchPage(url: string) {
-  try {
-    const u = new URL(url);
-    return (
-      u.protocol === 'https:' &&
-      ['www.twitch.tv', 'twitch.tv', 'm.twitch.tv'].includes(u.hostname) &&
-      (!!parseChannel(url) || /^\/videos\/\d+\/?$/.test(u.pathname))
-    );
-  } catch {
-    return false;
-  }
+  return !!parseChannel(url) || !!replayPage(url);
 }
 export function pageWatchContext(
   url = location.href,
   doc: Pick<Document, 'querySelector'> = document,
 ): WatchContext {
-  const onTwitch = twitchPage(url);
+  const replay = replayPage(url),
+    onTwitch = twitchPage(url);
   let channel = parseChannel(url);
-  if (onTwitch && !channel) {
-    const link = doc.querySelector<HTMLAnchorElement>(
-      'a[data-a-target="video-info-user-name"], [data-a-target="video-info-header"] a[data-a-target="channel-header-link"], [data-test-selector="video-info-header"] a[data-a-target="video-info-user-name"]',
-    );
-    if (link?.href) channel = parseChannel(link.href);
+  if (replay) {
+    for (const selector of [
+      'a[data-a-target="video-info-user-name"]',
+      '[data-a-target="video-info-header"] a[data-a-target="channel-header-link"]',
+      '[data-test-selector="video-info-header"] a[data-a-target="video-info-user-name"]',
+      '[data-a-target="video-info-header"] a[href]',
+      '[data-test-selector="clip-info-card"] a[href]',
+      'a[data-test-selector="clip-broadcaster"]',
+      '.channel-info-content a[href]',
+    ]) {
+      const link = doc.querySelector<HTMLAnchorElement>(selector);
+      const login = link?.href ? parseChannel(link.href) : null;
+      if (login) {
+        channel = login;
+        break;
+      }
+    }
+    if (!channel) {
+      for (const selector of [
+        'meta[name="author"]',
+        'meta[property="video:actor"]',
+      ]) {
+        const value =
+          doc.querySelector<HTMLMetaElement>(selector)?.content?.trim() ?? '';
+        const login =
+          parseChannel(value) ||
+          (/^@?[A-Za-z0-9_]{1,25}$/.test(value) ? cleanChannel(value) : null);
+        if (login) {
+          channel = login;
+          break;
+        }
+      }
+    }
+    if (!channel) {
+      try {
+        const raw =
+          doc.querySelector('script[type="application/ld+json"]')
+            ?.textContent ?? '';
+        if (raw.length < 50000) {
+          const parsed = JSON.parse(raw);
+          const nodes = Array.isArray(parsed)
+            ? parsed
+            : (parsed['@graph'] ?? [parsed]);
+          for (const node of nodes.slice(0, 32)) {
+            const author = node.author ?? node.creator;
+            const person = Array.isArray(author) ? author[0] : author;
+            const candidate = person?.url ?? person?.name ?? '';
+            if (typeof candidate === 'string') {
+              const login =
+                parseChannel(candidate) ||
+                (/^@?[A-Za-z0-9_]{1,25}$/.test(candidate)
+                  ? cleanChannel(candidate)
+                  : null);
+              if (login) {
+                channel = login;
+                break;
+              }
+            }
+          }
+        }
+      } catch {}
+    }
+    if (!channel) {
+      const description =
+        doc.querySelector<HTMLMetaElement>('meta[property="og:description"]')
+          ?.content ?? '';
+      const match =
+        /^Watch ([A-Za-z0-9_]{1,25})(?:'s|’s) (?:clip|video|stream)/i.exec(
+          description,
+        );
+      if (match) channel = cleanChannel(match[1]!);
+      const clip =
+        /^https:\/\/www\.twitch\.tv\/([A-Za-z0-9_]{1,25})\/clip\//.exec(url);
+      if (!channel && clip) channel = cleanChannel(clip[1]!);
+    }
   }
   const name = doc
     .querySelector(
@@ -41,22 +107,32 @@ export function pageWatchContext(
     )
     ?.textContent?.trim()
     .slice(0, 100);
+  const video = doc.querySelector<HTMLVideoElement>('video');
   return {
     onTwitch,
     channel,
-    isLive:
-      !!channel && !/\/videos\/\d+/.test(url) && !!doc.querySelector('video'),
+    isLive: !!channel && !replay && !!video,
     displayName: name || channel || undefined,
+    replay: !!replay,
+    ...(replay && video
+      ? {
+          seconds: Number.isFinite(video.currentTime) ? video.currentTime : 0,
+          rate: Math.max(0.25, Math.min(4, video.playbackRate || 1)),
+          paused: video.paused,
+        }
+      : {}),
   };
 }
 export async function resolveWatchContext(
   tab: Pick<chrome.tabs.Tab, 'id' | 'url'>,
 ): Promise<WatchContext> {
+  const replay = !!replayPage(tab.url ?? '');
   const fallback = {
     onTwitch: twitchPage(tab.url ?? ''),
     channel: parseChannel(tab.url ?? ''),
     isLive: false,
     unknown: !tab.url,
+    replay,
   };
   if (tab.id === undefined || (tab.url && !twitchPage(tab.url)))
     return fallback;
@@ -66,10 +142,7 @@ export async function resolveWatchContext(
     );
   try {
     return await ask();
-  } catch {
-    /* Pre-install/update tabs need a fresh receiver. */
-  }
-  if (tab.url && !twitchPage(tab.url)) return fallback;
+  } catch {}
   try {
     const files = (chrome.runtime.getManifest().content_scripts ?? []).flatMap(
       (s) => s.js ?? [],

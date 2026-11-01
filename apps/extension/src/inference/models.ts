@@ -29,6 +29,8 @@ export type SpeechResult = {
     { kind: 'words' }
   >['phrases'];
   hype: boolean;
+  matched?: number;
+  rejected?: number;
 };
 export interface ModelRunner {
   topClass?: { label: string; score: number };

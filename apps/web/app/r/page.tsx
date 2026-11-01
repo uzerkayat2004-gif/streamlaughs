@@ -45,6 +45,9 @@ export default async function SharedRecap({ searchParams }: Props) {
             </small>
           </div>
         </header>
+        {data.replay && (
+          <p className="public-recap-ordinal">watched a replay</p>
+        )}
         <p>I laughed</p>
         <strong className="public-recap-number">{data.laughs}</strong>
         <h1>times with {data.streamer}</h1>

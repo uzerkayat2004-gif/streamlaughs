@@ -1,4 +1,4 @@
-import { PRODUCT } from '@laughline/shared';
+import { PRODUCT, replayPage, sessionWord } from '@laughline/shared';
 import { ChevronDown, GripHorizontal } from 'lucide-react';
 import { type CSSProperties, useEffect, useRef, useState } from 'react';
 import { useStore } from 'zustand';
@@ -74,7 +74,10 @@ export function Overlay({
   const dotButton = useRef<HTMLButtonElement>(null),
     boxElement = useRef<HTMLDivElement>(null),
     keyboardOpen = useRef(false);
-  const sessionHere = snapshot.session?.channel === channel,
+  const replayHere =
+    !!snapshot.session?.replay &&
+    snapshot.session.replay.url === replayPage(location.href)?.url;
+  const sessionHere = snapshot.session?.channel === channel || replayHere,
     status = sessionHere ? snapshot.status : 'idle',
     room = sessionHere ? snapshot.crowd : null;
   const notice = sessionHere ? audioNotice(snapshot) : null,
@@ -162,6 +165,14 @@ export function Overlay({
         count,
       )
     ) {
+      const last = snapshot.session?.laughEvents.at(-1);
+      if (last)
+        void chrome.runtime
+          .sendMessage({
+            type: 'PANEL_LATENCY',
+            ms: Math.max(0, Date.now() - last.at),
+          })
+          .catch(() => {});
       setBounce((n) => n + 1);
       const now = Date.now();
       setActiveAt(now);
@@ -183,6 +194,35 @@ export function Overlay({
       previousSession.current = null;
     }
   }, [sessionHere, snapshot.session, snapshot.lastRecapId]);
+  useEffect(() => {
+    if (!replayHere || !snapshot.session?.replay) return;
+    const tick = () => {
+      const context = pageWatchContext();
+      const page = replayPage(location.href);
+      if (page && context.seconds !== undefined)
+        void chrome.runtime
+          .sendMessage({
+            type: 'REPLAY_POSITION',
+            replay: {
+              ...page,
+              seconds: context.seconds,
+              at: Date.now(),
+              rate: context.rate ?? 1,
+              paused: context.paused ?? false,
+            },
+          })
+          .catch(() => {});
+    };
+    tick();
+    const events = ['seeked', 'ratechange', 'pause', 'play'];
+    for (const event of events) document.addEventListener(event, tick, true);
+    const timer = setInterval(tick, 500);
+    return () => {
+      clearInterval(timer);
+      for (const event of events)
+        document.removeEventListener(event, tick, true);
+    };
+  }, [replayHere, snapshot.session?.id]);
   useEffect(() => {
     if (hovered) return;
     const delay = Math.max(0, OVERLAY_FADE_MS - (Date.now() - activeAt));
@@ -236,7 +276,10 @@ export function Overlay({
       () => act('STOP'),
     );
   }
-  if (!channel || !rect || rect.width < 50 || rect.height < 50) return null;
+  const resolvedChannel =
+    channel || (replayHere ? snapshot.session?.channel : null);
+  if (!resolvedChannel || !rect || rect.width < 50 || rect.height < 50)
+    return null;
   const size = { width: rect.width, height: rect.height },
     local = clampAnchor(
       launcher ??
@@ -453,17 +496,16 @@ export function Overlay({
             </button>
           </div>
           <FanPanel
-            channel={snapshot.session?.displayName || channel}
+            channel={snapshot.session?.displayName || resolvedChannel}
+            replay={replayHere}
             elapsed={
               sessionHere && snapshot.session
                 ? Math.max(0, (clock - snapshot.session.startedAt) / 1000)
                 : 0
             }
             word={
-              sessionHere
-                ? [...(snapshot.session?.topWords ?? [])].sort(
-                    (a, b) => b.count - a.count,
-                  )[0]?.word
+              sessionHere && snapshot.session
+                ? sessionWord(snapshot.session)?.word
                 : undefined
             }
             lastLaughSeconds={

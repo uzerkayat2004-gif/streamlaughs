@@ -38,6 +38,7 @@ export function verifyProduction(directory, product = readProduct(), origins) {
     'https://www.twitch.tv/*',
     'https://twitch.tv/*',
     'https://m.twitch.tv/*',
+    'https://clips.twitch.tv/*',
   ]);
   const contentScripts = (manifest.content_scripts ?? []).flatMap(
     (entry) => entry.js ?? [],

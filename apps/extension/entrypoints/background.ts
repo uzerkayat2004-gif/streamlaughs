@@ -14,11 +14,17 @@ import {
   PersonalBatchSchema,
   PRODUCT,
   parseChannel,
+  replayPage,
+  ReplaySchema,
   type Snapshot,
+  type MySession,
+  type PersonalEvent,
+  type Replay,
   SnapshotSchema,
   STATE_KEY,
   visibleWords,
 } from '@laughline/shared';
+import { clearToolbar } from '../src/toolbar';
 import { selectedMicrophone } from '../src/audio/microphone';
 import { AUDIO_DEBUG, MIC_CONSENT_KEY } from '../src/audio/config';
 import {
@@ -45,9 +51,33 @@ import { checkVersion } from '../src/version-check';
 
 export default defineBackground(() => {
   let state: Snapshot = initialSnapshot();
-  void chrome.action?.setBadgeText({ text: '' });
+  void clearToolbar();
+  chrome.runtime.onStartup?.addListener(() => void clearToolbar());
   let endingSession: Snapshot['session'] = null;
   let endingDeadline = 0;
+  let laughPanelLatencyMs = 0;
+  let replayAnchors: Replay[] = [];
+  function applySessionEvent(
+    session: MySession,
+    event: PersonalEvent,
+    crowd: number,
+    tabLaughTs = 0,
+  ) {
+    const anchor = session.replay
+      ? (replayAnchors.findLast(
+          (r) => r.url === session.replay!.url && r.at <= event.ts,
+        ) ?? session.replay)
+      : undefined;
+    return {
+      ...applyPersonalEvent(
+        { ...session, replay: anchor },
+        event,
+        crowd,
+        tabLaughTs,
+      ),
+      replay: session.replay,
+    };
+  }
   let activeOwnerId: string | null = null;
   const source: CrowdSource = makeCrowdSource();
   let sourceSessionId: string | null = null;
@@ -130,16 +160,21 @@ export default defineBackground(() => {
   }
   function runSource() {
     clearInterval(saveTimer);
-    source.setSharing?.(state.settings.share && state.status === 'recording');
-    if (state.session && sourceSessionId !== state.session.id) {
+    if (state.session?.replay) {
       source.stop();
-      sourceSessionId = state.session.id;
-      const sessionId = state.session.id;
-      source.start(state.session.channel, (crowd) => {
-        void serialize(async () => {
-          if (state.session?.id === sessionId) await onCrowd(crowd);
+      sourceSessionId = null;
+    } else {
+      source.setSharing?.(state.settings.share && state.status === 'recording');
+      if (state.session && sourceSessionId !== state.session.id) {
+        source.stop();
+        sourceSessionId = state.session.id;
+        const sessionId = state.session.id;
+        source.start(state.session.channel, (crowd) => {
+          void serialize(async () => {
+            if (state.session?.id === sessionId) await onCrowd(crowd);
+          });
         });
-      });
+      }
     }
     if (state.session)
       saveTimer = setInterval(() => {
@@ -358,15 +393,22 @@ export default defineBackground(() => {
     };
     await publish();
   }
-  async function start(tabId?: number) {
+  async function start(tabId?: number, manualChannel?: string) {
     const tab =
       tabId === undefined
         ? (await chrome.tabs.query({ active: true, currentWindow: true }))[0]
         : await chrome.tabs.get(tabId);
-    const channel = (await resolveWatchContext(tab ?? {})).channel;
+    const context = await resolveWatchContext(tab ?? {});
+    const replay = replayPage(tab?.url ?? '');
+    const channel = context.channel || (replay ? manualChannel : undefined);
     if (!channel || tab?.id === undefined)
       throw new Error('open any Twitch stream');
-    if (state.session && state.session.tabId !== tab.id) await stop();
+    if (
+      state.session &&
+      (state.session.tabId !== tab.id ||
+        state.session.replay?.url !== replay?.url)
+    )
+      await stop();
     if (!state.session && state.capture.sessionId) await stop();
     if (
       state.session &&
@@ -415,6 +457,17 @@ export default defineBackground(() => {
           channelUrl: `https://www.twitch.tv/${channel}`,
           displayName: channel,
           tabId: tab.id,
+          ...(replay
+            ? {
+                replay: {
+                  ...replay,
+                  seconds: context.seconds ?? 0,
+                  at: now,
+                  rate: context.rate ?? 1,
+                  paused: context.paused ?? false,
+                },
+              }
+            : {}),
           startedAt: now,
           endedAt: null,
           laughCount: 0,
@@ -425,6 +478,7 @@ export default defineBackground(() => {
           source: 'local',
         }),
       };
+    replayAnchors = state.session?.replay ? [state.session.replay] : [];
     state.capture = captureTransition(state.capture, {
       type: 'start',
       sessionId: state.session!.id,
@@ -502,7 +556,7 @@ export default defineBackground(() => {
         });
         break;
       case 'START':
-        await start(message.tabId);
+        await start(message.tabId, message.channel);
         break;
       case 'STOP':
         await stop();
@@ -575,9 +629,10 @@ export default defineBackground(() => {
       case 'SETTINGS': {
         const wasListening = state.settings.listen;
         state.settings = { ...state.settings, ...message.settings };
-        source.setSharing?.(
-          state.settings.share && state.status === 'recording',
-        );
+        if (!state.session?.replay)
+          source.setSharing?.(
+            state.settings.share && state.status === 'recording',
+          );
         if (state.session && wasListening !== state.settings.listen) {
           await closeAudioOwner();
           activeOwnerId = null;
@@ -797,6 +852,37 @@ export default defineBackground(() => {
       );
       return true;
     }
+    if ((message as { type?: string })?.type === 'REPLAY_POSITION') {
+      const value = ReplaySchema.safeParse(
+        (message as { replay?: unknown }).replay,
+      );
+      if (
+        value.success &&
+        sender.tab?.id === state.session?.tabId &&
+        state.session?.replay?.url === value.data.url &&
+        replayPage(sender.url ?? '')?.url === value.data.url
+      ) {
+        state.session.replay = value.data;
+        replayAnchors = [...replayAnchors, value.data].slice(-64);
+      }
+      reply({ ok: value.success });
+      return;
+    }
+    if (
+      (message as { type?: string })?.type === 'PANEL_LATENCY' &&
+      sender.tab?.id === state.session?.tabId
+    ) {
+      const ms = (message as { ms?: number }).ms;
+      if (
+        typeof ms === 'number' &&
+        Number.isFinite(ms) &&
+        ms >= 0 &&
+        ms < 60000
+      )
+        laughPanelLatencyMs = ms;
+      reply({ ok: true });
+      return;
+    }
     const audioUI =
       ['/diagnostics.html', '/popup.html', '/mic-test.html'].some(
         (path) => sender.url === chrome.runtime.getURL(path),
@@ -812,6 +898,7 @@ export default defineBackground(() => {
           ? ownerCommand<string>({
               target: 'offscreen',
               type: 'AUDIO_PREVIEW',
+              speech: (message as { speech?: boolean }).speech === true,
             }).catch(() => '')
           : '';
       })().then(reply);
@@ -843,6 +930,7 @@ export default defineBackground(() => {
             ] === true,
           sessionMatches:
             !!owner && owner.sessionId === state.capture.sessionId,
+          laughPanelLatencyMs,
           savedLaughs: saved?.laughCount ?? 0,
           savedWords: saved?.topWords.reduce((n, w) => n + w.count, 0) ?? 0,
           sessionLaughs: state.session?.laughCount ?? 0,
@@ -894,7 +982,7 @@ export default defineBackground(() => {
               event.ts >= endingSession.startedAt &&
               event.ts <= endingSession.endedAt!
             )
-              endingSession = applyPersonalEvent(
+              endingSession = applySessionEvent(
                 endingSession,
                 event,
                 0,
@@ -939,13 +1027,13 @@ export default defineBackground(() => {
               event.ts > Date.now() + 1000
             )
               continue;
-            state.session = applyPersonalEvent(
+            state.session = applySessionEvent(
               state.session,
               event,
               state.crowd?.laughingNow ?? 0,
               personal.data.tabLaughTs,
             );
-            source.addEvents?.([event]);
+            if (!state.session.replay) source.addEvents?.([event]);
           }
           await publish();
         } else if (
@@ -1017,12 +1105,21 @@ export default defineBackground(() => {
         await ready;
         if (
           state.session?.tabId === tabId &&
+          state.session.replay &&
+          replayPage(change.url!)?.url !== state.session.replay.url
+        ) {
+          await stop();
+          return;
+        }
+        if (
+          state.session?.tabId === tabId &&
           (
             await resolveWatchContext({
               ...(await chrome.tabs.get(tabId)),
               url: change.url,
             })
-          ).channel !== state.session.channel
+          ).channel !== state.session.channel &&
+          !state.session.replay
         )
           await stop();
       });
@@ -1043,6 +1140,7 @@ export default defineBackground(() => {
       });
   });
   chrome.runtime.onInstalled.addListener(({ reason }) => {
+    void clearToolbar();
     if (reason === 'update')
       void notifyUpdatedTabs(
         PRODUCT.name,

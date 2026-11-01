@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { notes, readProduct, root, validateVersion } from './config.mjs';
 
@@ -19,6 +19,17 @@ if (next !== '--notes') {
     path.join(root, 'product.config.json'),
     `${JSON.stringify(product, null, 2)}\n`,
   );
+}
+for (const file of [
+  'package.json',
+  'apps/extension/package.json',
+  'apps/web/package.json',
+]) {
+  const target = path.join(root, file);
+  if (!existsSync(target)) continue;
+  const pkg = JSON.parse(readFileSync(target, 'utf8'));
+  pkg.version = product.version;
+  writeFileSync(target, JSON.stringify(pkg, null, 2) + '\n');
 }
 writeFileSync(path.join(root, 'docs/release-notes.md'), notes(product));
 console.log(

@@ -39,7 +39,9 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, reply) => {
           inference: inference.diagnostics(),
         };
       case 'AUDIO_PREVIEW':
-        return inference.preview();
+        return parsed.data.speech
+          ? inference.speechPreview()
+          : inference.preview();
       case 'AUDIO_START':
         return engine.start(parsed.data);
       case 'AUDIO_PAUSE':

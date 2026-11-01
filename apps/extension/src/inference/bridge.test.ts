@@ -288,3 +288,62 @@ it('does not spin on model-load failure and retries only after an explicit inact
   expect(WorkerFake.instances).toHaveLength(6);
   bridge.close();
 });
+
+it('publishes a recognized reaction before periodic health so the panel need not wait for a health storage write', () => {
+  vi.stubGlobal('Worker', WorkerFake);
+  vi.stubGlobal('chrome', {
+    runtime: { getURL: (p: string) => `chrome-extension://test${p}` },
+  });
+  const send = vi.fn(),
+    bridge = new InferenceBridge(new AudioFrameHub(), send);
+  bridge.sync(report());
+  send.mockClear();
+  WorkerFake.instances[0]!.deliver({
+    type: 'status',
+    health: { ...emptyInferenceHealth(), phase: 'ready' },
+    events: [{ kind: 'laugh', ts: 10, confidence: 0.9, intensity: 2 }],
+  });
+  expect(send.mock.calls[0]?.[0].type).toBe('PERSONAL_EVENTS');
+  expect(send.mock.calls[1]?.[0].type).toBe('INFERENCE_STATUS');
+  bridge.close();
+});
+it('keeps an explicitly requested transcript in expiring RAM only, outside all persistent event/status messages', async () => {
+  vi.useFakeTimers();
+  vi.stubGlobal('Worker', WorkerFake);
+  vi.stubGlobal('chrome', {
+    runtime: { getURL: (p: string) => `chrome-extension://test${p}` },
+  });
+  const send = vi.fn(),
+    bridge = new InferenceBridge(new AudioFrameHub(), send);
+  bridge.sync(report());
+  const [rt, speech] = WorkerFake.instances;
+  bridge.speechPreview();
+  speech!.deliver({
+    type: 'speech_status',
+    model: { phase: 'ready', ms: 1, error: '' },
+  });
+  rt!.deliver({
+    type: 'speech_request',
+    id: 99,
+    samples: new Float32Array(16000),
+  });
+  speech!.deliver({
+    type: 'speech_result',
+    id: 99,
+    previewText: 'a private sentence for this fixture',
+    result: {
+      phrases: [{ text: 'bro', class: 'ok', count: 1 }],
+      hype: false,
+      matched: 1,
+      rejected: 0,
+    },
+  });
+  expect(bridge.speechPreview()).toBe('a private sentence for this fixture');
+  expect(JSON.stringify(send.mock.calls)).not.toContain('private sentence');
+  expect(JSON.stringify(rt!.postMessage.mock.calls)).not.toContain(
+    'private sentence',
+  );
+  await vi.advanceTimersByTimeAsync(1201);
+  expect(bridge.speechPreview()).toBe('');
+  bridge.close();
+});

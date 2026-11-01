@@ -90,7 +90,7 @@ export async function GET(request: Request) {
           </span>
           <span style={{ fontSize: 34 }}>times with {d.streamer}</span>
           <span style={{ fontSize: 18, marginTop: 12 }}>
-            stream #{d.stream}
+            {d.replay ? 'watched a replay · ' : ''}stream #{d.stream}
             {d.minutes !== undefined
               ? ` · ${d.minutes < 1 ? 'under a minute' : `${d.minutes} minutes`}`
               : ''}

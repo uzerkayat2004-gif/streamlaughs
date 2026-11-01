@@ -1,3 +1,4 @@
+import { normalizeReaction, REACTION_WORDS } from '@laughline/shared';
 import type {
   PersonalEvent,
   PrivacyClass,
@@ -225,9 +226,9 @@ const stop = new Set<string>(C.stopwords),
   swears = new Set<string>(C.swears),
   blocked = new Set<string>(C.blocked);
 const common = new Set(
-  'no way what lets go oh my god bro yo shot bruh wow lmao haha laugh laughs laughing funny hello amazing okay yes not good great really holy stream chat nice today love play playing wait'.split(
-    ' ',
-  ),
+  'no way what lets go oh my god bro yo shot bruh wow lmao haha laugh laughs laughing funny hello amazing okay yes not good great really holy stream chat nice today love play playing wait'
+    .split(' ')
+    .concat(REACTION_WORDS.flatMap((s) => s.split(' '))),
 );
 export const maskSwear = (word: string) =>
   word[0] + '*'.repeat(Math.max(2, word.length - 1));
@@ -247,6 +248,8 @@ export function privacyClass(
 export function extractWords(text: string): {
   phrases: Extract<PersonalEvent, { kind: 'words' }>['phrases'];
   hype: boolean;
+  matched: number;
+  rejected: number;
 } {
   const raw =
     text
@@ -254,8 +257,11 @@ export function extractWords(text: string): {
       .match(/[A-Za-z]+(?:'[A-Za-z]+)?/g)
       ?.slice(0, 128) ?? [];
   const tokens = raw.map((original) => {
-    const word = original.toLowerCase().replace(/'/g, '');
-    return { word, class: privacyClass(original, word) };
+    const word = normalizeReaction(original);
+    return {
+      word,
+      class: privacyClass(common.has(word) ? word : original, word),
+    };
   });
   const phrases = new Map<
     string,
@@ -269,18 +275,39 @@ export function extractWords(text: string): {
     else if (phrases.size < 64)
       phrases.set(key, { text, count: 1, class: privacy });
   };
+  let matched = 0,
+    rejected = 0;
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i]!;
     if (token.class === 'swear') {
       add(maskSwear(token.word), 'swear');
       continue;
     }
-    if (token.class !== 'ok' || stop.has(token.word)) continue;
-    for (let length = 1; length <= 3 && i + length <= tokens.length; length++) {
-      const group = tokens.slice(i, i + length);
-      if (group.some((item) => item.class !== 'ok' || stop.has(item.word)))
+    if (token.class !== 'ok') {
+      rejected++;
+      continue;
+    }
+    let found = false;
+    for (const length of [3, 2, 1]) {
+      if (i + length > tokens.length) continue;
+      const group = tokens.slice(i, i + length),
+        text = group.map((t) => t.word).join(' ');
+      if (
+        group.every((t) => t.class === 'ok') &&
+        (REACTION_WORDS as readonly string[]).includes(text)
+      ) {
+        add(text, 'ok');
+        matched++;
+        i += length - 1;
+        found = true;
         break;
-      add(group.map((item) => item.word).join(' '), 'ok');
+      }
+    }
+    if (!found) {
+      if (common.has(token.word) && !stop.has(token.word)) {
+        add(token.word, 'ok');
+        matched++;
+      } else rejected++;
     }
   }
   const normalized = tokens
@@ -288,6 +315,8 @@ export function extractWords(text: string): {
     .join(' ');
   return {
     phrases: [...phrases.values()],
+    matched,
+    rejected,
     hype: C.hypePhrases.some((phrase) =>
       ` ${normalized} `.includes(` ${phrase} `),
     ),

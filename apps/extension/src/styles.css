@@ -2374,7 +2374,7 @@ svg {
   box-shadow:
     inset 0 1px 2px #ffffff26,
     0 2px 9px #0008;
-  animation: calm-breath 4s ease-in-out infinite;
+  animation: launcher-breath 4s ease-in-out infinite;
   transition:
     transform 0.18s ease,
     opacity 0.18s ease;
@@ -2425,7 +2425,7 @@ svg {
     box-shadow: 0 0 16px #ffd23f00;
   }
 }
-@keyframes calm-breath {
+@keyframes launcher-breath {
   50% {
     box-shadow:
       inset 0 1px 2px #ffffff26,
@@ -2714,5 +2714,136 @@ svg {
   background: #ffffff40;
   border-radius: 8px;
 }
-.streamer-detail-heading .action-pill { color:#14141A; border-color:#14141a80; }
-.streamer-detail-heading .action-pill:hover { background:#14141a14; }
+.streamer-detail-heading .action-pill {
+  color: #14141a;
+  border-color: #14141a80;
+}
+.streamer-detail-heading .action-pill:hover {
+  background: #14141a14;
+}
+
+/* v0.8.3: transforms stay on the SVG, never a shadow on its wrapper. */
+.popup .smile-trigger,
+.popup .smile-breath {
+  background: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+.popup .smile-trigger {
+  animation: none;
+}
+.popup .smile-breath {
+  animation: jelly-idle 6s ease-in-out infinite;
+}
+.popup .smile-trigger:hover .smile-breath,
+.popup .smile-trigger:focus-visible .smile-breath {
+  animation: jelly-jiggle 0.65s ease-in-out infinite;
+}
+.popup .smile-trigger:active .smile-breath {
+  animation: jelly-jiggle 0.35s ease-out;
+}
+.popup .smile-trigger .face-eyes {
+  transform-origin: 32px 24px;
+  animation: jelly-blink 7s ease-in-out infinite;
+}
+@keyframes jelly-idle {
+  0%,
+  65%,
+  100% {
+    transform: scale(1);
+  }
+  72% {
+    transform: scale(1.035, 0.96);
+  }
+  80% {
+    transform: scale(0.975, 1.04);
+  }
+  88% {
+    transform: scale(1.015, 0.985);
+  }
+}
+@keyframes jelly-jiggle {
+  0%,
+  100% {
+    transform: rotate(0) scale(1);
+  }
+  25% {
+    transform: rotate(-4deg) scale(1.07, 0.93);
+  }
+  60% {
+    transform: rotate(3deg) scale(0.94, 1.06);
+  }
+  82% {
+    transform: rotate(-1deg) scale(1.02, 0.98);
+  }
+}
+@keyframes jelly-blink {
+  0%,
+  43%,
+  48%,
+  100% {
+    transform: scaleY(1);
+  }
+  45%,
+  46% {
+    transform: scaleY(0.1);
+  }
+}
+.streamer-card:hover,
+.streamer-card:focus-visible {
+  background: var(--streamer-color);
+  color: #14141a;
+  opacity: 1;
+  transform: translateY(-3px) scale(1.01);
+  box-shadow: 0 14px 32px #0005;
+}
+.streamer-card {
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+.replay-tag {
+  display: inline-flex;
+  padding: 3px 8px;
+  border: 1px solid currentColor;
+  border-radius: 99px;
+  font: 600 11px var(--ui);
+  opacity: 0.8;
+}
+.replay-channel-form {
+  display: grid;
+  gap: 9px;
+  text-align: left;
+  margin-top: 12px;
+}
+.replay-channel-form input {
+  width: 100%;
+  border: 1px solid #ffffff40;
+  border-radius: 12px;
+  padding: 11px 13px;
+  background: #ffffff0a;
+  color: #fff;
+  font: 14px var(--ui);
+}
+@media (prefers-reduced-motion: reduce) {
+  .popup .smile-breath,
+  .popup .smile-trigger:hover .smile-breath,
+  .popup .smile-trigger:focus-visible .smile-breath,
+  .popup .smile-trigger:active .smile-breath,
+  .popup .face-eyes {
+    animation: none !important;
+    transform: none !important;
+  }
+  .streamer-card {
+    transition: none;
+  }
+}
+
+.reaction-you b {
+  overflow-wrap: anywhere;
+}
+
+.streamer-card:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 4px;
+}

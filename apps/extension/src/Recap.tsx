@@ -175,13 +175,16 @@ export function Recap() {
       </main>
     );
   const name = profile?.displayName || recap.displayName || recap.channel;
-  const vod = data.moment
-    ? momentLink(
-        recap.startedAt ?? recap.createdAt,
-        data.moment.seconds,
-        profile,
-      )
-    : null;
+  const vod =
+    data.moment && recap.replayUrl
+      ? `${recap.replayUrl}${recap.replayUrl.includes('/videos/') ? `?t=${data.moment.seconds}s` : ''}`
+      : data.moment
+        ? momentLink(
+            recap.startedAt ?? recap.createdAt,
+            data.moment.seconds,
+            profile,
+          )
+        : null;
   const micCheck = (
     <a
       className="x-pill"
@@ -280,9 +283,12 @@ export function Recap() {
                   profile={profile}
                   size={92}
                 />
-                <p className="x-ln x-kick">you + {name}</p>
+                <p className="x-ln x-kick">
+                  you + {name}
+                  {recap.replay && <small className="replay-tag">replay</small>}
+                </p>
                 <h1 className="x-ln story-title">
-                  you watched
+                  {recap.replay ? 'watched a replay' : 'you watched'}
                   <br />
                   <strong>{duration(data.seconds)}</strong>
                 </h1>
@@ -346,7 +352,11 @@ export function Recap() {
                 <p className="x-ln x-kick">your words</p>
                 {data.words[0] && (
                   <div className="story-word-feature x-ln">
-                    <small>most used word</small>
+                    <small>
+                      {data.words[0].count >= 2
+                        ? 'most used word'
+                        : 'latest word'}
+                    </small>
                     <b>“{data.words[0].word}”</b>
                     <span>{data.words[0].count} times</span>
                   </div>
