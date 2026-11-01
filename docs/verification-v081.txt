@@ -8,9 +8,9 @@ Targeted changed paths: 14 files
 
 
  Test Files  14 passed (14)
-      Tests  81 passed (81)
-   Start at  10:57:40
-   Duration  2.15s (transform 2.33s, setup 0ms, import 7.02s, tests 2.25s, environment 2ms)
+      Tests  82 passed (82)
+   Start at  11:04:20
+   Duration  1.97s (transform 2.54s, setup 0ms, import 6.10s, tests 2.36s, environment 3ms)
 
 
 Resampling/normalization/assets and fixed identity: 3 files
@@ -43,7 +43,7 @@ apps/extension typecheck: WXT 0.21.5
 apps/extension typecheck: i Generating types...
 apps/extension typecheck:  WARN  The following entrypoints have been skipped:
 apps/extension typecheck: - debug
-apps/extension typecheck: √ Finished in 668 ms
+apps/extension typecheck: √ Finished in 953 ms
 workers/api typecheck: Done
 apps/web typecheck: Done
 apps/extension typecheck: Done
@@ -51,15 +51,15 @@ apps/extension typecheck: Done
 Production build: Worker dry-run, Chrome/Edge, universal download, Next website, then store ZIP
 
   Creating an optimized production build ...
-✓ Compiled successfully in 4.8s
+✓ Compiled successfully in 2.7s
   Running TypeScript ...
-  Finished TypeScript in 3.3s ...
+  Finished TypeScript in 2.7s ...
   Collecting page data using 11 workers ...
   Generating static pages using 11 workers (0/16) ...
   Generating static pages using 11 workers (4/16)
   Generating static pages using 11 workers (8/16)
   Generating static pages using 11 workers (12/16)
-✓ Generating static pages using 11 workers (16/16) in 1603ms
+✓ Generating static pages using 11 workers (16/16) in 1981ms
   Finalizing page optimization ...
   Collecting build traces ...
 
@@ -140,8 +140,8 @@ Local universal ZIP metadata:
   "version": "0.8.1",
   "filename": "streamlaughs.zip",
   "versionedFilename": "streamlaughs-v0.8.1.zip",
-  "sha256": "3380d8915b57a1aa0018b32185f232f752f628dc3ad5326dec69731994594ae5",
-  "bytes": 40769147
+  "sha256": "0e4d92c940217c2891007f7fce8cf249c15a85d241a926d3023a14c49277adb4",
+  "bytes": 40769079
 }
 
 

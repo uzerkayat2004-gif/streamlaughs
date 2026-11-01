@@ -57,9 +57,12 @@ it('uses the chosen device exactly and falls back if it was unplugged', async ()
     deviceId: { exact: 'headset' },
   });
   const y = setup('unplugged', false);
+  y.getUserMedia.mockRejectedValueOnce(
+    new DOMException('gone', 'NotFoundError'),
+  );
   await openSelectedMicrophone();
   expect(y.set).toHaveBeenCalledWith({ [MIC_DEVICE_KEY]: 'default' });
-  expect(y.getUserMedia.mock.calls[0]![0].audio).not.toHaveProperty('deviceId');
+  expect(y.getUserMedia.mock.calls[1]![0].audio).not.toHaveProperty('deviceId');
 });
 it('does not claim permission after browser denial', async () => {
   const x = setup();
@@ -80,5 +83,18 @@ it('uses a device preference sent by the background without touching unsupported
   await openSelectedMicrophone(navigator.mediaDevices.getUserMedia, 'headset');
   expect(x.getUserMedia.mock.calls[0]![0].audio).toMatchObject({
     deviceId: { exact: 'headset' },
+  });
+});
+
+it('tries the selected input when permission hides enumerated device identities', async () => {
+  const x = setup('usb-mic');
+  Object.assign(navigator.mediaDevices, {
+    enumerateDevices: async () => [
+      { kind: 'audioinput', deviceId: '', label: '' },
+    ],
+  });
+  await openSelectedMicrophone(navigator.mediaDevices.getUserMedia, 'usb-mic');
+  expect(x.getUserMedia.mock.calls[0]![0].audio).toMatchObject({
+    deviceId: { exact: 'usb-mic' },
   });
 });

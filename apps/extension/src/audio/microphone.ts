@@ -16,13 +16,8 @@ export async function openSelectedMicrophone(
     if (deviceOverride === undefined)
       await chrome.storage.local.set({ [MIC_DEVICE_KEY]: 'default' });
   };
-  if (id !== 'default' && navigator.mediaDevices.enumerateDevices) {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    if (!devices.some((d) => d.kind === 'audioinput' && d.deviceId === id)) {
-      id = 'default';
-      await remember();
-    }
-  }
+  // Enumeration can hide identities before a capture opens, even after a grant.
+  // Only an actual missing-device capture error justifies changing the input.
   const constraints = {
     audio: {
       ...MICROPHONE_CONSTRAINTS,
