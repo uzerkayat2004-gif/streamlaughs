@@ -18,6 +18,8 @@ The quiet human-WAV regression failed with zero saved laughs before DSP. With th
 
 Mic check/settings include an input selector, actual label and level, permission instructions, and a Bluetooth/Hands-Free tip. Both mic check and Alt+Shift+D copy bounded local diagnostics: version/browser, permission, input label/rate/track/context, RMS/FPS, VAD/DSP stages, models/scores, local session ID/counts and recent errors. Only the last approved phrase may be copied; full transcripts and audio are excluded. Nothing is automatically uploaded.
 
+The copied report also includes the visible-page error, permission-query result and chosen input label when capture has not opened yet. A red regression proved these startup failures were previously missing from the clipboard report. Device names hidden by permission are labelled unavailable rather than guessed. The capture's actual permission/track state stays separately visible.
+
 USER_MEDIA is retained for document lifetime. Chrome documents that AUDIO_PLAYBACK adds a 30-second silent-audio timeout; other reasons do not. A surviving offscreen document is resynced on worker restart. If it disappeared, it is recreated and a fresh Start gesture is requested to restore tab capture; an old stream token is never silently reused. Suspended AudioContexts are resumed.
 
 API references: [offscreen lifecycle](https://developer.chrome.com/docs/extensions/reference/api/offscreen), [tab capture and user invocation](https://developer.chrome.com/docs/extensions/reference/api/tabCapture).

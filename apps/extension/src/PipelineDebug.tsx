@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { selectedMicrophone } from './audio/microphone';
 import {
   copyableReport,
   type DiagnosticsReport,
@@ -161,9 +162,11 @@ export function PipelineDebug({ close }: { close: () => void }) {
 export function CopyDiagnostics({
   report,
   phrase = '',
+  visibleError = '',
 }: {
   report: DiagnosticsReport | null;
   phrase?: string;
+  visibleError?: string;
 }) {
   const [message, setMessage] = useState('copy diagnostics');
   return (
@@ -173,7 +176,39 @@ export function CopyDiagnostics({
       disabled={!report}
       onClick={async () => {
         try {
-          await navigator.clipboard.writeText(copyableReport(report, phrase));
+          let permission: PermissionState | 'unknown' = 'unknown';
+          let label = report?.audio?.mic.name ?? 'not opened';
+          if (location.protocol === 'chrome-extension:') {
+            try {
+              permission = (
+                await navigator.permissions.query({
+                  name: 'microphone' as PermissionName,
+                })
+              ).state;
+            } catch {
+              /* Capture state stays separately visible. */
+            }
+            try {
+              const id = await selectedMicrophone();
+              const devices = await navigator.mediaDevices.enumerateDevices();
+              label =
+                devices.find(
+                  (d) => d.kind === 'audioinput' && d.deviceId === id,
+                )?.label ||
+                (id === 'default'
+                  ? 'system default'
+                  : 'selected input (name unavailable)');
+            } catch {
+              /* Keep the actual captured label, if any. */
+            }
+          }
+          await navigator.clipboard.writeText(
+            copyableReport(report, phrase, {
+              visibleError: visibleError.slice(0, 400),
+              visiblePermissionQuery: permission,
+              chosenDeviceLabel: label.slice(0, 256),
+            }),
+          );
           setMessage('diagnostics copied');
         } catch {
           setMessage('couldn’t copy · focus this tab and retry');

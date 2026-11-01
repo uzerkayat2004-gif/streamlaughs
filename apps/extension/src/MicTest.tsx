@@ -130,7 +130,7 @@ export function MicTest() {
             ? 'test again'
             : 'start mic check'}
       </button>
-      <CopyDiagnostics report={report} phrase={phrase} />
+      <CopyDiagnostics report={report} phrase={phrase} visibleError={error} />
       <a
         className="textbtn"
         target="_blank"

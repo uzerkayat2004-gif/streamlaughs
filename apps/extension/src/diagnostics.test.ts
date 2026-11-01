@@ -67,3 +67,16 @@ it('copies the requested local session/device/browser facts and only a filtered 
   expect(copied.recentErrors).toEqual([]);
   expect(() => copyableReport(value, 'alice private name')).toThrow();
 });
+
+it('includes visible permission failures even before an offscreen capture exists', () => {
+  const copied = JSON.parse(
+    copyableReport(report(), '', {
+      visibleError: 'microphone blocked',
+      visiblePermissionQuery: 'denied',
+      chosenDeviceLabel: 'system default',
+    }),
+  );
+  expect(copied.visiblePermissionQuery).toBe('denied');
+  expect(copied.recentErrors).toContain('microphone blocked');
+  expect(copied.chosenDeviceLabel).toBe('system default');
+});

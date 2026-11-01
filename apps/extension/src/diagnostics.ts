@@ -197,6 +197,11 @@ export function safeError(error: unknown) {
 }
 // The clipboard boundary is deliberately an allowlist: never serialize a worker message.
 const ClipboardReportSchema = DiagnosticsSchema.extend({
+  visibleError: z.string().max(400).default(''),
+  visiblePermissionQuery: z
+    .enum(['unknown', 'prompt', 'granted', 'denied'])
+    .default('unknown'),
+  chosenDeviceLabel: z.string().max(256).default('not opened'),
   osBrowser: z.string().max(500),
   lastApprovedPhrase: z
     .string()
@@ -204,7 +209,15 @@ const ClipboardReportSchema = DiagnosticsSchema.extend({
     .refine((s) => s === '' || isApprovedPhrase(s)),
   recentErrors: z.array(z.string().max(400)).max(10),
 });
-export const copyableReport = (value: unknown, phrase = '') => {
+export const copyableReport = (
+  value: unknown,
+  phrase = '',
+  visible: {
+    visibleError?: string;
+    visiblePermissionQuery?: PermissionState | 'unknown';
+    chosenDeviceLabel?: string;
+  } = {},
+) => {
   const report = DiagnosticsSchema.parse(value);
   const errors = [
     ...(report.audio?.errors ?? []),
@@ -212,10 +225,12 @@ export const copyableReport = (value: unknown, phrase = '') => {
     report.error,
     report.inference?.error,
     ...Object.values(report.inference?.models ?? {}).map((m) => m.error),
+    visible.visibleError,
   ].filter((s): s is string => !!s);
   return JSON.stringify(
     ClipboardReportSchema.parse({
       ...report,
+      ...visible,
       osBrowser:
         typeof navigator === 'undefined'
           ? 'unavailable'
