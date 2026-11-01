@@ -30,6 +30,7 @@ import {
 import { TabEndedSchema } from '../src/audio/protocol';
 import { captureTransition } from '../src/audio/state-machine';
 import { type CrowdSource, makeCrowdSource } from '../src/crowd-source';
+import { resolveWatchContext, twitchPage } from '../src/watch-context';
 import { db, deleteSavedStreams } from '../src/db';
 import { liveQuery } from 'dexie';
 import { SITE_URL, UPDATE_KEY } from '../src/site';
@@ -230,7 +231,10 @@ export default defineBackground(() => {
     activeOwnerId = owner?.ownerId ?? null;
     if (state.session) {
       const tab = await chrome.tabs.get(state.session.tabId).catch(() => null);
-      if (!tab || parseChannel(tab.url ?? '') !== state.session.channel) {
+      if (
+        !tab ||
+        (await resolveWatchContext(tab)).channel !== state.session.channel
+      ) {
         await stop();
         return;
       }
@@ -308,7 +312,7 @@ export default defineBackground(() => {
       tabId === undefined
         ? (await chrome.tabs.query({ active: true, currentWindow: true }))[0]
         : await chrome.tabs.get(tabId);
-    const channel = parseChannel(tab?.url ?? '');
+    const channel = (await resolveWatchContext(tab ?? {})).channel;
     if (!channel || tab?.id === undefined)
       throw new Error('open any Twitch stream');
     if (state.session && state.session.tabId !== tab.id) await stop();
@@ -737,8 +741,7 @@ export default defineBackground(() => {
       ['/diagnostics.html', '/popup.html', '/mic-test.html'].some(
         (path) => sender.url === chrome.runtime.getURL(path),
       ) ||
-      (sender.tab?.id === state.session?.tabId &&
-        parseChannel(sender.url ?? '') === state.session?.channel);
+      (sender.tab?.id === state.session?.tabId && twitchPage(sender.url ?? ''));
     if (
       audioUI &&
       (message as { type?: string })?.type === 'GET_AUDIO_PREVIEW'
@@ -918,7 +921,12 @@ export default defineBackground(() => {
         await ready;
         if (
           state.session?.tabId === tabId &&
-          parseChannel(change.url!) !== state.session.channel
+          (
+            await resolveWatchContext({
+              ...(await chrome.tabs.get(tabId)),
+              url: change.url,
+            })
+          ).channel !== state.session.channel
         )
           await stop();
       });

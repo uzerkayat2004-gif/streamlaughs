@@ -1,33 +1,31 @@
-import { parseChannel } from '@laughline/shared';
+import { pageWatchContext } from '../src/watch-context';
 import { createRoot } from 'react-dom/client';
 import { Overlay } from '../src/Overlay';
 import css from '../src/styles.css?inline';
 
 export default defineContentScript({
-  matches: ['https://www.twitch.tv/*'],
+  matches: [
+    'https://www.twitch.tv/*',
+    'https://twitch.tv/*',
+    'https://m.twitch.tv/*',
+  ],
   main(ctx) {
+    const previous = globalThis as typeof globalThis & {
+      streamlaughsCleanup?: () => void;
+    };
+    previous.streamlaughsCleanup?.();
+    document.querySelector('laughline-overlay')?.remove();
     const channelInfo = (
       message: { type?: string },
       sender: chrome.runtime.MessageSender,
       reply: (value: unknown) => void,
     ) => {
-      if (
-        message?.type !== 'STREAMER_CONTEXT' ||
-        sender.id !== chrome.runtime.id
-      )
-        return;
-      const channel = parseChannel(location.href);
-      if (!channel) return;
-      const name =
-        document
-          .querySelector('[data-a-target="channel-header-display-name"]')
-          ?.textContent?.trim() ||
-        document
-          .querySelector(
-            `[data-a-target="channel-info-content"] a[href="/${channel}"]`,
-          )
-          ?.textContent?.trim();
-      reply({ channel, displayName: name?.slice(0, 100) || channel });
+      if (sender.id !== chrome.runtime.id) return;
+      if (message?.type === 'GET_WATCH_CONTEXT') reply(pageWatchContext());
+      if (message?.type === 'STREAMER_CONTEXT') {
+        const context = pageWatchContext();
+        if (context.channel) reply(context);
+      }
     };
     chrome.runtime.onMessage.addListener(channelInfo);
     const host = document.createElement('laughline-overlay');
@@ -64,11 +62,13 @@ export default defineContentScript({
     placeHost();
     root.render(<Overlay getPlayer={getPlayer} />);
     ctx.addEventListener(document, 'fullscreenchange', placeHost);
-    ctx.onInvalidated(() => {
+    const cleanup = () => {
       chrome.runtime.onMessage.removeListener(channelInfo);
       root.unmount();
       host.remove();
       fontStyle.remove();
-    });
+    };
+    previous.streamlaughsCleanup = cleanup;
+    ctx.onInvalidated(cleanup);
   },
 });

@@ -202,6 +202,30 @@ describe('background capture integration with browser ports mocked', () => {
     vi.unstubAllGlobals();
     vi.useRealTimers();
   });
+  it('injects a missing receiver, re-queries its context and starts the watched tab', async () => {
+    const executeScript = vi.fn(async () => []);
+    Object.assign(chrome, { scripting: { executeScript } });
+    Object.assign(chrome.runtime, {
+      getManifest: () => ({
+        content_scripts: [{ js: ['content-scripts/twitch.js'] }],
+      }),
+    });
+    vi.mocked(chrome.tabs.sendMessage)
+      .mockRejectedValueOnce(new Error('no receiving end'))
+      .mockResolvedValueOnce({
+        onTwitch: true,
+        channel: 'nightowl_tv',
+        isLive: true,
+      });
+    const started = await dispatch({ type: 'START', tabId: 1 });
+    expect(started.state.session?.channel).toBe('nightowl_tv');
+    expect(started.state.capture.phase).toBe('active');
+    expect(executeScript).toHaveBeenCalledWith({
+      target: { tabId: 1 },
+      files: ['content-scripts/twitch.js'],
+    });
+    expect(fixture.getStreamId).toHaveBeenCalledWith({ targetTabId: 1 });
+  });
   it('never opens media or an offscreen document when listening is off', async () => {
     await dispatch({ type: 'SETTINGS', settings: { listen: false } });
     const result = await dispatch({ type: 'START', tabId: 1 });

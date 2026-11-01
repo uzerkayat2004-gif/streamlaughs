@@ -213,7 +213,10 @@ const RESERVED = new Set([
 export function parseChannel(input: string): string | null {
   try {
     const url = new URL(input);
-    if (url.protocol !== 'https:' || url.hostname !== 'www.twitch.tv')
+    if (
+      url.protocol !== 'https:' ||
+      !['www.twitch.tv', 'twitch.tv', 'm.twitch.tv'].includes(url.hostname)
+    )
       return null;
     const parts = url.pathname.split('/').filter(Boolean);
     const channel = parts[0]?.toLowerCase();

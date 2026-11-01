@@ -123,7 +123,11 @@ export default defineConfig({
       'downloads',
       'scripting',
     ],
-    host_permissions: ['https://www.twitch.tv/*'],
+    host_permissions: [
+      'https://www.twitch.tv/*',
+      'https://twitch.tv/*',
+      'https://m.twitch.tv/*',
+    ],
     optional_host_permissions: configuredSite
       ? [
           `${new URL(configuredSite).protocol}//${new URL(configuredSite).hostname}/*`,

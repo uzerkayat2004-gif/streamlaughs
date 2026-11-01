@@ -1,9 +1,4 @@
-import {
-  type Command,
-  type MySession,
-  PRODUCT,
-  parseChannel,
-} from '@laughline/shared';
+import { type Command, type MySession, PRODUCT } from '@laughline/shared';
 import { ArrowRight, Pause, Play, Settings } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useStore } from 'zustand';
@@ -15,6 +10,7 @@ import { StopSaved } from './StopSaved';
 import { StreamerAvatar } from './HistoryView';
 import { db } from './db';
 import type { StreamerProfile } from './history';
+import { resolveWatchContext } from './watch-context';
 import { SITE_URL, UPDATE_KEY } from './site';
 import { audioNotice, friendlyError } from './ui-status';
 import {
@@ -65,6 +61,8 @@ export function Popup() {
     chrome.storage.onChanged.addListener(changed);
     return () => chrome.storage.onChanged.removeListener(changed);
   }, []);
+  const [onTwitch, setOnTwitch] = useState(false),
+    [contextName, setContextName] = useState('');
   const [channel, setChannel] = useState<string | null>(null),
     [tabId, setTabId] = useState<number>();
   const [settingsOpen, setSettingsOpen] = useState(false),
@@ -74,13 +72,34 @@ export function Popup() {
     [busy, setBusy] = useState(false);
   useEffect(() => {
     const disconnect = connectSurface();
-    void chrome.tabs
-      .query({ active: true, currentWindow: true })
-      .then(([tab]) => {
-        setChannel(parseChannel(tab?.url ?? ''));
-        setTabId(tab?.id);
-      });
-    return disconnect;
+    let live = true;
+    const refresh = async () => {
+      try {
+        const [tab] = await chrome.tabs.query({
+          active: true,
+          currentWindow: true,
+        });
+        const context = await resolveWatchContext(tab ?? {});
+        if (live) {
+          setChannel(context.channel);
+          setOnTwitch(context.onTwitch);
+          setContextName(context.displayName || '');
+          setTabId(tab?.id);
+        }
+      } catch {
+        if (live) setError('couldn’t read this tab · reopen the popup');
+      }
+    };
+    void refresh();
+    const updated = () => void refresh();
+    chrome.tabs.onUpdated.addListener(updated);
+    chrome.tabs.onActivated.addListener(updated);
+    return () => {
+      live = false;
+      disconnect();
+      chrome.tabs.onUpdated.removeListener(updated);
+      chrome.tabs.onActivated.removeListener(updated);
+    };
   }, []);
   async function act(message: Command) {
     setBusy(true);
@@ -124,6 +143,8 @@ export function Popup() {
       if (await act({ type: 'STOP' })) setEnded(current);
     } else if (updateAvailable && !later) await openUpdate();
     else if (channel) await act({ type: 'START', tabId });
+    else if (onTwitch)
+      setError('finding the channel · refresh the Twitch tab and reopen');
     else await chrome.tabs.create({ url: 'https://www.twitch.tv/directory' });
   }
   return (
@@ -152,12 +173,12 @@ export function Popup() {
           <div className="who">
             <StreamerAvatar
               login={activeChannel}
-              name={session?.displayName || activeChannel}
+              name={session?.displayName || contextName || activeChannel}
               profile={profile}
               size={36}
             />
-            <p title={session?.displayName || activeChannel}>
-              {session?.displayName || activeChannel}
+            <p title={session?.displayName || contextName || activeChannel}>
+              {session?.displayName || contextName || activeChannel}
             </p>
             {session && (
               <>
@@ -253,7 +274,11 @@ export function Popup() {
                 </span>
               </button>
               <h1>
-                {channel ? `${PRODUCT.pitch}.` : 'open any Twitch stream'}
+                {channel
+                  ? 'ready for your next laugh?'
+                  : onTwitch
+                    ? 'finding this replay’s channel'
+                    : 'open any Twitch stream'}
               </h1>
               <p className="sub">
                 {channel
@@ -294,6 +319,10 @@ export function Popup() {
               >
                 start <ArrowRight size={17} />
               </button>
+            ) : onTwitch ? (
+              <p role="status" className="sub">
+                refresh the Twitch tab, then reopen this popup
+              </p>
             ) : (
               <a
                 className="btn"

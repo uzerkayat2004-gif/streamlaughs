@@ -34,7 +34,11 @@ export function verifyProduction(directory, product = readProduct(), origins) {
     'downloads',
     'scripting',
   ]);
-  assert.deepEqual(manifest.host_permissions, ['https://www.twitch.tv/*']);
+  assert.deepEqual(manifest.host_permissions, [
+    'https://www.twitch.tv/*',
+    'https://twitch.tv/*',
+    'https://m.twitch.tv/*',
+  ]);
   const contentScripts = (manifest.content_scripts ?? []).flatMap(
     (entry) => entry.js ?? [],
   );

@@ -1,4 +1,4 @@
-import { PRODUCT, parseChannel, visibleWords } from '@laughline/shared';
+import { PRODUCT, visibleWords } from '@laughline/shared';
 import { ChevronDown, GripHorizontal, Pause, Play } from 'lucide-react';
 import { type CSSProperties, useEffect, useRef, useState } from 'react';
 import { useStore } from 'zustand';
@@ -22,6 +22,7 @@ import { newLaugh, OVERLAY_FADE_MS, overlayOpacity } from './overlay-behavior';
 import { PipelineDebug } from './PipelineDebug';
 import { AppIcon } from './AppIcon';
 import { StopSaved } from './StopSaved';
+import { pageWatchContext } from './watch-context';
 import { audioNotice, friendlyError } from './ui-status';
 
 const PANEL_KEY = 'streamlaughs:overlay-panel';
@@ -42,7 +43,7 @@ export function Overlay({
     return () => document.removeEventListener('keydown', key, true);
   }, []);
   const { snapshot } = useStore(surface.store);
-  const [channel, setChannel] = useState(parseChannel(location.href)),
+  const [channel, setChannel] = useState(pageWatchContext().channel),
     [rect, setRect] = useState<DOMRect | null>(null);
   const [dock, setDock] = useState<Dock>({ edge: 'right', ratio: 1 }),
     [launcher, setLauncher] = useState<Point | null>(null),
@@ -106,7 +107,7 @@ export function Overlay({
           : bounds,
       );
       setChannel((old) => {
-        const nextChannel = parseChannel(location.href);
+        const nextChannel = pageWatchContext().channel;
         if (old !== nextChannel) {
           setOpen(false);
           setHint(false);
