@@ -35,8 +35,73 @@ const report = (): AudioReport => ({
   metrics: emptyAudioMetrics(),
 });
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   WorkerFake.instances = [];
+});
+it('caps stop drain at 1500ms, stops frame input and keeps tracks/workers alive for the final save', async () => {
+  vi.useFakeTimers();
+  vi.stubGlobal('Worker', WorkerFake);
+  vi.stubGlobal('chrome', {
+    runtime: { getURL: (p: string) => `chrome-extension://test${p}` },
+  });
+  const hub = new AudioFrameHub(),
+    send = vi.fn(),
+    bridge = new InferenceBridge(hub, send);
+  bridge.sync(report());
+  const worker = WorkerFake.instances[0]!;
+  worker.deliver({
+    type: 'status',
+    health: { ...emptyInferenceHealth(), phase: 'ready' },
+    events: [],
+  });
+  let finished = false;
+  const pending = bridge.finish().then(() => {
+    finished = true;
+  });
+  expect(worker.postMessage.mock.lastCall?.[0]).toEqual({ type: 'finish' });
+  const calls = worker.postMessage.mock.calls.length;
+  hub.onFrame('mic', new Float32Array(320), 123);
+  expect(worker.postMessage.mock.calls.length).toBe(calls);
+  await vi.advanceTimersByTimeAsync(1499);
+  expect(finished).toBe(false);
+  await vi.advanceTimersByTimeAsync(1);
+  await pending;
+  expect(finished).toBe(true);
+  for (const w of WorkerFake.instances)
+    expect(w.terminate).not.toHaveBeenCalled();
+  bridge.close();
+  for (const w of WorkerFake.instances)
+    expect(w.terminate).toHaveBeenCalledOnce();
+});
+it('forwards the last approved word batch before acknowledging a completed drain', async () => {
+  vi.stubGlobal('Worker', WorkerFake);
+  vi.stubGlobal('chrome', {
+    runtime: { getURL: (p: string) => `chrome-extension://test${p}` },
+  });
+  const send = vi.fn(),
+    bridge = new InferenceBridge(new AudioFrameHub(), send);
+  bridge.sync(report());
+  const worker = WorkerFake.instances[0]!;
+  const finishing = bridge.finish();
+  worker.deliver({
+    type: 'status',
+    health: emptyInferenceHealth(),
+    events: [
+      {
+        kind: 'words',
+        ts: 10,
+        phrases: [{ text: 'bro', count: 1, class: 'ok' }],
+      },
+    ],
+  });
+  worker.deliver({ type: 'finished' });
+  await finishing;
+  expect(
+    send.mock.calls.map(([m]) => m).find((m) => m.type === 'PERSONAL_EVENTS')
+      ?.events[0].phrases[0].text,
+  ).toBe('bro');
+  bridge.close();
 });
 it('isolates speech from realtime work, caps transport and terminates both on pause/mic loss; only safe events escape', () => {
   vi.stubGlobal('Worker', WorkerFake);

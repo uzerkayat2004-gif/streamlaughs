@@ -1,7 +1,7 @@
 export type Point = { x: number; y: number };
 export type Size = { width: number; height: number };
 export type Dock = { edge: 'left' | 'right' | 'top' | 'bottom'; ratio: number };
-export const DOT_SIZE = 40;
+export const DOT_SIZE = 14;
 export const CONTROL_RESERVE = 64;
 export const clamp = (n: number, min: number, max: number) =>
   Math.max(min, Math.min(n, Math.max(min, max)));
@@ -78,18 +78,43 @@ export function snap(point: Point, size: Size): Dock {
   };
 }
 export function boxPoint(dot: Point, bounds: Size, box: Size): Point {
-  const rightSpace = bounds.width - dot.x - DOT_SIZE;
   return {
     x: clamp(
-      rightSpace >= box.width + 10
-        ? dot.x + DOT_SIZE + 10
-        : dot.x - box.width - 10,
+      dot.x + DOT_SIZE / 2 >= bounds.width / 2
+        ? dot.x + DOT_SIZE - box.width
+        : dot.x,
       8,
       bounds.width - box.width - 8,
     ),
-    y: clamp(dot.y, 8, bounds.height - box.height - 8 - CONTROL_RESERVE),
+    y: clamp(
+      dot.y + DOT_SIZE / 2 < bounds.height / 2
+        ? dot.y + DOT_SIZE + 10
+        : dot.y - box.height - 10,
+      8,
+      bounds.height - box.height - 8,
+    ),
   };
 }
+/** A single normalized anchor drives both launcher and panel, across player sizes. */
+export const clampAnchor = (p: Point, size: Size): Point => ({
+  x: clamp(p.x, 8, size.width - DOT_SIZE - 8),
+  y: clamp(p.y, 8, size.height - DOT_SIZE - 8),
+});
+export const normalizeAnchor = (p: Point, size: Size): Point => {
+  const a = clampAnchor(p, size);
+  return {
+    x: (a.x - 8) / Math.max(1, size.width - DOT_SIZE - 16),
+    y: (a.y - 8) / Math.max(1, size.height - DOT_SIZE - 16),
+  };
+};
+export const restoreAnchor = (p: Point, size: Size): Point =>
+  clampAnchor(
+    {
+      x: 8 + p.x * Math.max(0, size.width - DOT_SIZE - 16),
+      y: 8 + p.y * Math.max(0, size.height - DOT_SIZE - 16),
+    },
+    size,
+  );
 export function panelPoint(point: Point, bounds: Size, panel: Size): Point {
   return {
     x: clamp(point.x, 8, bounds.width - panel.width - 8),

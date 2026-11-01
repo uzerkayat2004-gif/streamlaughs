@@ -445,29 +445,7 @@ export class InferencePipeline {
       for (const segment of current
         ? this.segmenter.update(this.health.vadProbability, vad.start, vad.end)
         : []) {
-        this.stages.segments++;
-        this.onSpeech?.(segment);
-        const ageSamples = Math.max(
-          0,
-          Math.round((this.lastFrame.mic - segment.end) * 16),
-        );
-        const length = Math.round((segment.end - segment.start) * 16);
-        const all = this.buffers.mic.read(length + ageSamples);
-        const samples = all.slice(0, Math.max(0, all.length - ageSamples));
-        all.fill(0);
-        if (samples.length < 4000 || this.playback('speech', segment.end)) {
-          samples.fill(0);
-          continue;
-        }
-        let square = 0;
-        for (const value of samples) square += value * value;
-        const rms = Math.sqrt(square / samples.length),
-          duration = samples.length / 16;
-        if (rms >= C.loudSpeechRms && duration <= C.loudSpeechMaximumMs)
-          this.decision('hype', 0.7, rms, segment.end, false);
-        if (!this.health.lowPower)
-          this.speechQueue.push({ samples, ts: segment.end, rms, duration });
-        else samples.fill(0);
+        this.enqueueSegment(segment);
       }
     }
     if (!this.health.lowPower && !this.speechBusy) {
@@ -506,6 +484,31 @@ export class InferencePipeline {
       if (this.health.lowPower) this.speechQueue.clear();
     }
   }
+  private enqueueSegment(segment: { start: number; end: number }) {
+    this.stages.segments++;
+    this.onSpeech?.(segment);
+    const ageSamples = Math.max(
+      0,
+      Math.round((this.lastFrame.mic - segment.end) * 16),
+    );
+    const length = Math.round((segment.end - segment.start) * 16);
+    const all = this.buffers.mic.read(length + ageSamples);
+    const samples = all.slice(0, Math.max(0, all.length - ageSamples));
+    all.fill(0);
+    if (samples.length < 4000 || this.playback('speech', segment.end)) {
+      samples.fill(0);
+      return;
+    }
+    let square = 0;
+    for (const value of samples) square += value * value;
+    const rms = Math.sqrt(square / samples.length),
+      duration = samples.length / 16;
+    if (rms >= C.loudSpeechRms && duration <= C.loudSpeechMaximumMs)
+      this.decision('hype', 0.7, rms, segment.end, false);
+    if (!this.health.lowPower)
+      this.speechQueue.push({ samples, ts: segment.end, rms, duration });
+    else samples.fill(0);
+  }
   private startSpeech(speech: SpeechJob) {
     const generation = this.speechGeneration;
     this.speechBusy = true;
@@ -535,6 +538,16 @@ export class InferencePipeline {
         }
       }
     })();
+  }
+  async finish() {
+    while (this.pendingWork) await this.step();
+    const trailing = this.segmenter.flush();
+    if (trailing) this.enqueueSegment(trailing);
+    if (!this.speechBusy && !this.health.lowPower) {
+      const speech = this.speechQueue.shift();
+      if (speech) this.startSpeech(speech);
+    }
+    await this.finishSpeech();
   }
   async finishSpeech() {
     while (this.speechTask) {

@@ -1,6 +1,9 @@
 import { z } from 'zod';
 export const OwnerCommandSchema = z.discriminatedUnion('type', [
   z
+    .object({ target: z.literal('offscreen'), type: z.literal('AUDIO_DRAIN') })
+    .strict(),
+  z
     .object({
       target: z.literal('offscreen'),
       type: z.literal('AUDIO_PREVIEW'),

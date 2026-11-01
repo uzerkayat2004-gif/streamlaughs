@@ -123,3 +123,15 @@ Bumped product version to 0.8.0. Rebuilt universal production and store archives
 ## v0.8.1 urgent release fixes
 
 Worked and committed in the requested order: watch-context URL/content/injection recovery; visible mic permission sequencing and device selection, independent DSP/model-failure fallback and local diagnostics; isolated buffered replay and capped sound inference with a CPU microbenchmark; opaque reaction panel; popup header/pills and versioned packaging. Details and manual steps: docs/fixes-v081.md. No full test suite or e2e runner. Physical Windows/Bluetooth behavior remains explicitly unverified. The isolated classifier benchmark measured Chrome CPU at 360.51 → 187.77 ms per second; it is not a whole-Twitch/hardware result. ZIP identity/privacy remain intact. No store upload, tag, release or Worker deployment.
+
+## v0.8.2 — calm reactions, immediate stop and stat-only recap links
+
+Kept the working hardware detection and microphone settings. Replaced the large launcher with a 14px matte dot and one normalized anchor shared with the panel, including vertical flipping and viewport/player clamping. The panel now shows personal word/last-laugh/busiest-minute context and collapses fan details under the existing privacy floor. The action badge is cleared without setting any badge background.
+
+The red regression reproduced short sessions reporting an inflated hourly rate. Recaps now show hourly rates only after 15 minutes, first-stream copy instead of a single bar, dated multi-stream bars, most-used and funniest approved labels, and positive-only reaction chips. Added 44px story arrows, a 48px share pill and matching My streamers actions.
+
+Stop feedback uses memory before awaiting persistence. A provisional recap supports immediate navigation; trusted final word batches bypass the stop queue, with a 1.5-second wall-clock cap. The final transaction precedes audio teardown. Tests cover navigation during the drain, deadline/drop, final word retention, and worker restart with a durable provisional recap. The inference changes are limited to this stop-only flush; DSP, thresholds, model cadence, mic constraints and echo guard remain unchanged.
+
+The local 1080×1920 PNG has a filled initials circle, reflowing chips and a locally generated/decoded QR. Added copy link and post-on-X, preserving image download/copy/native share and text. `/r` validates bounded stat-only URLs and produces a 1200×630 next/og preview without DB/auth access. Unknown or duplicate parameters, invalid dates, numeric syntax and non-allowlisted words are rejected. Canonical URLs use configured SITE_URL; public links expose no credentialed CORS. Privacy explains public stats, provider URL logs and non-revocable previews. Legacy missing facts are omitted.
+
+Targeted tests only, typecheck, production builds, ZIP identity/manifest checks and labelled production-UI visual captures are recorded in `verification-v082.txt`. No full suite/e2e runner, Cloudflare deployment, store upload, tag or GitHub release. Main push triggers the existing website ZIP build and store-artifact workflow; live checks follow that deployment.

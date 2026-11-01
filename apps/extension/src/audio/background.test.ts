@@ -29,6 +29,7 @@ const fixture = vi.hoisted(() => ({
   getStreamId: vi.fn(async () => 'ephemeral-test-id'),
   closeOwner: vi.fn(async () => {}),
   ensureOwner: vi.fn(async () => {}),
+  drain: vi.fn(async () => {}),
 }));
 vi.mock('../crowd-source', () => ({
   makeCrowdSource: () => ({
@@ -51,7 +52,13 @@ vi.mock('../db', () => ({
       }),
     },
     recaps: {
+      get: vi.fn(async (id) =>
+        fixture.recaps.find((r) => (r as { id: string }).id === id),
+      ),
       put: vi.fn(async (recap) => {
+        fixture.recaps = fixture.recaps.filter(
+          (r) => (r as { id: string }).id !== recap.id,
+        );
         fixture.recaps.push(structuredClone(recap));
       }),
       clear: vi.fn(async () => {
@@ -83,6 +90,10 @@ vi.mock('./offscreen-client', () => ({
     fixture.owner = null;
   },
   ownerCommand: async (message: OwnerCommand) => {
+    if (message.type === 'AUDIO_DRAIN') {
+      await fixture.drain();
+      return null;
+    }
     if (message.type === 'AUDIO_PERMISSION') return fixture.permission;
     if (message.type === 'AUDIO_START')
       fixture.owner = {
@@ -141,6 +152,7 @@ describe('background capture integration with browser ports mocked', () => {
     vi.useFakeTimers();
     vi.resetModules();
     vi.clearAllMocks();
+    fixture.drain.mockImplementation(async () => {});
     fixture.extensionId = 'fkocldgggcmhihelohiicoakcfomhepg';
     fixture.exists = false;
     fixture.owner = null;
@@ -201,6 +213,103 @@ describe('background capture integration with browser ports mocked', () => {
     vi.clearAllTimers();
     vi.unstubAllGlobals();
     vi.useRealTimers();
+  });
+  it('publishes stop summary before a pending drain; opens recap and accepts final words without queue deadlock, then saves before teardown', async () => {
+    const started = await dispatch({ type: 'START', tabId: 1 });
+    const sessionId = started.state.session!.id;
+    await dispatch(
+      {
+        type: 'PERSONAL_EVENTS',
+        ownerId: 'owner-token',
+        sessionId,
+        tabLaughTs: 0,
+        events: [
+          { kind: 'laugh', ts: Date.now(), confidence: 0.9, intensity: 2 },
+        ],
+      },
+      true,
+    );
+    let finish!: () => void;
+    fixture.drain.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    fixture.closeOwner.mockClear();
+    const stopping = dispatch({ type: 'STOP' });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(fixture.storage[STATE_KEY]).toMatchObject({
+      status: 'idle',
+      lastSaved: { id: sessionId, laughs: 1, saving: true },
+    });
+    expect(fixture.closeOwner).not.toHaveBeenCalled();
+    await dispatch({ type: 'OPEN_RECAP', id: sessionId });
+    expect(chrome.tabs.create).toHaveBeenCalledWith({
+      url: expect.stringContaining(`session=${sessionId}`),
+    });
+    expect(
+      (
+        await dispatch(
+          {
+            type: 'PERSONAL_EVENTS',
+            ownerId: 'owner-token',
+            sessionId,
+            tabLaughTs: 0,
+            events: [
+              {
+                kind: 'words',
+                ts: Date.now(),
+                phrases: [{ text: 'bro', count: 2, class: 'ok' }],
+              },
+            ],
+          },
+          true,
+        )
+      ).ok,
+    ).toBe(true);
+    finish();
+    expect((await stopping).ok).toBe(true);
+    expect(fixture.recaps.at(-1)).toMatchObject({
+      totalLaughs: 1,
+      topWord: 'bro',
+      funniestWord: 'bro',
+      saving: false,
+    });
+    expect(fixture.closeOwner).toHaveBeenCalledOnce();
+    const { db } = await import('../db');
+    expect(
+      vi.mocked(db.recaps.put).mock.invocationCallOrder.at(-1)!,
+    ).toBeLessThan(fixture.closeOwner.mock.invocationCallOrder[0]!);
+  });
+  it('drops a stalled final speech job at 1500ms and still saves and releases audio', async () => {
+    await dispatch({ type: 'START', tabId: 1 });
+    fixture.drain.mockImplementation(() => new Promise<void>(() => {}));
+    fixture.closeOwner.mockClear();
+    let done = false;
+    const stopping = dispatch({ type: 'STOP' }).then((r) => {
+      done = true;
+      return r;
+    });
+    await vi.advanceTimersByTimeAsync(1499);
+    expect(done).toBe(false);
+    expect(fixture.closeOwner).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect((await stopping).ok).toBe(true);
+    expect(fixture.recaps.at(-1)).toMatchObject({ saving: false });
+    expect(fixture.closeOwner).toHaveBeenCalledOnce();
+  });
+  it('recovers the durable provisional recap after a worker restart during finalization', async () => {
+    await dispatch({ type: 'START', tabId: 1 });
+    fixture.drain.mockImplementation(() => new Promise<void>(() => {}));
+    void dispatch({ type: 'STOP' });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(fixture.recaps.at(-1)).toMatchObject({ saving: true });
+    vi.clearAllTimers();
+    vi.resetModules();
+    const recovered = await loadWorker();
+    expect(recovered.state.lastSaved?.saving).toBe(false);
+    expect(fixture.recaps.at(-1)).toMatchObject({ saving: false });
   });
   it('injects a missing receiver, re-queries its context and starts the watched tab', async () => {
     const executeScript = vi.fn(async () => []);

@@ -1,10 +1,10 @@
-# StreamLaughs v0.8.1
+# StreamLaughs v0.8.2
 
 see who's laughing with you.
 
-- Readable solid Twitch reaction panel, a visible yellow launcher, live meters and remembered drag.
-- Robust live-channel/VOD popup detection and content-script recovery; comfortable navigation pills. Saved-stream actions, unread badges and colourful history remain.
-- Yellow, coral and teal recap stories from real saved moments, plus a locally drawn 1080x1920 PNG share sheet: preview, download, copy and native file sharing where supported.
+- Calm 14px reaction dot, one attached draggable panel and useful personal + fan reactions.
+- Instant stop feedback with a bounded final save; the toolbar badge is cleared. Saved-stream unread badges remain inside My streamers.
+- Accurate short-session recap copy, first-stream history and approved-word timing for your funniest word. Comfortable story controls, a locally drawn 1080x1920 PNG with QR, and public stat-only recap links with social preview images.
 - Store installs retain browser-managed updates; ZIP installs retain the popup update flow.
 - Store submission ZIP contains one manifest.json, no manifest key and no downloads permission; ZIP installs keep self-updates.
 - Recaps and settings stay in your browser. Selectable real microphone, visible permission checks, independent DSP laugh fallback, detailed private diagnostics, isolated tab replay and throttled model workers. All local models remain bundled.

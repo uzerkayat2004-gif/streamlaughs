@@ -2,26 +2,37 @@ import { PRODUCT, type Recap } from '@laughline/shared';
 import { useEffect, useState } from 'react';
 import { Sheet } from './components';
 import type { StreamerProfile } from './history';
-import { renderShareCard, shareText } from './share-card';
+import { renderShareCard, shareText, shareLink } from './share-card';
 export function ShareSheet({
   recap,
   profile,
   close,
   ordinal,
   bestMoment,
+  funniest,
+  streamNumber,
 }: {
   recap: Recap;
   profile?: StreamerProfile;
   close: () => void;
   ordinal?: string;
   bestMoment?: number;
+  funniest?: string;
+  streamNumber?: number;
 }) {
+  const context = { ordinal, bestMoment, funniest, streamNumber };
+  const url = shareLink(recap, context);
   const [image, setImage] = useState<{ blob: Blob; url: string }>(),
     [message, setMessage] = useState('drawing your little story…');
   useEffect(() => {
     let alive = true,
       url: string | undefined;
-    void renderShareCard(recap, profile, { ordinal, bestMoment })
+    void renderShareCard(recap, profile, {
+      ordinal,
+      bestMoment,
+      funniest,
+      streamNumber,
+    })
       .then((blob) => {
         if (!alive) return;
         url = URL.createObjectURL(blob);
@@ -36,7 +47,7 @@ export function ShareSheet({
       alive = false;
       if (url) URL.revokeObjectURL(url);
     };
-  }, [recap, profile, ordinal, bestMoment]);
+  }, [recap, profile, ordinal, bestMoment, funniest, streamNumber]);
   const filename = `${PRODUCT.wordmark}-${recap.channel}-${new Date(recap.createdAt).toISOString().slice(0, 10)}.png`;
   const file = image
     ? new File([image.blob], filename, { type: 'image/png' })
@@ -61,6 +72,28 @@ export function ShareSheet({
           {message}
         </p>
         <div className="share-actions">
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(url);
+                setMessage('share link copied');
+              } catch {
+                setMessage('couldn’t copy · try again');
+              }
+            }}
+          >
+            copy share link
+          </button>
+          <a
+            className="btn btn--ghost"
+            href={`https://twitter.com/intent/tweet?${new URLSearchParams({ text: `I laughed ${recap.totalLaughs} times with ${recap.channel} 😂`, url })}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            post on X ↗
+          </a>
           {image && (
             <a className="btn" href={image.url} download={filename}>
               download image
@@ -94,7 +127,11 @@ export function ShareSheet({
             }
             onClick={async () => {
               try {
-                await navigator.share({ files: [file!], title: PRODUCT.name });
+                await navigator.share({
+                  files: [file!],
+                  title: PRODUCT.name,
+                  text: shareText(recap, profile, context),
+                });
                 setMessage('shared');
               } catch {
                 setMessage('share closed · try again');
@@ -108,7 +145,9 @@ export function ShareSheet({
             className="textbtn"
             onClick={async () => {
               try {
-                await navigator.clipboard.writeText(shareText(recap, profile));
+                await navigator.clipboard.writeText(
+                  shareText(recap, profile, context),
+                );
                 setMessage('text copied');
               } catch {
                 setMessage('couldn’t copy · download the image instead');

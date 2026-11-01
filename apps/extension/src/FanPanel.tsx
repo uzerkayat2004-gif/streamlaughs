@@ -1,6 +1,10 @@
-import { visibleWords, type CrowdState } from '@laughline/shared';
+import {
+  isApprovedPhrase,
+  visibleWords,
+  type CrowdState,
+} from '@laughline/shared';
 import { Pause, Play } from 'lucide-react';
-import { AppIcon } from './AppIcon';
+import { formatTime } from './components';
 export function FanPanel({
   room,
   count,
@@ -11,7 +15,11 @@ export function FanPanel({
   onPause,
   onStop,
   onMic,
-  bounce = 0,
+  channel = 'stream',
+  elapsed = 0,
+  word,
+  lastLaughSeconds,
+  bestMoment,
 }: {
   room: CrowdState | null;
   count: number;
@@ -23,70 +31,88 @@ export function FanPanel({
   onStop: () => void;
   onMic: () => void;
   bounce?: number;
+  channel?: string;
+  elapsed?: number;
+  word?: string;
+  lastLaughSeconds?: number;
+  bestMoment?: number;
 }) {
   const live = room?.state === 'live' && room.laughlineViewers >= 3;
   const words = visibleWords(room).filter((w) => w.word !== '—');
-  const active = micLevel > 0.003 || bounce > 0;
   return (
     <div className="fan-panel-content">
-      {live ? (
-        <div className="fans-count">
-          <span>fans laughing now</span>
-          <strong>{room.laughingNow}</strong>
-        </div>
-      ) : (
-        <p className="fans-early">
-          {status === 'idle'
-            ? 'open the toolbar to start'
-            : status === 'paused'
-              ? 'paused'
-              : room?.state === 'few' || (room && room.laughlineViewers < 3)
-                ? "you're one of the first fans here"
-                : 'fans are offline'}
-        </p>
-      )}
-      <div className="laugh-meter" aria-label="live laugh meter">
-        {[0, 1, 2, 3, 4].map((n) => (
-          <i
-            key={n}
-            className={
-              status === 'recording' &&
-              (active || (live && room.laughingNow > n * 2))
-                ? 'lit'
-                : ''
-            }
-          />
-        ))}
-      </div>
-      {words[0] && (
-        <div className="fan-word">
-          <span>top word from fans</span>
-          <b>{words[0].word}</b>
-        </div>
-      )}
-      <div className="personal-mic-row">
-        <span className="glass-laugh-chip">
-          <AppIcon mono size={18} />
-          you: {count} {count === 1 ? 'laugh' : 'laughs'}
-        </span>
+      <header className="reaction-header">
+        <b>{channel}</b>
+        <span>{formatTime(elapsed)}</span>
         <button
           type="button"
           className={`panel-mic ${micProblem ? 'problem' : listen && micLevel > 0.003 ? 'hearing' : 'silent'}`}
           onClick={onMic}
-          aria-label={
-            micProblem
-              ? 'microphone problem · test my mic'
-              : listen && micLevel > 0.003
-                ? 'microphone hearing you · test my mic'
-                : 'microphone quiet · test my mic'
-          }
+          aria-label={`${micProblem ? 'microphone problem' : listen && micLevel > 0.003 ? 'microphone hearing you' : 'microphone quiet'} · test my mic`}
           title="test my mic"
         >
           <i />
-          <span>mic</span>
         </button>
-      </div>
-      {status !== 'idle' && (
+      </header>
+      <section className="reaction-you" aria-label="your reactions">
+        <small>YOU</small>
+        <p>
+          <strong>{count}</strong> laughs
+        </p>
+        {word && isApprovedPhrase(word) && (
+          <div>
+            your word: <b>{word}</b>
+          </div>
+        )}
+        {lastLaughSeconds !== undefined && (
+          <div>
+            last laugh:{' '}
+            {lastLaughSeconds < 60
+              ? 'just now'
+              : `${Math.floor(lastLaughSeconds / 60)}m ago`}
+          </div>
+        )}
+        {bestMoment !== undefined && (
+          <div className="personal-best">
+            funniest moment so far: <b>{formatTime(bestMoment)}</b>
+          </div>
+        )}
+      </section>
+      {live ? (
+        <section className="reaction-fans" aria-label="fan reactions">
+          <small>FANS</small>
+          <div className="fans-count">
+            <strong>{room.laughingNow}</strong>
+            <span>fans laughing now</span>
+          </div>
+          <div className="laugh-meter" aria-label="live laugh meter">
+            {[0, 1, 2, 3, 4].map((n) => (
+              <i
+                key={n}
+                className={
+                  status === 'recording' &&
+                  room.laughingNow > n * Math.max(1, room.laughlineViewers / 5)
+                    ? 'lit'
+                    : ''
+                }
+              />
+            ))}
+          </div>
+          {words[0] && (
+            <div className="fan-word">
+              <span>top fan word</span>
+              <b>{words[0].word}</b>
+            </div>
+          )}
+        </section>
+      ) : (
+        <p className="fans-floor">
+          {room?.state === 'offline'
+            ? 'fans are offline · reconnecting'
+            : 'fan reactions show when 3+ fans are here'}
+        </p>
+      )}
+      {status !== 'idle' ? (
         <div className="x-cfoot">
           <button
             type="button"
@@ -105,6 +131,8 @@ export function FanPanel({
             <i />
           </button>
         </div>
+      ) : (
+        <p className="fans-floor">open the toolbar to start</p>
       )}
       {(room?.source === 'fake' || room?.testTraffic) && (
         <p className="fans-test-label">test fans · simulated traffic</p>

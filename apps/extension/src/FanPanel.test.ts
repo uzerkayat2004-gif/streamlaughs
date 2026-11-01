@@ -27,9 +27,9 @@ it('renders readable fan, personal, mic and control content with the approved wo
   for (const text of [
     'fans laughing now',
     '12',
-    'top word from fans',
+    'top fan word',
     'lets go',
-    'you: 3 laughs',
+    '<strong>3</strong> laughs',
     'microphone hearing you',
     'stop session',
     'pause',
@@ -44,14 +44,14 @@ it('hides fan words below the floor and shows a friendly first-fan state', () =>
       micProblem: true,
     }),
   );
-  expect(html).toContain('one of the first fans here');
+  expect(html).toContain('fan reactions show when 3+ fans are here');
   expect(html).not.toContain('lets go');
   expect(html).toContain('microphone problem');
 });
 it('locks opaque panel and visible launcher styling and keeps audio APIs off the Twitch page', () => {
   const css = readFileSync('src/styles.css', 'utf8');
-  expect(css.replace(/\s/g,'')).toMatch(/rgba\(20,20,26,0?\.94\)/);
-  expect(css.replace(/\s/g,'')).toContain('opacity:1!important');
+  expect(css.replace(/\s/g, '')).toMatch(/rgba\(20,20,26,0?\.94\)/);
+  expect(css.replace(/\s/g, '')).toContain('opacity:1!important');
   const source =
     readFileSync('entrypoints/twitch.content.tsx', 'utf8') +
     readFileSync('src/Overlay.tsx', 'utf8');

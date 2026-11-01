@@ -56,6 +56,9 @@ importers:
       onnxruntime-web:
         specifier: 1.22.0-dev.20250409-89f8206ba4
         version: 1.22.0-dev.20250409-89f8206ba4
+      qrcode-generator:
+        specifier: 2.0.4
+        version: 2.0.4
       react:
         specifier: ^19.2.0
         version: 19.3.1
@@ -87,6 +90,9 @@ importers:
       fake-indexeddb:
         specifier: ^6.2.7
         version: 6.2.7
+      jsqr:
+        specifier: 1.4.0
+        version: 1.4.0
       tailwindcss:
         specifier: ^4.1.0
         version: 4.3.3
@@ -1590,6 +1596,9 @@ packages:
     engines: {node: '>=6'}
     hasBin: true
 
+  jsqr@1.4.0:
+    resolution: {integrity: sha512-dxLob7q65Xg2DvstYkRpkYtmKm2sPJ9oFhrhmudT1dZvNFFTlroai3AWSpLey/w5vMcLBXRgOJsbXpdN9HzU/A==}
+
   kleur@4.1.5:
     resolution: {integrity: sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ==}
     engines: {node: '>=6'}
@@ -1916,6 +1925,9 @@ packages:
     resolution: {integrity: sha512-yIxoJ54RdTqyfdLrc+8mswCmEeh9x/03JrtF8Ney8zjzKplKgg4fdTs3hRP33IcWImak98yAHSI8ZBVAflsDNg==}
     engines: {node: '>=22.0.0'}
     hasBin: true
+
+  qrcode-generator@2.0.4:
+    resolution: {integrity: sha512-mZSiP6RnbHl4xL2Ap5HfkjLnmxfKcPWpWe/c+5XxCuetEenqmNFf1FH/ftXPCtFG5/TDobjsjz6sSNL0Sr8Z9g==}
 
   quansync@0.2.11:
     resolution: {integrity: sha512-AifT7QEbW9Nri4tAwR5M/uzpBuqfZf+zwaEM/QkzEjj7NBuFD2rBuy0K3dE+8wltbezDV7JMA0WfnCPYRSYbXA==}
@@ -3392,6 +3404,8 @@ snapshots:
 
   json5@2.2.3: {}
 
+  jsqr@1.4.0: {}
+
   kleur@4.1.5: {}
 
   lightningcss-android-arm64@1.32.0:
@@ -3692,6 +3706,8 @@ snapshots:
       '@topcli/prompts': 4.0.0
       cac: 7.1.0
       tasuku: 2.3.0
+
+  qrcode-generator@2.0.4: {}
 
   quansync@0.2.11: {}
 

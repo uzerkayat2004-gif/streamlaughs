@@ -1852,3 +1852,141 @@ tbody th {
     height: 28px;
   }
 }
+/* Public recap URLs contain only creator-selected stats. */
+.shared-recap-page {
+  max-width: 1000px;
+  margin: 65px auto 90px;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 70px;
+  align-items: center;
+}
+.public-recap-card {
+  background: #ff5c5c;
+  color: #14141a;
+  padding: 32px;
+  border-radius: 30px;
+  box-shadow: 0 24px 90px #ff5c5c15;
+  font-family: var(--display), sans-serif;
+}
+.public-recap-brand {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 24px;
+  font-weight: 750;
+  letter-spacing: -1px;
+  margin-bottom: 32px;
+}
+.public-recap-brand span {
+  position: relative;
+}
+.public-recap-brand span::after {
+  content: "";
+  display: block;
+  height: 6px;
+  border-bottom: 3px solid #14141a;
+  border-radius: 0 0 70% 70%;
+}
+.public-recap-card header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.public-recap-avatar {
+  background: #087f69;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  font-weight: 750;
+}
+.public-recap-card header div {
+  display: grid;
+  gap: 4px;
+}
+.public-recap-card header b {
+  font-size: 23px;
+}
+.public-recap-card small {
+  font:
+    500 12px var(--body),
+    sans-serif;
+}
+.public-recap-card > p {
+  font-size: 24px;
+  margin: 0;
+}
+.public-recap-number {
+  font-size: clamp(85px, 9vw, 140px);
+  line-height: 1.1;
+  letter-spacing: -0.07em;
+}
+.public-recap-card h1 {
+  font-size: 28px;
+  line-height: 1.1;
+  margin: 0 0 25px;
+  letter-spacing: -0.04em;
+  overflow-wrap: anywhere;
+}
+.public-recap-chips {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.public-recap-chips > div {
+  background: #ffd23f;
+  padding: 16px;
+  display: grid;
+  gap: 8px;
+  border-radius: 18px;
+}
+.public-recap-chips > div:nth-child(even) {
+  background: #2ee6c5;
+}
+.public-recap-chips > div:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+.public-recap-chips b {
+  font-size: 23px;
+  overflow-wrap: anywhere;
+}
+.public-recap-card p.public-recap-ordinal {
+  font-size: 15px;
+  margin: 28px 0 12px;
+}
+.shared-recap-cta {
+  display: grid;
+  gap: 20px;
+}
+.shared-recap-cta h2 {
+  font:
+    750 45px / 1.04 var(--display),
+    sans-serif;
+  letter-spacing: -0.04em;
+}
+.shared-recap-cta > a:not(.primary-button) {
+  color: #2ee6c5;
+}
+.shared-recap-cta p {
+  color: #ffffffa6;
+  font-size: 13px;
+}
+@media (max-width: 700px) {
+  .shared-recap-page {
+    max-width: 470px;
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .shared-recap-cta h2 {
+    font-size: 35px;
+  }
+  .public-recap-number {
+    font-size: 110px;
+  }
+}

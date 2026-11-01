@@ -7,16 +7,14 @@ import { crowdLabel } from './components';
 import {
   boxPoint,
   clamp,
-  type Dock,
   dockPoint,
   isDrag,
-  normalizePanel,
+  clampAnchor,
+  normalizeAnchor,
+  restoreAnchor,
   type Point,
-  panelPoint,
   readDock,
   readPanel,
-  restorePanel,
-  snap,
 } from './geometry';
 import {
   newLaugh,
@@ -27,11 +25,13 @@ import {
 import { FanPanel } from './FanPanel';
 import { PipelineDebug } from './PipelineDebug';
 import { AppIcon } from './AppIcon';
+import { biggestMinute } from './recap-story';
+import { stopWithPreview, type StopPreview } from './stop-preview';
 import { StopSaved } from './StopSaved';
 import { pageWatchContext } from './watch-context';
 import { audioNotice, friendlyError } from './ui-status';
 
-const PANEL_KEY = 'streamlaughs:overlay-panel';
+const ANCHOR_KEY = 'streamlaughs:overlay-anchor';
 export function Overlay({
   getPlayer,
 }: {
@@ -51,13 +51,11 @@ export function Overlay({
   const { snapshot } = useStore(surface.store);
   const [channel, setChannel] = useState(pageWatchContext().channel),
     [rect, setRect] = useState<DOMRect | null>(null);
-  const [dock, setDock] = useState<Dock>({ edge: 'right', ratio: 1 }),
-    [launcher, setLauncher] = useState<Point | null>(null),
-    [savedPanel, setSavedPanel] = useState<Point | null>(null),
-    [movingPanel, setMovingPanel] = useState<Point | null>(null);
+  const [anchor, setAnchor] = useState<Point | null>(null),
+    [launcher, setLauncher] = useState<Point | null>(null);
   const [open, setOpen] = useState(false),
     [hint, setHint] = useState(false),
-    [toast, setToast] = useState<string | null>(null),
+    [toast, setToast] = useState<StopPreview | null>(null),
     [error, setError] = useState(''),
     [hovered, setHovered] = useState(false),
     [activeAt, setActiveAt] = useState(Date.now()),
@@ -84,12 +82,16 @@ export function Overlay({
   useEffect(() => {
     const disconnect = connectSurface();
     void chrome.storage.local
-      .get(['laughline:dock', PANEL_KEY])
+      .get(['laughline:dock', ANCHOR_KEY])
       .then((data) => {
-        const d = readDock(data['laughline:dock']),
-          p = readPanel(data[PANEL_KEY]);
-        if (d) setDock(d);
-        if (p) setSavedPanel(p);
+        const p = readPanel(data[ANCHOR_KEY]);
+        if (p) setAnchor(p);
+        else {
+          const d = readDock(data['laughline:dock']);
+          const bounds = getPlayer()?.getBoundingClientRect();
+          if (d && bounds)
+            setAnchor(normalizeAnchor(dockPoint(d, bounds), bounds));
+        }
       });
     return disconnect;
   }, []);
@@ -103,7 +105,21 @@ export function Overlay({
         player = next;
         if (player) observer.observe(player);
       }
-      const bounds = player?.getBoundingClientRect() ?? null;
+      const raw = player?.getBoundingClientRect();
+      const bounds = raw
+        ? new DOMRect(
+            Math.max(0, raw.left),
+            Math.max(0, raw.top),
+            Math.max(
+              0,
+              Math.min(innerWidth, raw.right) - Math.max(0, raw.left),
+            ),
+            Math.max(
+              0,
+              Math.min(innerHeight, raw.bottom) - Math.max(0, raw.top),
+            ),
+          )
+        : null;
       setRect((old) =>
         old?.x === bounds?.x &&
         old?.y === bounds?.y &&
@@ -156,13 +172,14 @@ export function Overlay({
   useEffect(() => {
     if (sessionHere && snapshot.session) {
       previousSession.current = snapshot.session.id;
-      setToast(null);
+      setToast((old) => (old?.id === snapshot.session?.id ? old : null));
     } else if (
       previousSession.current &&
       snapshot.lastRecapId === previousSession.current
     ) {
       setOpen(false);
-      setToast(previousSession.current);
+      const saved = snapshot.lastSaved;
+      if (saved?.id === previousSession.current) setToast(saved);
       previousSession.current = null;
     }
   }, [sessionHere, snapshot.session, snapshot.lastRecapId]);
@@ -203,18 +220,44 @@ export function Overlay({
       return false;
     }
   }
+  useEffect(() => {
+    if (!sessionHere || !open) return;
+    const timer = setInterval(() => setClock(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [sessionHere, open]);
+  function stopNow() {
+    if (!snapshot.session) return;
+    void stopWithPreview(
+      snapshot.session,
+      (preview) => {
+        setToast(preview);
+        setOpen(false);
+      },
+      () => act('STOP'),
+    );
+  }
   if (!channel || !rect || rect.width < 50 || rect.height < 50) return null;
   const size = { width: rect.width, height: rect.height },
-    local = launcher ?? dockPoint(dock, size),
+    local = clampAnchor(
+      launcher ??
+        (anchor
+          ? restoreAnchor(anchor, size)
+          : dockPoint({ edge: 'right', ratio: 1 }, size)),
+      size,
+    ),
     boxSize = {
-      width: Math.min(270, rect.width - 16),
-      height: Math.min(370, Math.max(64, rect.height - 80)),
+      width: Math.min(286, rect.width - 16),
+      height: Math.min(
+        room?.state === 'live' && room.laughlineViewers >= 3 ? 464 : 328,
+        Math.max(
+          32,
+          (local.y + 7 < rect.height / 2
+            ? rect.height - local.y - 14
+            : local.y) - 18,
+        ),
+      ),
     };
-  const box =
-    movingPanel ??
-    (savedPanel
-      ? restorePanel(savedPanel, size, boxSize)
-      : boxPoint(local, size, boxSize));
+  const box = boxPoint(local, size, boxSize);
   const wake = () => {
     const now = Date.now();
     setActiveAt(now);
@@ -229,8 +272,8 @@ export function Overlay({
     drag.current = {
       kind,
       start: { x: event.clientX, y: event.clientY },
-      origin: kind === 'launcher' ? local : box,
-      last: kind === 'launcher' ? local : box,
+      origin: local,
+      last: local,
       moved: false,
     };
   }
@@ -243,15 +286,8 @@ export function Overlay({
       x: d.origin.x + event.clientX - d.start.x,
       y: d.origin.y + event.clientY - d.start.y,
     };
-    d.last =
-      d.kind === 'panel'
-        ? panelPoint(next, size, boxSize)
-        : {
-            x: clamp(next.x, 0, size.width - 40),
-            y: clamp(next.y, 0, size.height - 104),
-          };
-    if (d.kind === 'panel') setMovingPanel(d.last);
-    else setLauncher(d.last);
+    d.last = clampAnchor(next, size);
+    setLauncher(d.last);
     wake();
   }
   function finish(event: React.PointerEvent<HTMLButtonElement>) {
@@ -259,17 +295,10 @@ export function Overlay({
     if (!d) return;
     suppressClick.current = d.moved;
     if (d.moved) {
-      if (d.kind === 'panel') {
-        const p = normalizePanel(d.last, size, boxSize);
-        setSavedPanel(p);
-        setMovingPanel(null);
-        void chrome.storage.local.set({ [PANEL_KEY]: p });
-      } else {
-        const next = snap(d.last, size);
-        setDock(next);
-        setLauncher(null);
-        void chrome.storage.local.set({ 'laughline:dock': next });
-      }
+      const next = normalizeAnchor(d.last, size);
+      setAnchor(next);
+      setLauncher(null);
+      void chrome.storage.local.set({ [ANCHOR_KEY]: next });
     }
     drag.current = null;
     if (event.currentTarget.hasPointerCapture(event.pointerId))
@@ -285,7 +314,7 @@ export function Overlay({
       return;
     event.preventDefault();
     const d = event.shiftKey ? 30 : 10,
-      p = kind === 'panel' ? box : local,
+      p = local,
       next = {
         x:
           p.x +
@@ -294,15 +323,9 @@ export function Overlay({
           p.y +
           (event.key === 'ArrowDown' ? d : event.key === 'ArrowUp' ? -d : 0),
       };
-    if (kind === 'panel') {
-      const stored = normalizePanel(next, size, boxSize);
-      setSavedPanel(stored);
-      void chrome.storage.local.set({ [PANEL_KEY]: stored });
-    } else {
-      const n = snap(next, size);
-      setDock(n);
-      void chrome.storage.local.set({ 'laughline:dock': n });
-    }
+    const stored = normalizeAnchor(next, size);
+    setAnchor(stored);
+    void chrome.storage.local.set({ [ANCHOR_KEY]: stored });
     wake();
   }
   const opacity = overlayOpacity(hovered, activeAt, clock);
@@ -335,12 +358,16 @@ export function Overlay({
       <button
         ref={dotButton}
         type="button"
-        className={`x-dot glass-launcher ${status === 'idle' ? 'x-dot--off' : status === 'paused' ? 'x-dot--paused' : ''}`}
+        className={`x-dot calm-launcher ${status === 'idle' ? 'x-dot--off' : status === 'paused' ? 'x-dot--paused' : ''}`}
         style={{
           left: rect.left + local.x,
           top: rect.top + local.y,
           opacity: launcherOpacity(hovered, activeAt, clock),
         }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        onFocus={() => setHovered(true)}
+        onBlur={() => setHovered(false)}
         aria-label={`${PRODUCT.name}, ${status}, ${status !== 'idle' ? `${crowdLabel(room)}, ` : ''}drag to move`}
         title={PRODUCT.name}
         aria-expanded={open}
@@ -364,10 +391,12 @@ export function Overlay({
           wake();
         }}
       >
-        <span key={bounce} className={bounce ? 'smile-bounce' : ''}>
-          <AppIcon size={24} />
+        <span className="launcher-face">
+          <AppIcon mono size={15} />
         </span>
-        {status === 'recording' && <i className="recording-dot" />}
+        {bounce > 0 && (
+          <i key={bounce} className="laugh-ripple" aria-hidden="true" />
+        )}
       </button>
       {open && (
         <div
@@ -390,6 +419,7 @@ export function Overlay({
               top: rect.top + box.y,
               width: boxSize.width,
               maxHeight: boxSize.height,
+              height: boxSize.height,
               opacity,
             } as CSSProperties
           }
@@ -404,7 +434,7 @@ export function Overlay({
               onPointerUp={finish}
               onPointerCancel={() => {
                 drag.current = null;
-                setMovingPanel(null);
+                setLauncher(null);
               }}
               onKeyDown={(event) => keyboardMove(event, 'panel')}
             >
@@ -423,6 +453,32 @@ export function Overlay({
             </button>
           </div>
           <FanPanel
+            channel={snapshot.session?.displayName || channel}
+            elapsed={
+              sessionHere && snapshot.session
+                ? Math.max(0, (clock - snapshot.session.startedAt) / 1000)
+                : 0
+            }
+            word={
+              sessionHere
+                ? [...(snapshot.session?.topWords ?? [])].sort(
+                    (a, b) => b.count - a.count,
+                  )[0]?.word
+                : undefined
+            }
+            lastLaughSeconds={
+              sessionHere && snapshot.session?.laughEvents.length
+                ? Math.max(
+                    0,
+                    (clock - snapshot.session.laughEvents.at(-1)!.at) / 1000,
+                  )
+                : undefined
+            }
+            bestMoment={
+              sessionHere
+                ? biggestMinute(snapshot.session ?? undefined)?.seconds
+                : undefined
+            }
             room={room}
             count={count}
             status={status}
@@ -437,7 +493,7 @@ export function Overlay({
             listen={snapshot.settings.listen}
             bounce={clock - activeAt < 1000 ? bounce : 0}
             onPause={() => void act('PAUSE')}
-            onStop={() => void act('STOP')}
+            onStop={stopNow}
             onMic={() => void act('OPEN_MIC_TEST')}
           />
           {error && (
@@ -466,17 +522,20 @@ export function Overlay({
       {toast && (
         <div className="x-toast x-glass is-on recap-toast" role="status">
           <StopSaved
-            id={toast}
+            id={toast.id}
             seconds={
-              snapshot.lastSaved?.id === toast
+              snapshot.lastSaved?.id === toast.id
                 ? snapshot.lastSaved.durationSeconds
-                : 0
+                : toast.durationSeconds
             }
             laughs={
-              snapshot.lastSaved?.id === toast ? snapshot.lastSaved.laughs : 0
+              snapshot.lastSaved?.id === toast.id
+                ? snapshot.lastSaved.laughs
+                : toast.laughs
             }
             close={() => setToast(null)}
           />
+          {error && <p role="alert">{error}</p>}
         </div>
       )}
     </div>

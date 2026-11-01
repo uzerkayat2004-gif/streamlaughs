@@ -33,7 +33,6 @@ import { captureTransition } from '../src/audio/state-machine';
 import { type CrowdSource, makeCrowdSource } from '../src/crowd-source';
 import { resolveWatchContext, twitchPage } from '../src/watch-context';
 import { db, deleteSavedStreams } from '../src/db';
-import { liveQuery } from 'dexie';
 import { SITE_URL, UPDATE_KEY } from '../src/site';
 import {
   isZipInstall,
@@ -46,15 +45,9 @@ import { checkVersion } from '../src/version-check';
 
 export default defineBackground(() => {
   let state: Snapshot = initialSnapshot();
-  liveQuery(() => db.recaps.filter((r) => r.seenAt === null).count()).subscribe(
-    {
-      next: (n) => {
-        void chrome.action?.setBadgeText({ text: n ? '•' : '' });
-        void chrome.action?.setBadgeBackgroundColor({ color: '#FFD23F' });
-      },
-      error: () => {},
-    },
-  );
+  void chrome.action?.setBadgeText({ text: '' });
+  let endingSession: Snapshot['session'] = null;
+  let endingDeadline = 0;
   let activeOwnerId: string | null = null;
   const source: CrowdSource = makeCrowdSource();
   let sourceSessionId: string | null = null;
@@ -172,25 +165,13 @@ export default defineBackground(() => {
     source.stop();
     sourceSessionId = null;
     clearInterval(saveTimer);
-    await closeAudioOwner();
-    activeOwnerId = null;
-    if (state.session) {
-      const session = { ...state.session, endedAt: Date.now() };
-      const recap = createRecap(session, session.endedAt);
-      await db.transaction('rw', db.sessions, db.recaps, async () => {
-        await db.sessions.put(session);
-        await db.recaps.put(recap);
-      });
-      state = {
-        ...state,
-        lastRecapId: recap.id,
-        lastSaved: {
-          id: recap.id,
-          durationSeconds: recap.durationSeconds ?? 0,
-          laughs: recap.totalLaughs,
-        },
-      };
-    }
+    endingSession = state.session
+      ? { ...state.session, endedAt: Date.now() }
+      : null;
+    endingDeadline = endingSession ? Date.now() + 1500 : 0;
+    const initial = endingSession
+      ? createRecap(endingSession, endingSession.endedAt!)
+      : null;
     state = {
       ...state,
       status: 'idle',
@@ -198,8 +179,68 @@ export default defineBackground(() => {
       crowd: null,
       capture: captureTransition(state.capture, { type: 'stop' }),
       inference: emptyInferenceHealth(),
+      ...(initial
+        ? {
+            lastRecapId: initial.id,
+            lastSaved: {
+              id: initial.id,
+              durationSeconds: initial.durationSeconds ?? 0,
+              laughs: initial.totalLaughs,
+              saving: true,
+            },
+          }
+        : {}),
     };
+    // Publish immediately, before storage finalization or audio teardown.
     await publish();
+    try {
+      if (endingSession && initial) {
+        await db.transaction('rw', db.sessions, db.recaps, async () => {
+          await db.sessions.put(endingSession!);
+          await db.recaps.put({ ...initial, saving: true });
+        });
+        const remaining = Math.max(0, endingDeadline - Date.now());
+        if (activeOwnerId && remaining > 0) {
+          let timer: ReturnType<typeof setTimeout> | undefined;
+          try {
+            await Promise.race([
+              ownerCommand({ target: 'offscreen', type: 'AUDIO_DRAIN' }).catch(
+                () => null,
+              ),
+              new Promise<void>((resolve) => {
+                timer = setTimeout(resolve, remaining);
+              }),
+            ]);
+          } finally {
+            clearTimeout(timer);
+          }
+        }
+        endingDeadline = 0; // Ignore all late events, even while the final DB transaction runs.
+        const session = endingSession;
+        const recap = {
+          ...createRecap(session, session.endedAt!),
+          saving: false,
+        };
+        await db.transaction('rw', db.sessions, db.recaps, async () => {
+          const existing = await db.recaps.get(recap.id);
+          await db.sessions.put(session);
+          await db.recaps.put({ ...recap, seenAt: existing?.seenAt ?? null });
+        });
+        state.lastSaved = {
+          id: recap.id,
+          durationSeconds: recap.durationSeconds ?? 0,
+          laughs: recap.totalLaughs,
+          saving: false,
+        };
+        await publish();
+      }
+    } finally {
+      endingDeadline = 0;
+      endingSession = null;
+      // Keep replay and tracks alive until the saved recap is committed.
+      await closeAudioOwner();
+      activeOwnerId = null;
+    }
   }
   async function welcome(tabId?: number, retryExistingMic = false) {
     const params = new URLSearchParams({ step: 'mic' });
@@ -214,6 +255,14 @@ export default defineBackground(() => {
     const stored = await chrome.storage.local.get(STATE_KEY);
     const parsed = SnapshotSchema.safeParse(stored[STATE_KEY]);
     if (parsed.success) state = parsed.data;
+    // A worker can disappear during the bounded drain. The provisional recap is
+    // already durable: keep its saved counts and make sharing available again.
+    if (state.lastSaved?.saving) {
+      const saved = await db.recaps.get(state.lastSaved.id);
+      if (saved) await db.recaps.put({ ...saved, saving: false });
+      state.lastSaved = { ...state.lastSaved, saving: false };
+      await publish();
+    }
     if (state.session?.source === 'fake')
       state.session = MySessionSchema.parse({
         ...state.session,
@@ -833,6 +882,29 @@ export default defineBackground(() => {
         !inference.success
       )
         return;
+      if (endingSession) {
+        if (
+          personal.success &&
+          personal.data.ownerId === activeOwnerId &&
+          personal.data.sessionId === endingSession.id &&
+          endingDeadline > Date.now()
+        ) {
+          for (const event of personal.data.events) {
+            if (
+              event.ts >= endingSession.startedAt &&
+              event.ts <= endingSession.endedAt!
+            )
+              endingSession = applyPersonalEvent(
+                endingSession,
+                event,
+                0,
+                personal.data.tabLaughTs,
+              );
+          }
+        }
+        reply({ ok: true });
+        return;
+      }
       void serialize(async () => {
         await ready;
         // Offscreen runtime senders may omit documentId. Use the owner nonce obtained by our start/status handshake.
@@ -905,6 +977,18 @@ export default defineBackground(() => {
     ) {
       reply({ ok: false, error: `Use the ${PRODUCT.name} toolbar icon.` });
       return;
+    }
+    if (
+      parsed.data.type === 'OPEN_RECAP' ||
+      (parsed.data.type === 'GET_STATE' && endingSession)
+    ) {
+      void ready
+        .then(() => handle(parsed.data))
+        .then(
+          (snapshot) => reply({ ok: true, state: snapshot }),
+          () => reply({ ok: false, error: 'couldn’t open · try again' }),
+        );
+      return true;
     }
     void serialize(async () => {
       await ready;

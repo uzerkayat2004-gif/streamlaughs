@@ -1,5 +1,6 @@
 import {
   isApprovedPhrase,
+  funniestWord,
   type MySession,
   type Recap,
 } from '@laughline/shared';
@@ -50,7 +51,7 @@ export function storyData(
     session?.topWords ?? [{ word: recap.topWord, count: recap.wordCount }]
   )
     .filter((w) => w.count > 0 && isApprovedPhrase(w.word))
-    .sort((a, b) => b.count - a.count || b.word.length - a.word.length)
+    .sort((a, b) => b.count - a.count || a.word.localeCompare(b.word))
     .slice(0, 3);
   const chips = [
     [recap.hype, 'hype shouts'],
@@ -67,7 +68,7 @@ export function storyData(
     (session
       ? ((session.endedAt ?? session.startedAt) - session.startedAt) / 1000
       : 0);
-  const empty = !recap.totalLaughs && !words.length && !recap.swears;
+  const empty = !recap.totalLaughs && !words.length && !chips.length;
   const moment = biggestMinute(session);
   // The server publishes concurrent snapshots, not unique fan totals or personal coincidence.
   // Those facts cannot be reconstructed from CrowdSummary peaks; skip that story.
@@ -88,11 +89,17 @@ export function storyData(
     empty,
     moment,
     streams,
+    showHistoryChart: streams.length >= 2,
+    funniest: session ? funniestWord(session) : recap.funniestWord,
+    durationLine:
+      seconds < 60
+        ? `in just ${Math.floor(seconds)} seconds`
+        : `${seconds < 180 ? 'in just' : 'in'} ${Math.floor(seconds / 60)} ${seconds < 120 ? 'minute' : 'minutes'}`,
     slides,
     ordinal: streams.length ? ordinal(streams.length) : undefined,
     together: streams.reduce((n, s) => n + s.laughs, 0),
     perHour:
-      seconds > 0
+      seconds >= 900
         ? Math.round((recap.totalLaughs * 3600) / seconds)
         : undefined,
     aboveUsual: prior.length

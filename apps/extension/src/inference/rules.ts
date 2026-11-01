@@ -326,6 +326,14 @@ export class VadSegmenter {
     }
     return segments;
   }
+  flush() {
+    const segment =
+      this.start !== null && this.lastSpeech - this.start >= C.minimumSpeechMs
+        ? { start: this.start, end: this.lastSpeech }
+        : null;
+    this.reset();
+    return segment;
+  }
   reset() {
     this.start = null;
     this.lastSpeech = 0;

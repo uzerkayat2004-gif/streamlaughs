@@ -8,10 +8,10 @@ import {
 } from './geometry';
 import { newLaugh, overlayOpacity, launcherOpacity } from './overlay-behavior';
 
-it('never fades the opened panel; the launcher stays at least 70% visible', () => {
+it('never fades the opened panel; the launcher stays 60% visible at rest', () => {
   expect(overlayOpacity(false, 1000, 4999)).toBe(1);
   expect(overlayOpacity(false, 1000, 5000)).toBe(1);
-  expect(launcherOpacity(false, 1000, 5000)).toBe(0.7);
+  expect(launcherOpacity(false, 1000, 5000)).toBe(0.6);
   expect(launcherOpacity(true, 1000, 9000)).toBe(1);
   expect(overlayOpacity(true, 1000, 9000)).toBe(1);
   expect(overlayOpacity(false, 9000, 9000)).toBe(1);
@@ -23,7 +23,7 @@ it('keeps the default launcher and panel above controls and restores normalized 
   const bounds = { width: 1000, height: 600 },
     size = { width: 210, height: 240 };
   const launcher = dockPoint({ edge: 'right', ratio: 1 }, bounds);
-  expect(launcher.y + 40).toBeLessThanOrEqual(600 - CONTROL_RESERVE);
+  expect(launcher.y + 14).toBeLessThanOrEqual(600 - CONTROL_RESERVE);
   const moved = panelPoint({ x: 5000, y: 5000 }, bounds, size);
   expect(moved.x + size.width).toBeLessThan(1000);
   expect(moved.y + size.height).toBeLessThanOrEqual(600 - CONTROL_RESERVE);

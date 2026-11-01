@@ -4,7 +4,7 @@
 
 A little crowd for Twitch: your local laughs, everyone’s anonymous reactions, and a Wrapped-style recap when the stream ends.
 
-**v0.7.0:** a quiet glass overlay, smile-only logo, history grouped by streamer, and a locally drawn story PNG. [What changed, verification and manual checks](docs/ui-v070.md).
+**v0.8.2:** a calm reaction dot with an attached panel, instant stop feedback, accurate recap stories, a local PNG with QR, and public stat-only share links. [What changed and how to check it](docs/polish-v082.md).
 
 > **Demo GIF / screenshot placeholder:** replace this line with the final crowd-blob GIF after recording. [Current extension screenshots](docs/screenshots/part6) · [Website preview](docs/screenshots/part5/home-desktop.png).
 
@@ -27,6 +27,8 @@ The **scripting** permission adds a small refresh notice to already-open Twitch 
 **Live services:** [streamlaughs.vercel.app](https://streamlaughs.vercel.app) and [streamlaughs-crowd.streamlaughs.workers.dev](https://streamlaughs-crowd.streamlaughs.workers.dev/health) are connected. Twitch login works, and the owner dashboard loads live crowd and eligible aggregate history. The Cloudflare Worker uses free-plan-compatible SQLite Durable Objects; production simulator traffic stays disabled. [Deployment, connected ZIPs and safe demo instructions](docs/production-part7.md). The repository is `uzerkayat2004-gif/streamlaughs`; env overrides remain supported. Nothing has been tagged or released. Connected ZIPs are in local `releases/production/`; offline previews remain separate. Follow the [release handoff](docs/release-part6.md) before publishing. [Internal compatibility identifiers](docs/internal-identifiers.md) remain unchanged.
 
 ## Privacy in three bullets
+
+Recap links are a separate, deliberate sharing action: their URL contains the selected stats and approved labels, with no viewer identity, audio or transcript. Anyone with the link can see them; hosting and social-preview providers may receive or log the URL. No recap database is used. Approved-word timestamps for the funniest-word calculation stay local. [Details](https://streamlaughs.vercel.app/privacy#recap-links).
 
 - **Audio is processed on your PC and never saved or sent.** Bundled models use short RAM buffers; full transcripts are discarded.
 - **Sharing is optional and off by default.** Only anonymous counts and allowlisted words leave the extension. Counts and each word need three anonymous contributors; this is not proof of three unique humans. Watch-only still establishes a network connection.

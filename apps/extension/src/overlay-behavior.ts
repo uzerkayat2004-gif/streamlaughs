@@ -11,7 +11,7 @@ export function launcherOpacity(
   activeAt: number,
   now: number,
 ) {
-  return hovered || now - activeAt < OVERLAY_FADE_MS ? 1 : 0.7;
+  return hovered ? 1 : 0.6;
 }
 export function newLaugh(
   previousSession: string | null,

@@ -49,3 +49,7 @@ pnpm --filter crowd-sim start --channel your_lowercase_login --viewers 1 --durat
 - [ ] From settings, open the update page and let the checksum-verified ZIP finish downloading. A running session stays active until finish update. Try finish before copying: it safely saves/stops, reloads and says “files not replaced yet”. Unzip and copy everything beside manifest.json into the **same loaded folder**, replacing files; finish again. Verify “you're on v…”, unchanged ID, saved recap and preferences. Refresh Twitch. Early versions without this flow need one manual folder replacement/reload. Confirm listen/share off and “delete my data” still end processing and remove local records. Audio is never stored/sent; completed anonymous server aggregates expire after 30 days.
 
 **Sign-off:** date ______ · browser/build ______ · passed / failed / unverified ______ · observed issues ______. Stop before publishing if required items fail. If hardware, real OAuth or a provider-dependent VOD case cannot be exercised, state that limit in the submission; an automated/mock result is not a substitute.
+
+## v0.8.2 update and focused acceptance
+
+Use the [v0.8.2 checklist](polish-v082.md#owner-check-on-real-hardware) for the attached launcher, immediate stop, recap and public-share changes. Replace the files in the same installed folder → reload the extension → refresh Twitch. **Never Remove** the extension.

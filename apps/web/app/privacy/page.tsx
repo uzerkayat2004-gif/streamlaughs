@@ -4,6 +4,7 @@ export const metadata: Metadata = { title: 'your audio stays yours' };
 const topics = [
   ['on-your-pc', 'on your computer'],
   ['sharing', 'what is shared'],
+  ['recap-links', 'recap links'],
   ['never', 'what we never collect'],
   ['streamers', 'streamer sign-in'],
   ['permissions', 'permissions'],
@@ -23,7 +24,7 @@ export default function Privacy() {
           stays <em>yours.</em>
         </h1>
         <p>Here’s what {PRODUCT.name} does with your data. In plain words.</p>
-        <p className="policy-date">Last updated: October 30, 2026</p>
+        <p className="policy-date">Last updated: November 1, 2026</p>
       </header>
       <aside className="privacy-short" aria-labelledby="short-version">
         <h2 id="short-version">the short version.</h2>
@@ -70,6 +71,32 @@ export default function Privacy() {
             <p>
               To clear local data, open the extension → settings → “delete my
               data”. This also ends your current session.
+            </p>
+          </section>
+          <section id="recap-links">
+            <h2>when you share a recap link.</h2>
+            <p>
+              A recap link contains the streamer’s public login, date, laugh
+              count, duration, selected approved words, biggest moment time,
+              hype count and stream number. It contains no audio, full
+              transcript or viewer identity. Anyone with the link can see those
+              stats. The creator supplies these numbers; they are not a verified
+              server record.
+            </p>
+            <p>
+              The page and its preview image are generated from the URL without
+              a recap database, account lookup or saved copy. The hosting
+              provider and any service where you post or preview the link may
+              receive or log its URL, including the stats. Copies and previews
+              on other services follow those services’ retention rules. Deleting
+              a local recap cannot withdraw a link you already shared. Share
+              only stats you want public.
+            </p>
+            <p>
+              Images and QR codes are drawn locally. The QR points to our
+              configured website. Approved-word timestamps used to find your
+              funniest word stay in this browser and are never included in the
+              link.
             </p>
           </section>
           <section id="sharing">

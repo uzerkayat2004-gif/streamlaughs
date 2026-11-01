@@ -19,7 +19,8 @@ export default defineUnlistedScript(() => {
     pipeline: InferencePipeline | null = null;
   let scheduled = false,
     running = false,
-    stopped = false;
+    stopped = false,
+    finishing = false;
   let events: PersonalEvent[] = [];
   let lastReport = 0;
   let failure = '';
@@ -95,10 +96,12 @@ export default defineUnlistedScript(() => {
   };
   const statusTimer = setInterval(report, 250);
   const schedule = () => {
-    if (scheduled || running || stopped || !pipeline?.pendingWork) return;
+    if (scheduled || running || stopped || finishing || !pipeline?.pendingWork)
+      return;
     scheduled = true;
     setTimeout(async () => {
       scheduled = false;
+      if (finishing || stopped) return;
       running = true;
       try {
         await pipeline!.step();
@@ -214,12 +217,19 @@ export default defineUnlistedScript(() => {
         );
     } else if (data.type === 'speech_status' && models) {
       models.status.whisper = data.model;
-    } else if (data.type === 'frame' && pipeline && !stopped) {
+    } else if (data.type === 'frame' && pipeline && !stopped && !finishing) {
       pipeline.ingest(data.source, data.frame, data.ts);
       data.frame.fill(0);
       if (data.drops) pipeline.addDrops(data.drops);
       self.postMessage({ type: 'ack' });
       schedule();
+    } else if (data.type === 'finish') {
+      finishing = true;
+      clearInterval(statusTimer);
+      while (running) await new Promise((resolve) => setTimeout(resolve, 5));
+      await pipeline?.finish();
+      report();
+      self.postMessage({ type: 'finished' });
     } else if (data.type === 'close') {
       clearInterval(statusTimer);
       stopped = true;

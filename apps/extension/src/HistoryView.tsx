@@ -95,7 +95,7 @@ export function HistoryView({
     <main className="history-page">
       <header className="history-heading">
         <Mark />
-        <button type="button" className="textbtn" onClick={onLast}>
+        <button type="button" className="action-pill" onClick={onLast}>
           last recap ↗
         </button>
       </header>
@@ -125,7 +125,7 @@ export function HistoryView({
         <>
           <button
             type="button"
-            className="textbtn history-back"
+            className="action-pill history-back"
             onClick={() => {
               setSelected(null);
               history.replaceState(null, '', '?view=streamers');
@@ -152,7 +152,7 @@ export function HistoryView({
             </div>
             <button
               type="button"
-              className="textbtn delete-link"
+              className="action-pill delete-link"
               onClick={() =>
                 setRemove({
                   ids: group.streams.map((s) => s.id),
@@ -169,7 +169,7 @@ export function HistoryView({
               <article key={stream.id} className="saved-stream-row">
                 <button
                   type="button"
-                  className="stream-open"
+                  className="action-pill stream-open"
                   onClick={() => onSelect(stream.recap)}
                 >
                   <span>
@@ -208,7 +208,7 @@ export function HistoryView({
                 </button>
                 <button
                   type="button"
-                  className="textbtn delete-link"
+                  className="action-pill delete-link"
                   aria-label={`delete stream from ${watched(stream.startedAt)}`}
                   onClick={() =>
                     setRemove({
@@ -286,7 +286,7 @@ export function HistoryView({
         <summary>settings · photos & replays</summary>
         <button
           type="button"
-          className="textbtn"
+          className="action-pill"
           disabled={busy}
           onClick={async () => {
             setBusy(true);
@@ -306,7 +306,7 @@ export function HistoryView({
         </button>
         {SITE_URL && (
           <a
-            className="textbtn"
+            className="action-pill"
             href={`${SITE_URL}/streamers`}
             target="_blank"
             rel="noreferrer"
@@ -348,7 +348,7 @@ export function HistoryView({
           </button>
           <button
             type="button"
-            className="textbtn"
+            className="action-pill"
             onClick={() => setRemove(null)}
           >
             keep them

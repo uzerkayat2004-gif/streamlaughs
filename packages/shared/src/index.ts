@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CaptureStateSchema, initialCaptureState } from './capture';
+import { isApprovedPhrase } from './privacy';
 import {
   emptyInferenceHealth,
   InferenceHealthSchema,
@@ -13,6 +14,7 @@ export * from './inference';
 export * from './owner-token';
 export * from './privacy';
 export * from './product';
+export * from './recap-share';
 
 export const WordSchema = z.object({
   word: z.string().max(80),
@@ -51,6 +53,17 @@ export const MySessionSchema = z.object({
   peakCrowd: z.number().int().nonnegative(),
   crowdViewers: z.number().int().nonnegative(),
   topWords: z.array(WordSchema),
+  // Approved labels and timestamps only, local to this browser. Never transcripts.
+  wordEvents: z
+    .array(
+      z.object({
+        word: z.string().max(40).refine(isApprovedPhrase),
+        count: z.number().int().positive(),
+        at: z.number(),
+      }),
+    )
+    .max(4096)
+    .default([]),
   crowdTopWords: z.array(WordSchema).max(256).default([]),
   crowdSummary: CrowdSummarySchema.nullable().default(null),
   personal: z
@@ -100,6 +113,8 @@ export const RecapSchema = z.object({
   crowdViewers: z.number().int().nonnegative(),
   topWord: z.string(),
   wordCount: z.number().int().nonnegative(),
+  funniestWord: z.string().max(40).refine(isApprovedPhrase).optional(),
+  saving: z.boolean().optional(),
   hardestLaughAt: z.number().nonnegative(),
   hasBestMoment: z.boolean().optional(),
   othersAtPeak: z.number().int().nonnegative(),
@@ -130,6 +145,7 @@ export const SnapshotSchema = z.object({
       id: z.string(),
       durationSeconds: z.number().nonnegative(),
       laughs: z.number().int().nonnegative(),
+      saving: z.boolean().optional(),
     })
     .nullable()
     .optional(),
@@ -248,7 +264,9 @@ export function visibleWords(crowd: CrowdState | null): CrowdState['topWords'] {
 
 export function createRecap(session: MySession, now: number): Recap {
   const peak = session.personal.hardest;
-  const word = [...session.topWords].sort((a, b) => b.count - a.count)[0];
+  const word = session.topWords
+    .filter((w) => w.count > 0 && isApprovedPhrase(w.word))
+    .sort((a, b) => b.count - a.count || a.word.localeCompare(b.word))[0];
   return {
     id: session.id,
     sessionId: session.id,
@@ -266,6 +284,7 @@ export function createRecap(session: MySession, now: number): Recap {
     crowdViewers: session.crowdViewers,
     topWord: word?.word ?? '—',
     wordCount: word?.count ?? 0,
+    funniestWord: funniestWord(session),
     hardestLaughAt: peak
       ? Math.max(0, Math.floor((peak.ts - session.startedAt) / 1000))
       : 0,
@@ -284,6 +303,32 @@ export function createRecap(session: MySession, now: number): Recap {
     source: session.source,
     crowdSummary: session.crowdSummary,
   };
+}
+export function funniestWord(session: MySession): string | undefined {
+  const counts = new Map<string, number>();
+  const laughs = session.laughEvents
+    .map((e) => e.at)
+    .filter(
+      (at) => at >= session.startedAt && at <= (session.endedAt ?? Infinity),
+    )
+    .sort((a, b) => a - b);
+  let left = 0;
+  for (const event of [...(session.wordEvents ?? [])].sort(
+    (a, b) => a.at - b.at,
+  )) {
+    if (
+      !isApprovedPhrase(event.word) ||
+      event.at < session.startedAt ||
+      event.at > (session.endedAt ?? Infinity)
+    )
+      continue;
+    while (left < laughs.length && laughs[left]! < event.at - 5000) left++;
+    if (left < laughs.length && laughs[left]! <= event.at + 5000)
+      counts.set(event.word, (counts.get(event.word) ?? 0) + event.count);
+  }
+  return [...counts].sort(
+    (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+  )[0]?.[0];
 }
 export function laughStyle(session: MySession) {
   const p = session.personal;
@@ -315,7 +360,11 @@ export function applyPersonalEvent(
         const old = swears.get(phrase.text);
         if (old) old.count += phrase.count;
         else if (swears.size < 64) swears.set(phrase.text, { ...phrase });
-      } else {
+      } else if (isApprovedPhrase(phrase.text)) {
+        next.wordEvents = [
+          ...(next.wordEvents ?? []),
+          { word: phrase.text, count: phrase.count, at: event.ts },
+        ].slice(-4096);
         const old = words.get(phrase.text);
         if (old) old.count += phrase.count;
         else if (words.size < 256)

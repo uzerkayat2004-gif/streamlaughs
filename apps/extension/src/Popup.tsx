@@ -7,6 +7,7 @@ import { Backdrop, crowdLabel, Mark, Sheet, Timer, Toggle } from './components';
 import { MicDevicePicker } from './MicDevicePicker';
 import { MicTest } from './MicTest';
 import { AppIcon } from './AppIcon';
+import { stopWithPreview } from './stop-preview';
 import { StopSaved } from './StopSaved';
 import { StreamerAvatar } from './HistoryView';
 import { db } from './db';
@@ -147,7 +148,11 @@ export function Popup() {
     if (busy || !ready || (contextLoading && !session)) return;
     if (session) {
       const current = session;
-      if (await act({ type: 'STOP' })) setEnded(current);
+      await stopWithPreview(
+        current,
+        () => setEnded({ ...current, endedAt: Date.now() }),
+        () => act({ type: 'STOP' }),
+      );
     } else if (updateAvailable && !later) await openUpdate();
     else if (channel) await act({ type: 'START', tabId });
     else if (onTwitch)
@@ -259,7 +264,11 @@ export function Popup() {
                   disabled={busy}
                   onClick={async () => {
                     const current = session;
-                    if (await act({ type: 'STOP' })) setEnded(current);
+                    await stopWithPreview(
+                      current,
+                      () => setEnded({ ...current, endedAt: Date.now() }),
+                      () => act({ type: 'STOP' }),
+                    );
                   }}
                 >
                   <i />
@@ -571,10 +580,15 @@ export function Popup() {
           <StopSaved
             id={ended.id}
             seconds={
-              snapshot.lastSaved?.durationSeconds ??
-              (Date.now() - ended.startedAt) / 1000
+              snapshot.lastSaved?.id === ended.id
+                ? snapshot.lastSaved.durationSeconds
+                : ((ended.endedAt ?? Date.now()) - ended.startedAt) / 1000
             }
-            laughs={ended.laughCount}
+            laughs={
+              snapshot.lastSaved?.id === ended.id
+                ? snapshot.lastSaved.laughs
+                : ended.laughCount
+            }
             close={() => setEnded(null)}
           />
         </Sheet>

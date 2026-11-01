@@ -47,7 +47,8 @@ export function verifyProduction(directory, product = readProduct(), origins) {
     .join('\n');
   assert(
     content.includes('solid-v081') &&
-      content.includes('glass-launcher') &&
+      content.includes('calm-launcher') &&
+      content.includes('fan reactions show when 3+ fans are here') &&
       content.includes('fans laughing now') &&
       content.includes('M14 34H50C49 56 15 56 14 34Z'),
     'Stale Twitch UI bundle; rebuild the content script',

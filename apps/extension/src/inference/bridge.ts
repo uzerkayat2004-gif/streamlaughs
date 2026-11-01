@@ -19,6 +19,8 @@ import {
 import { INFERENCE_CONFIG as C } from './config';
 
 export class InferenceBridge {
+  private finishing = false;
+  private finished: (() => void) | null = null;
   private worker: Worker | null = null;
   private speechWorker: Worker | null = null;
   private soundWorker: Worker | null = null;
@@ -127,7 +129,8 @@ export class InferenceBridge {
     private send: (message: unknown) => void,
   ) {
     hub.subscribe((source, frame, ts) => {
-      if (!this.worker || this.health.phase !== 'ready') return;
+      if (this.finishing || !this.worker || this.health.phase !== 'ready')
+        return;
       if (this.inFlight >= C.maxTransportFrames) {
         this.drops++;
         return;
@@ -143,6 +146,7 @@ export class InferenceBridge {
   }
   sync(owner: AudioReport) {
     this.owner = owner;
+    if (this.finishing) return;
     if (owner.phase !== 'active' || owner.micLost || !owner.hasMic) {
       this.close();
       this.failed = false;
@@ -269,7 +273,9 @@ export class InferenceBridge {
     });
     worker.onmessage = ({ data }) => {
       if (worker !== this.worker) return;
-      if (data.type === 'ack') this.inFlight = Math.max(0, this.inFlight - 1);
+      if (data.type === 'finished') this.finished?.();
+      else if (data.type === 'ack')
+        this.inFlight = Math.max(0, this.inFlight - 1);
       else if (data.type === 'status') {
         this.lastWorkerReport = performance.now();
         const diagnostic = WorkerDiagnosticsSchema.safeParse(data.diagnostics);
@@ -375,7 +381,25 @@ export class InferenceBridge {
         }
       : null;
   }
+  async finish() {
+    this.finishing = true;
+    if (!this.worker) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      await new Promise<void>((resolve) => {
+        this.finished = resolve;
+        timer = setTimeout(resolve, 1500);
+        this.worker!.postMessage({ type: 'finish' });
+      });
+    } finally {
+      clearTimeout(timer);
+      this.finished = null;
+    }
+  }
   close() {
+    this.finished?.();
+    this.finished = null;
+    this.finishing = false;
     if (
       !this.worker &&
       !this.speechWorker &&

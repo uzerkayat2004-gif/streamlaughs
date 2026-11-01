@@ -1,6 +1,30 @@
 import { expect, it, vi } from 'vitest';
 import { INFERENCE_CONFIG as C, zeroScores } from './config';
 import { InferencePipeline } from './pipeline';
+it('flushes an open speech segment only on stop, preserving ordinary segmentation and approved word timestamps', async () => {
+  const events: { kind: string }[] = [];
+  const words = vi.fn(async () => ({
+    phrases: [{ text: 'bro', class: 'ok' as const, count: 1 }],
+    hype: false,
+  }));
+  const pipeline = new InferencePipeline(
+    { vad: async () => 0.9, sound: zeroScores, words },
+    (e) => events.push(e),
+  );
+  for (let i = 0; i < 30; i++) {
+    pipeline.ingest(
+      'mic',
+      Float32Array.from({ length: 320 }, (_, j) => Math.sin(j * 0.3) * 0.04),
+      100000 + (i + 1) * 20,
+    );
+    while (pipeline.pendingWork) await pipeline.step();
+  }
+  expect(words).not.toHaveBeenCalled();
+  await pipeline.finish();
+  expect(words).toHaveBeenCalledOnce();
+  expect(events.some((e) => e.kind === 'words')).toBe(true);
+  pipeline.clear();
+});
 
 it('reports actual worker arrivals and zero FPS after frames stop even while status polling continues', () => {
   vi.useFakeTimers({ toFake: ['performance'] });

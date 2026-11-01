@@ -3,12 +3,17 @@ import { AudioEngine, microphonePermission } from '../../src/audio/engine';
 import { OwnerCommandSchema } from '../../src/audio/protocol';
 import { InferenceBridge } from '../../src/inference/bridge';
 
+const deliveries = new Set<Promise<unknown>>();
 const engine = new AudioEngine((message) => {
   if (message.type === 'AUDIO_REPORT') inference?.sync(message);
   void chrome.runtime.sendMessage(message).catch(() => {});
 });
 const inference = new InferenceBridge(engine.frames, (message) => {
-  void chrome.runtime.sendMessage(message).catch(() => {});
+  const sent = chrome.runtime.sendMessage(message).catch(() => {});
+  if ((message as { type?: string }).type === 'PERSONAL_EVENTS') {
+    deliveries.add(sent);
+    void sent.finally(() => deliveries.delete(sent));
+  }
 });
 chrome.runtime.onMessage.addListener((message: unknown, sender, reply) => {
   if (
@@ -39,6 +44,10 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, reply) => {
         return engine.start(parsed.data);
       case 'AUDIO_PAUSE':
         return engine.pause(parsed.data.paused);
+      case 'AUDIO_DRAIN':
+        await inference.finish();
+        await Promise.allSettled([...deliveries]);
+        return null;
       case 'AUDIO_STOP':
         await engine.stop();
         return null;
