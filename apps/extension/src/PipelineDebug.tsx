@@ -83,7 +83,7 @@ export function PipelineDebug({ close }: { close: () => void }) {
   const { report: r, phrase } = usePipelineReport(true, true);
   const ai = r?.inference,
     audio = r?.audio;
-  const [copied, setCopied] = useState(false);
+
   return (
     <section
       className="local-pipeline-debug"
@@ -130,8 +130,8 @@ export function PipelineDebug({ close }: { close: () => void }) {
         {ai?.stages.segments ?? 0}
       </p>
       <p>
-        laugh score: {(ai?.laughScore ?? 0).toFixed(3)} ·{' '}
-        {ai?.topClass.label ?? 'waiting'}
+        DSP hits: {ai?.stages.dspHits ?? 0} · laugh score:{' '}
+        {(ai?.laughScore ?? 0).toFixed(3)} · {ai?.topClass.label ?? 'waiting'}
       </p>
       <p>
         {(['vad', 'yamnet', 'whisper'] as const)
@@ -153,20 +153,34 @@ export function PipelineDebug({ close }: { close: () => void }) {
         {r?.sessionMatches ? 'matched' : 'not matched'}
       </p>
       <p role="status">{micProblem(r) || 'pipeline running'}</p>
-      <button
-        type="button"
-        disabled={!r}
-        onClick={async () => {
-          try {
-            await navigator.clipboard.writeText(copyableReport(r));
-            setCopied(true);
-          } catch {
-            setCopied(false);
-          }
-        }}
-      >
-        {copied ? 'report copied · no transcript' : 'copy counters only'}
-      </button>
+      <CopyDiagnostics report={r} phrase={phrase} />
     </section>
+  );
+}
+
+export function CopyDiagnostics({
+  report,
+  phrase = '',
+}: {
+  report: DiagnosticsReport | null;
+  phrase?: string;
+}) {
+  const [message, setMessage] = useState('copy diagnostics');
+  return (
+    <button
+      type="button"
+      className="textbtn copy-diagnostics"
+      disabled={!report}
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(copyableReport(report, phrase));
+          setMessage('diagnostics copied');
+        } catch {
+          setMessage('couldn’t copy · focus this tab and retry');
+        }
+      }}
+    >
+      {message}
+    </button>
   );
 }

@@ -19,6 +19,7 @@ import {
   STATE_KEY,
   visibleWords,
 } from '@laughline/shared';
+import { selectedMicrophone } from '../src/audio/microphone';
 import { AUDIO_DEBUG, MIC_CONSENT_KEY } from '../src/audio/config';
 import {
   audioOwnerError,
@@ -247,6 +248,7 @@ export default defineBackground(() => {
           listen: false,
         });
       } else {
+        if (!exists) await ensureAudioOwner();
         if (exists && owner?.sessionId !== state.session.id)
           await closeAudioOwner();
         state.capture = captureTransition(
@@ -390,6 +392,7 @@ export default defineBackground(() => {
         const owner = await ownerCommand({
           target: 'offscreen',
           type: 'AUDIO_START',
+          micDeviceId: await selectedMicrophone(),
           sessionId: state.session!.id,
           streamId,
           paused: state.status === 'paused',
@@ -504,6 +507,7 @@ export default defineBackground(() => {
           const owner = await ownerCommand({
             target: 'offscreen',
             type: 'AUDIO_RETRY',
+            micDeviceId: await selectedMicrophone(),
           });
           if (owner) {
             state.capture = captureTransition(state.capture, {
@@ -592,6 +596,7 @@ export default defineBackground(() => {
           const owner = await ownerCommand({
             target: 'offscreen',
             type: 'AUDIO_START',
+            micDeviceId: await selectedMicrophone(),
             sessionId: state.capture.sessionId!,
             micOnly: true,
           });
@@ -657,6 +662,7 @@ export default defineBackground(() => {
           const owner = await ownerCommand({
             target: 'offscreen',
             type: 'AUDIO_START',
+            micDeviceId: await selectedMicrophone(),
             sessionId: state.capture.sessionId!,
             micOnly: true,
           });
@@ -775,6 +781,7 @@ export default defineBackground(() => {
           ? await db.sessions.get(state.session.id)
           : undefined;
         return {
+          sessionId: state.session?.id ?? state.capture.sessionId,
           offscreenAlive: exists,
           micConsent:
             (await chrome.storage.local.get(MIC_CONSENT_KEY))[

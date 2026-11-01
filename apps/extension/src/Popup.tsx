@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useStore } from 'zustand';
 import { command, connectSurface, surface } from './bridge';
 import { Backdrop, crowdLabel, Mark, Sheet, Timer, Toggle } from './components';
+import { MicDevicePicker } from './MicDevicePicker';
 import { MicTest } from './MicTest';
 import { AppIcon } from './AppIcon';
 import { StopSaved } from './StopSaved';
@@ -356,7 +357,7 @@ export function Popup() {
           <button
             type="button"
             className="textbtn"
-            onClick={() => setMicTestOpen(true)}
+            onClick={() => void chrome.tabs.create({ url: chrome.runtime.getURL('/mic-test.html') })}
           >
             test my mic
           </button>
@@ -466,6 +467,11 @@ export function Popup() {
             </>
           ) : (
             <>
+              <MicDevicePicker
+                changed={() => {
+                  if (snapshot.session) void act({ type: 'RETRY_MIC' });
+                }}
+              />
               <Toggle
                 title="listen for my laughs"
                 on={snapshot.settings.listen}

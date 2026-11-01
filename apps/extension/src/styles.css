@@ -2140,3 +2140,10 @@ svg {
 .overlay-shell .x-cnote {
   margin: 0;
 }
+
+/* Local device picker and actionable diagnostics. */
+.mic-device-picker { width:100%;margin:12px 0;text-align:left; }
+.mic-device-picker label { display:grid;gap:8px;font:600 13px var(--ui);color:#ffffffdf; }
+.mic-device-picker select { width:100%;max-width:100%;border:1px solid #ffffff30;border-radius:10px;background:#14141A;color:#fff;padding:10px;font:500 13px var(--ui); }
+.mic-bluetooth-tip { background:#FFD23F15;border:1px solid #FFD23F50;border-radius:12px;color:#FFD23F;padding:12px;font-size:13px;line-height:1.5; }
+.copy-diagnostics { min-height:36px; }

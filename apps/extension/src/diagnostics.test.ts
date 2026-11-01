@@ -58,3 +58,12 @@ it('rejects private speech text across the speech worker boundary', () => {
     }).success,
   ).toBe(false);
 });
+
+it('copies the requested local session/device/browser facts and only a filtered approved phrase', () => {
+  const value = { ...report(), sessionId: 'local-session-uuid' };
+  const copied = JSON.parse(copyableReport(value, 'lets go'));
+  expect(copied.sessionId).toBe('local-session-uuid');
+  expect(copied.lastApprovedPhrase).toBe('lets go');
+  expect(copied.recentErrors).toEqual([]);
+  expect(() => copyableReport(value, 'alice private name')).toThrow();
+});

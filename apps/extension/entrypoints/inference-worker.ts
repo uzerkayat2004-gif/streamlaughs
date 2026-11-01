@@ -118,8 +118,45 @@ export default defineUnlistedScript(() => {
     if (data.type === 'init') {
       if (models) return;
       models = new LocalModels();
+      const evaluation = AUDIO_DEBUG && data.evaluation === true;
+      // DSP/frame ACKs must run immediately, even during a failed or slow VAD load.
+      pipeline = new InferencePipeline(
+        evaluation
+          ? models
+          : {
+              vad: (samples) =>
+                models!.status.vad.phase === 'ready'
+                  ? models!.vad(samples)
+                  : Promise.resolve(
+                      Math.sqrt(
+                        samples.reduce((n, x) => n + x * x, 0) / samples.length,
+                      ) > 0.006
+                        ? 0.8
+                        : 0,
+                    ),
+              sound: data.externalSound
+                ? requestSound
+                : (samples, reference) => models!.sound(samples, reference),
+              resetVad: () => models!.resetVad(),
+              get topClass() {
+                return models!.topClass;
+              },
+              get echo() {
+                return models!.echo;
+              },
+              words: requestSpeech,
+            },
+        (event) => {
+          if (events.length < 32) events.push(event);
+          else pipeline?.addDrops(1);
+        },
+        AUDIO_DEBUG,
+        undefined,
+        schedule,
+      );
+      models.status.vad.phase = 'loading';
+      report();
       try {
-        const evaluation = AUDIO_DEBUG && data.evaluation === true;
         if (evaluation)
           await models.load(
             data.base,
@@ -127,38 +164,11 @@ export default defineUnlistedScript(() => {
           );
         else if (data.externalSound) await models.loadVad(data.base);
         else await models.loadRealtime(data.base);
-        if (stopped) return;
-        pipeline = new InferencePipeline(
-          evaluation
-            ? models
-            : {
-                vad: (samples) => models!.vad(samples),
-                sound: data.externalSound
-                  ? requestSound
-                  : (samples, reference) => models!.sound(samples, reference),
-                resetVad: () => models!.resetVad(),
-                get topClass() {
-                  return models!.topClass;
-                },
-                get echo() {
-                  return models!.echo;
-                },
-                words: requestSpeech,
-              },
-          (event) => {
-            if (events.length < 32) events.push(event);
-            else pipeline?.addDrops(1);
-          },
-          AUDIO_DEBUG,
-          undefined,
-          schedule,
-        );
-        report();
+        if (!stopped) report();
       } catch (error) {
         failure = safeError(error);
         models.loadFailed(error);
-        report();
-        self.postMessage({ type: 'error', error: failure });
+        report(); /* Keep DSP and bounded energy-VAD speech segmentation alive. */
       }
     } else if (data.type === 'sound_result') {
       const pending = soundRequests.get(data.id);

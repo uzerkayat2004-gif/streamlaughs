@@ -1,7 +1,8 @@
 import { PRODUCT } from '@laughline/shared';
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from 'zustand';
-import { MIC_CONSENT_KEY, MICROPHONE_CONSTRAINTS } from './audio/config';
+import { MIC_CONSENT_KEY } from './audio/config';
+import { openSelectedMicrophone, permissionHelp } from './audio/microphone';
 import { checkMicrophone } from './audio/mic-check';
 import { command, connectSurface, surface } from './bridge';
 import { Backdrop, Mark, Toggle, Wave } from './components';
@@ -176,10 +177,7 @@ export function Welcome() {
                   setBusy(true);
                   let stream: MediaStream | undefined;
                   try {
-                    stream = await navigator.mediaDevices.getUserMedia({
-                      audio: MICROPHONE_CONSTRAINTS,
-                      video: false,
-                    });
+                    stream = await openSelectedMicrophone();
                     if (!mounted.current) return;
                     permissionStream.current = stream;
                     await chrome.storage.local.set({ [MIC_CONSENT_KEY]: true });
@@ -198,9 +196,7 @@ export function Welcome() {
                       await command({ type: 'RETRY_MIC' });
                     setSlide(2);
                   } catch {
-                    setError(
-                      'mic is blocked · allow it in extension settings, then retry',
-                    );
+                    setError(permissionHelp);
                   } finally {
                     permissionStream.current = null;
                     micCheck.current = null;

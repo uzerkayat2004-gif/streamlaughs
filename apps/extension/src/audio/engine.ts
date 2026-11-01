@@ -3,6 +3,7 @@ import {
   type AudioReport,
   emptyAudioMetrics,
 } from '@laughline/shared';
+import { openSelectedMicrophone } from './microphone';
 import { safeError } from '../diagnostics';
 import { AUDIO_STATUS_MS, MICROPHONE_CONSTRAINTS } from './config';
 import { AudioFrameHub, type AudioSource } from './ring-buffer';
@@ -74,12 +75,19 @@ export class AudioEngine {
   private micTestTimer: ReturnType<typeof setTimeout> | undefined;
   private lastReport = 0;
   private lastError = '';
+  private errors: string[] = [];
+  private recordError(error: unknown) {
+    this.lastError = safeError(error);
+    this.errors.push(this.lastError);
+    this.errors = this.errors.slice(-10);
+  }
   private lastMicTrack: MediaStreamTrack | null = null;
   private deviceSignature = '';
   private changingDevice = false;
   private mutedSince: number | null = null;
   private micAttempts = 0;
   private micOpened = 0;
+  private micDeviceId = 'default';
   private micPermission: PermissionState = 'prompt';
   private deviceHandler = () => {
     const generation = this.generation;
@@ -134,6 +142,12 @@ export class AudioEngine {
       permission: this.micPermission,
       micAttempts: this.micAttempts,
       micOpened: this.micOpened,
+      errors: [...this.errors],
+      noiseSuppression:
+        this.mic?.getAudioTracks()[0]?.getSettings?.().noiseSuppression ??
+        false,
+      autoGainControl:
+        this.mic?.getAudioTracks()[0]?.getSettings?.().autoGainControl ?? false,
       echoCancellation:
         this.mic?.getAudioTracks()[0]?.getSettings?.().echoCancellation ??
         MICROPHONE_CONSTRAINTS.echoCancellation,
@@ -222,11 +236,13 @@ export class AudioEngine {
   async start({
     sessionId,
     streamId,
+    micDeviceId = 'default',
     micOnly = false,
     paused = false,
   }: {
     sessionId: string;
     streamId?: string;
+    micDeviceId?: string;
     micOnly?: boolean;
     paused?: boolean;
   }) {
@@ -235,6 +251,7 @@ export class AudioEngine {
     if (!streamId && !micOnly) throw new Error('capture');
     const generation = ++this.generation;
     this.sessionId = sessionId;
+    this.micDeviceId = micDeviceId;
     this.phase = 'starting';
     this.paused = paused;
     this.micLost = false;
@@ -274,7 +291,7 @@ export class AudioEngine {
       try {
         await this.openMic(generation);
       } catch (error) {
-        this.lastError = safeError(error);
+        this.recordError(error);
         this.loseMic();
       }
       this.deviceSignature = await this.inputDevices();
@@ -300,7 +317,7 @@ export class AudioEngine {
       this.report();
       return this.status();
     } catch (error) {
-      this.lastError = safeError(error);
+      this.recordError(error);
       await this.stop();
       throw new Error(
         error instanceof Error && error.message === 'audioContext'
@@ -365,9 +382,9 @@ export class AudioEngine {
   private async openMic(generation: number) {
     this.micPermission = await microphonePermission();
     this.micAttempts++;
-    const mic = await this.acquire(
-      { audio: MICROPHONE_CONSTRAINTS, video: false },
-      generation,
+    const mic = await openSelectedMicrophone(
+      (c) => this.acquire(c, generation),
+      this.micDeviceId,
     );
     this.mic = mic;
     this.micOpened++;
@@ -445,8 +462,9 @@ export class AudioEngine {
     }
     return this.status();
   }
-  async retryMic() {
-    if (!this.sessionId || !this.context || !this.micLost) return this.status();
+  async retryMic(micDeviceId?: string) {
+    if (micDeviceId) this.micDeviceId = micDeviceId;
+    if (!this.sessionId || !this.context) return this.status();
     const generation = this.generation;
     try {
       this.disconnect('mic');
@@ -460,7 +478,7 @@ export class AudioEngine {
       this.setProcessing();
       this.report();
     } catch (error) {
-      this.lastError = safeError(error);
+      this.recordError(error);
       this.loseMic();
     }
     return this.status();
@@ -494,6 +512,10 @@ export class AudioEngine {
         this.report();
       }
     }
+    if (this.context?.state === 'suspended' && this.sessionId)
+      void this.resumeContext().catch((error) => {
+        this.lastError = safeError(error);
+      });
     const now = performance.now(),
       elapsed = Math.max(1, now - this.lastReport);
     this.lastReport = now;

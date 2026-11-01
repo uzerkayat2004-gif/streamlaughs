@@ -210,13 +210,17 @@ describe('background capture integration with browser ports mocked', () => {
         content_scripts: [{ js: ['content-scripts/twitch.js'] }],
       }),
     });
-    vi.mocked(chrome.tabs.sendMessage)
-      .mockRejectedValueOnce(new Error('no receiving end'))
-      .mockResolvedValueOnce({
-        onTwitch: true,
-        channel: 'nightowl_tv',
-        isLive: true,
-      });
+    Object.assign(chrome.tabs, {
+      sendMessage: vi
+        .fn()
+        .mockResolvedValue(undefined)
+        .mockRejectedValueOnce(new Error('no receiving end'))
+        .mockResolvedValueOnce({
+          onTwitch: true,
+          channel: 'nightowl_tv',
+          isLive: true,
+        }),
+    });
     const started = await dispatch({ type: 'START', tabId: 1 });
     expect(started.state.session?.channel).toBe('nightowl_tv');
     expect(started.state.capture.phase).toBe('active');

@@ -1,10 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
-import { MIC_CONSENT_KEY, MICROPHONE_CONSTRAINTS } from './audio/config';
+import {
+  verifyVisibleMicrophone,
+  permissionHelp,
+  bluetoothInput,
+} from './audio/microphone';
+import { MicDevicePicker } from './MicDevicePicker';
 import { command } from './bridge';
-import { micProblem, usePipelineReport } from './PipelineDebug';
+import {
+  micProblem,
+  usePipelineReport,
+  CopyDiagnostics,
+} from './PipelineDebug';
 
 export function MicTest() {
-  const { report } = usePipelineReport();
+  const { report, phrase } = usePipelineReport(true, true);
   const [started, setStarted] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
@@ -35,6 +44,20 @@ export function MicTest() {
     <div className="mic-test-step">
       <h2>laugh or say something</h2>
       <p className="sub">a real local check · nothing is saved or shared</p>
+      <MicDevicePicker
+        key={String(started)}
+        changed={() => {
+          setStarted(false);
+          if (owns.current) void command({ type: 'MIC_TEST_STOP' });
+          else void command({ type: 'RETRY_MIC' });
+        }}
+      />
+      {bluetoothInput(report?.audio?.mic.name ?? '') && (
+        <p className="mic-bluetooth-tip">
+          Bluetooth headphones sound bad while the mic is on; use your laptop
+          mic instead
+        </p>
+      )}
       <meter
         aria-label="mic check live level"
         min="0"
@@ -44,7 +67,11 @@ export function MicTest() {
       <p className="mic-check-result" role="status">
         {error ||
           (heard
-            ? 'heard you!'
+            ? report?.inference?.events.some(
+                (e) => e.ts >= since.current && e.kind === 'laugh',
+              )
+              ? 'heard a laugh!'
+              : `heard: ${phrase || 'a word'}`
             : started
               ? micProblem(report) || 'listening for a laugh or a word…'
               : 'press start, then laugh or say “let’s go”')}
@@ -63,18 +90,16 @@ export function MicTest() {
         onClick={async () => {
           setBusy(true);
           setError('');
-          let stream: MediaStream | undefined;
+
           try {
             const state = await command({ type: 'GET_STATE' });
-            if (!state.session) {
-              stream = await navigator.mediaDevices.getUserMedia({
-                audio: MICROPHONE_CONSTRAINTS,
-                video: false,
-              });
-              await chrome.storage.local.set({ [MIC_CONSENT_KEY]: true });
+            if (!state.session || state.capture.micLost) {
+              await verifyVisibleMicrophone();
             }
             since.current = Date.now();
-            const next = await command({ type: 'MIC_TEST_START' });
+            const next = await command({
+              type: state.session ? 'RETRY_MIC' : 'MIC_TEST_START',
+            });
             owns.current =
               !next.session &&
               !!next.capture.sessionId?.startsWith('mic-test-');
@@ -87,7 +112,7 @@ export function MicTest() {
             if (mounted.current)
               setError(
                 e instanceof DOMException && e.name === 'NotAllowedError'
-                  ? 'no permission · allow the microphone for this extension, then retry'
+                  ? permissionHelp
                   : e instanceof DOMException && e.name === 'NotFoundError'
                     ? 'no microphone found · connect an input and retry'
                     : e instanceof Error
@@ -95,7 +120,6 @@ export function MicTest() {
                       : 'microphone could not start · retry',
               );
           } finally {
-            for (const track of stream?.getTracks() ?? []) track.stop();
             if (mounted.current) setBusy(false);
           }
         }}
@@ -106,6 +130,7 @@ export function MicTest() {
             ? 'test again'
             : 'start mic check'}
       </button>
+      <CopyDiagnostics report={report} phrase={phrase} />
       <a
         className="textbtn"
         target="_blank"

@@ -6,7 +6,7 @@ export const INFERENCE_CONFIG = {
   vadThreshold: 0.5,
   minimumSpeechMs: 250,
   mergeGapMs: 300,
-  maximumSpeechMs: 8000,
+  maximumSpeechMs: 2400,
   soundWindow: 15600,
   soundHopMs: 250,
   maximumEvidenceGapMs: 750,
@@ -25,7 +25,7 @@ export const INFERENCE_CONFIG = {
   maxTransportFrames: 200,
   // Three seconds of 32 ms VAD chunks; catches up after the bounded transport burst.
   maxVadJobs: 96,
-  maxSpeechJobs: 2,
+  maxSpeechJobs: 1,
   maxPhrases: 256,
   maxDebugEvents: 40,
   lowPowerRtf: 1,

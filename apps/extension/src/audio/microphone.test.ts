@@ -1,0 +1,84 @@
+import { afterEach, expect, it, vi } from 'vitest';
+import {
+  MIC_DEVICE_KEY,
+  openSelectedMicrophone,
+  verifyVisibleMicrophone,
+  bluetoothInput,
+} from './microphone';
+afterEach(() => vi.unstubAllGlobals());
+function setup(selected = 'default', present = true) {
+  const stop = vi.fn(),
+    getUserMedia = vi.fn(async (_constraints: MediaStreamConstraints) => ({
+      getTracks: () => [{ stop }],
+      getAudioTracks: () => [
+        {
+          readyState: 'live',
+          label: 'laptop mic',
+          getSettings: () => ({ sampleRate: 48000 }),
+        },
+      ],
+    }));
+  const set = vi.fn(async () => {});
+  vi.stubGlobal('chrome', {
+    storage: {
+      local: { get: async () => ({ [MIC_DEVICE_KEY]: selected }), set },
+    },
+  });
+  vi.stubGlobal('navigator', {
+    permissions: { query: async () => ({ state: 'prompt' }) },
+    mediaDevices: {
+      getUserMedia,
+      enumerateDevices: async () =>
+        present ? [{ kind: 'audioinput', deviceId: selected }] : [],
+    },
+  });
+  return { stop, getUserMedia, set };
+}
+it('releases the visible permission probe before the offscreen opener is invoked', async () => {
+  const x = setup();
+  await verifyVisibleMicrophone();
+  expect(x.stop).toHaveBeenCalledOnce();
+  expect(x.set).toHaveBeenCalledWith(
+    expect.objectContaining({ 'streamlaughs:mic-consent': true }),
+  );
+  expect(x.getUserMedia).toHaveBeenCalledWith({
+    audio: {
+      echoCancellation: false,
+      noiseSuppression: false,
+      autoGainControl: false,
+    },
+    video: false,
+  });
+});
+it('uses the chosen device exactly and falls back if it was unplugged', async () => {
+  const x = setup('headset');
+  await openSelectedMicrophone();
+  expect(x.getUserMedia.mock.calls[0]![0].audio).toMatchObject({
+    deviceId: { exact: 'headset' },
+  });
+  const y = setup('unplugged', false);
+  await openSelectedMicrophone();
+  expect(y.set).toHaveBeenCalledWith({ [MIC_DEVICE_KEY]: 'default' });
+  expect(y.getUserMedia.mock.calls[0]![0].audio).not.toHaveProperty('deviceId');
+});
+it('does not claim permission after browser denial', async () => {
+  const x = setup();
+  x.getUserMedia.mockRejectedValue(
+    new DOMException('blocked', 'NotAllowedError'),
+  );
+  await expect(verifyVisibleMicrophone()).rejects.toThrow('blocked');
+  expect(x.set).not.toHaveBeenCalled();
+});
+it.each(['Bluetooth Headset', 'Headphones Hands-Free AG Audio', 'HFP input'])(
+  'identifies a communications input %s',
+  (label) => expect(bluetoothInput(label)).toBe(true),
+);
+
+it('uses a device preference sent by the background without touching unsupported offscreen storage APIs', async () => {
+  const x = setup('headset');
+  vi.stubGlobal('chrome', { runtime: { id: 'extension' } });
+  await openSelectedMicrophone(navigator.mediaDevices.getUserMedia, 'headset');
+  expect(x.getUserMedia.mock.calls[0]![0].audio).toMatchObject({
+    deviceId: { exact: 'headset' },
+  });
+});

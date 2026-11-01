@@ -3,6 +3,7 @@ import {
   emptyInferenceHealth,
   InferenceHealthSchema,
   SafePhraseSchema,
+  isApprovedPhrase,
 } from '@laughline/shared';
 import { z } from 'zod';
 export const SpeechResultSchema = z
@@ -55,6 +56,7 @@ export const WorkerDiagnosticsSchema = z
         voicedChunks: z.number().nonnegative(),
         segments: z.number().nonnegative(),
         soundCalls: z.number().nonnegative(),
+        dspHits: z.number().nonnegative().default(0),
         soundJobsSkipped: z.number().nonnegative().default(0),
         speechRequests: z.number().nonnegative(),
         speechResults: z.number().nonnegative(),
@@ -111,6 +113,7 @@ export const emptyStages = () => ({
   voicedChunks: 0,
   segments: 0,
   soundCalls: 0,
+  dspHits: 0,
   soundJobsSkipped: 0,
   speechRequests: 0,
   speechResults: 0,
@@ -142,6 +145,9 @@ export const AudioDiagnosticsSchema = z
     micAttempts: z.number().nonnegative().default(0),
     micOpened: z.number().nonnegative().default(0),
     echoCancellation: z.boolean().default(false),
+    noiseSuppression: z.boolean().default(false),
+    autoGainControl: z.boolean().default(false),
+    errors: z.array(z.string().max(400)).max(10).default([]),
     phase: z.string().max(32),
     context: z.string().max(32),
     inputSampleRate: z.number().nonnegative(),
@@ -155,6 +161,7 @@ export const AudioDiagnosticsSchema = z
   .strict();
 export const DiagnosticsSchema = z
   .object({
+    sessionId: z.string().max(100).nullable().default(null),
     offscreenAlive: z.boolean().default(false),
     micConsent: z.boolean().default(false),
     sessionMatches: z.boolean().default(false),
@@ -184,5 +191,34 @@ export function safeError(error: unknown) {
     .slice(0, 400);
 }
 // The clipboard boundary is deliberately an allowlist: never serialize a worker message.
-export const copyableReport = (value: unknown) =>
-  JSON.stringify(DiagnosticsSchema.parse(value), null, 2);
+const ClipboardReportSchema = DiagnosticsSchema.extend({
+  osBrowser: z.string().max(500),
+  lastApprovedPhrase: z
+    .string()
+    .max(80)
+    .refine((s) => s === '' || isApprovedPhrase(s)),
+  recentErrors: z.array(z.string().max(400)).max(10),
+});
+export const copyableReport = (value: unknown, phrase = '') => {
+  const report = DiagnosticsSchema.parse(value);
+  const errors = [
+    ...(report.audio?.errors ?? []),
+    report.audio?.error,
+    report.error,
+    report.inference?.error,
+    ...Object.values(report.inference?.models ?? {}).map((m) => m.error),
+  ].filter((s): s is string => !!s);
+  return JSON.stringify(
+    ClipboardReportSchema.parse({
+      ...report,
+      osBrowser:
+        typeof navigator === 'undefined'
+          ? 'unavailable'
+          : navigator.userAgent.slice(0, 500),
+      lastApprovedPhrase: phrase,
+      recentErrors: [...new Set(errors)].slice(-10),
+    }),
+    null,
+    2,
+  );
+};

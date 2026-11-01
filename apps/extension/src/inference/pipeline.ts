@@ -1,4 +1,5 @@
 import { emptyInferenceHealth, type PersonalEvent } from '@laughline/shared';
+import { DspLaughDetector } from './dsp-laugh';
 import { MicNormalizer } from '../audio/mic-normalizer';
 import { AudioRingBuffer, type AudioSource } from '../audio/ring-buffer';
 import { emptyStages, emptyWorkerDiagnostics } from '../diagnostics';
@@ -38,6 +39,8 @@ export class InferencePipeline {
   };
   private rawMic = new AudioRingBuffer(32000);
   private normalizer = new MicNormalizer();
+  private dsp = new DspLaughDetector();
+  private lastLaugh = -Infinity;
   private envelopes: Record<AudioSource, { ts: number; rms: number }[]> = {
     mic: [],
     tab: [],
@@ -75,6 +78,11 @@ export class InferencePipeline {
     [];
   private topMicClass = { label: 'waiting', score: 0 };
   private event(event: PersonalEvent) {
+    if (event.kind === 'laugh') {
+      if (event.ts - this.lastLaugh < 2000) return false;
+      this.lastLaugh = event.ts;
+    }
+    if (event.kind !== 'words') this.health.accepted++;
     this.stages.acceptedEvents++;
     if (event.kind === 'words') this.stages.wordEvents++;
     this.recentEvents.push({
@@ -88,6 +96,7 @@ export class InferencePipeline {
     });
     if (this.recentEvents.length > 20) this.recentEvents.shift();
     this.emit(event);
+    return true;
   }
   diagnostics() {
     const cutoff = performance.now() - 1000;
@@ -103,7 +112,7 @@ export class InferencePipeline {
       gain: this.normalizer.gain,
       noiseFloor: this.normalizer.noiseFloor,
       topClass: this.topMicClass,
-      stages: { ...this.stages },
+      stages: { ...this.stages, dspHits: this.dsp.hits },
       laughScore: this.scores.mic.laugh,
       echo: this.models.echo ?? { removed: false, inputRms: 0, outputRms: 0 },
       error: this.soundError,
@@ -147,6 +156,7 @@ export class InferencePipeline {
       if (source === 'mic') {
         this.rawMic.clear();
         this.normalizer.reset();
+        this.dsp.reset();
         this.vadGeneration++;
         this.pendingLength = 0;
         this.segmenter.reset();
@@ -162,6 +172,8 @@ export class InferencePipeline {
     if (source === 'mic') {
       this.rawMic.write(frame);
       frame = this.normalizer.process(frame, this.health.vadProbability >= 0.5);
+      if (this.dsp.process(frame, ts) && !this.dspPlayback(ts))
+        this.event({ kind: 'laugh', ts, confidence: 0.75, intensity: 1 });
     }
     this.buffers[source].write(frame);
     const envelope = this.envelopes[source];
@@ -224,7 +236,6 @@ export class InferencePipeline {
   ) {
     const result = this.gate.consider(kind, score, rms, ts, contaminated);
     if (result.event) {
-      this.health.accepted++;
       this.event(result.event);
     } else if (score >= C.thresholds[kind]) this.health.rejected++;
     if (this.debug) {
@@ -263,6 +274,28 @@ export class InferencePipeline {
             : null;
     } else this.headphonesLikely = null;
     return result.correlation;
+  }
+  private dspPlayback(ts: number) {
+    const end = Math.min(ts, this.lastFrame.tab);
+    if (!end || ts - end > 80) return false;
+    const skip = Math.max(0, Math.round((ts - end) * 16)),
+      mic = this.rawMic.read(2048 + skip),
+      tab = this.buffers.tab.read(2048 + C.maximumLagMs * 16);
+    const match = waveformMatch(
+      mic.subarray(0, Math.max(0, mic.length - skip)),
+      tab,
+    );
+    mic.fill(0);
+    tab.fill(0);
+    const suppressed = match.valid && match.correlation >= 0.95;
+    this.guardDecision = {
+      kept: !suppressed,
+      reason: suppressed
+        ? 'matching raw tab waveform: DSP playback rejected'
+        : 'DSP rhythm kept: no matching raw playback',
+      correlation: match.correlation,
+    };
+    return suppressed;
   }
   private playback(kind: keyof ClassScores, ts: number) {
     const envelopeMatched = isPlayback(
@@ -389,7 +422,18 @@ export class InferencePipeline {
     if (vad) {
       const generation = this.vadGeneration;
       this.processedMs += 32;
-      const probability = await this.models.vad(vad.samples);
+      let probability: number;
+      try {
+        probability = await this.models.vad(vad.samples);
+      } catch {
+        probability =
+          Math.sqrt(
+            vad.samples.reduce((n, v) => n + v * v, 0) / vad.samples.length,
+          ) >
+          Math.max(0.004, this.normalizer.noiseFloor * this.normalizer.gain * 3)
+            ? 0.8
+            : 0;
+      }
       this.stages.vadCalls++;
       if (probability >= C.vadThreshold) this.stages.voicedChunks++;
       const current = generation === this.vadGeneration;
@@ -523,6 +567,7 @@ export class InferencePipeline {
     this.speechBusy = false;
     this.rawMic.clear();
     this.normalizer.reset();
+    this.dsp.reset();
     this.vadQueue.clear();
     this.speechQueue.clear();
     for (const buffer of Object.values(this.buffers)) buffer.clear();

@@ -16,6 +16,7 @@ export const OwnerCommandSchema = z.discriminatedUnion('type', [
     .object({
       target: z.literal('offscreen'),
       type: z.literal('AUDIO_START'),
+      micDeviceId: z.string().max(256).optional(),
       sessionId: z.string(),
       streamId: z.string().optional(),
       micOnly: z.boolean().optional(),
@@ -33,7 +34,11 @@ export const OwnerCommandSchema = z.discriminatedUnion('type', [
     .object({ target: z.literal('offscreen'), type: z.literal('AUDIO_STOP') })
     .strict(),
   z
-    .object({ target: z.literal('offscreen'), type: z.literal('AUDIO_RETRY') })
+    .object({
+      target: z.literal('offscreen'),
+      type: z.literal('AUDIO_RETRY'),
+      micDeviceId: z.string().max(256).optional(),
+    })
     .strict(),
   z
     .object({ target: z.literal('offscreen'), type: z.literal('AUDIO_STATUS') })

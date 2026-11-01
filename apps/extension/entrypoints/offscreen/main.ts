@@ -43,7 +43,7 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, reply) => {
         await engine.stop();
         return null;
       case 'AUDIO_RETRY':
-        return engine.retryMic();
+        return engine.retryMic(parsed.data.micDeviceId);
       case 'AUDIO_PERMISSION':
         return microphonePermission();
       case 'AUDIO_STATUS':

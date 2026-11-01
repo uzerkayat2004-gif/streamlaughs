@@ -23,6 +23,8 @@ export async function ensureAudioOwner() {
     creating = chrome.offscreen
       .createDocument({
         url: 'offscreen.html',
+        // USER_MEDIA owns both capture and its local replay. Adding AUDIO_PLAYBACK
+        // would impose Chrome's 30-second silent-audio timeout during a quiet stream.
         reasons: [chrome.offscreen.Reason.USER_MEDIA],
         justification:
           'Process microphone and Twitch tab audio locally in memory and replay the captured tab to the speakers.',
