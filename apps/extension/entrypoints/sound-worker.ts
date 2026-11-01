@@ -35,9 +35,11 @@ export default defineUnlistedScript(() => {
             (!(reference instanceof Float32Array) || reference.length > 32000))
         )
           throw new Error('local sound model unavailable');
+        const start = performance.now();
         const scores = models.sound(samples, reference);
         self.postMessage({
           type: 'sound_result',
+          computeMs: performance.now() - start,
           id: data.id,
           scores,
           echo: models.echo,

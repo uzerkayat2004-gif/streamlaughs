@@ -19,3 +19,12 @@ Mic check/settings include an input selector, actual label and level, permission
 USER_MEDIA is retained for document lifetime. Chrome documents that AUDIO_PLAYBACK adds a 30-second silent-audio timeout; other reasons do not. A surviving offscreen document is resynced on worker restart. If it disappeared, it is recreated and a fresh Start gesture is requested to restore tab capture; an old stream token is never silently reused. Suspended AudioContexts are resumed.
 
 API references: [offscreen lifecycle](https://developer.chrome.com/docs/extensions/reference/api/offscreen), [tab capture and user invocation](https://developer.chrome.com/docs/extensions/reference/api/tabCapture).
+
+
+## Part 3: playback isolation and measured inference pressure
+
+Confirmed architecture: captured tab replay shared the same interactive/low-latency AudioContext and render graph as the processing worklets. Replay now uses its own buffered playback context, with a separate balanced-latency processing context. Both live only in the offscreen document; pause and mic loss preserve replay, and stop closes both contexts. Native echo cancellation/noise suppression/AGC are confirmed false in constraints and reported actual track settings. No extension AudioContext runs on Twitch and the video element is never modified for audio.
+
+YAMNet cadence was 250 ms per stream; it is now 500 ms, with unchanged confidence thresholds and overlapping one-second windows. Heavy sound/VAD/speech work stays in separate workers. Whisper already had one active job; Part 2 additionally limits pending work to one replacement and segments to 2.4 seconds. Diagnostics expose per-worker compute duration rather than hiding model cost inside a misleading VAD-only figure.
+
+An isolated headed-Chromium microbenchmark used the same bundled recorded-human fixture, actual packaged YAMNet worker and two inputs, excluding initialization. Each cadence ran for six seconds: 48 jobs at 250 ms versus 24 at 500 ms. Chrome process CPU from CDP was 360.51 versus 187.77 ms per second (about 48% lower, or 36.1% versus 18.8% of one core). Worker service time was 204.55 versus 123.93 ms per audio second. These are measurements on this machine, not a whole-Twitch CPU benchmark or a hardware stutter reproduction. Local evidence is work/v081-cpu.json outside git. Bluetooth HFP switching and Windows device/driver behavior remain unconfirmed on the user's hardware; the input picker/tip makes that path actionable.

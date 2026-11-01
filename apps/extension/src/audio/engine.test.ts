@@ -21,6 +21,7 @@ function stream() {
 }
 const connect = () => ({ connect: vi.fn(), disconnect: vi.fn() });
 describe('offscreen audio ownership', () => {
+  let contextRequests: AudioContextOptions[] = [];
   let mic: ReturnType<typeof stream>,
     tab: ReturnType<typeof stream>,
     context: {
@@ -39,6 +40,7 @@ describe('offscreen audio ownership', () => {
   let engine: AudioEngine;
   beforeEach(() => {
     vi.useFakeTimers();
+    contextRequests = [];
     mic = stream();
     tab = stream();
     nodes = [];
@@ -70,7 +72,8 @@ describe('offscreen audio ownership', () => {
         close = vi.fn(async () => {
           this.state = 'closed';
         });
-        constructor() {
+        constructor(options: AudioContextOptions) {
+          contextRequests.push(options);
           context = this;
         }
       },
@@ -98,6 +101,11 @@ describe('offscreen audio ownership', () => {
     await engine.start({ sessionId: 'one', streamId: 'opaque' });
     expect(engine.status()?.phase).toBe('active');
     expect(nodes).toHaveLength(2);
+    expect(contextRequests).toEqual([
+      { latencyHint: 'playback' },
+      { latencyHint: 'balanced' },
+    ]);
+    expect(engine.diagnostics().playbackContext).toBe('running');
     engine.pause(true);
     expect(mic.item.stop).not.toHaveBeenCalled();
     expect(tab.item.stop).not.toHaveBeenCalled();

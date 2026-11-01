@@ -60,7 +60,7 @@ it('catches up queued VAD before running another synchronous classifier window',
   p.clear();
 });
 
-it('samples a brief high-confidence laugh bout often enough to confirm it twice', async () => {
+it('confirms overlapping laugh evidence across the capped half-second sound windows', async () => {
   let clock = 0;
   const events: { kind: string }[] = [];
   const p = new InferencePipeline(
@@ -69,7 +69,7 @@ it('samples a brief high-confidence laugh bout often enough to confirm it twice'
       words: async () => '',
       sound: () => ({
         ...zeroScores(),
-        laugh: clock >= 1450 && clock <= 1850 ? 0.9 : 0,
+        laugh: clock >= 1450 && clock <= 2050 ? 0.9 : 0,
       }),
     },
     (event) => events.push(event),
@@ -244,4 +244,20 @@ it('bounds queues during prolonged overload, clears stale PCM on gaps and clears
   p.clear();
   expect(p.pendingWork).toBe(0);
   expect(p.debugState().lastTranscript).toBe('');
+});
+
+it('caps classifier work to two half-second windows per stream per second while ingesting 50 FPS', async () => {
+  const sound = vi.fn(zeroScores),
+    p = new InferencePipeline(
+      { vad: async () => 0, sound, words: async () => '' },
+      () => {},
+    );
+  for (let i = 0; i < 200; i++) {
+    p.ingest('tab', new Float32Array(320), 10000 + i * 20);
+    p.ingest('mic', new Float32Array(320), 10000 + i * 20);
+    while (p.pendingWork) await p.step();
+  }
+  expect(sound.mock.calls.length).toBeLessThanOrEqual(16);
+  expect(p.diagnostics().micFrames).toBe(200);
+  p.clear();
 });

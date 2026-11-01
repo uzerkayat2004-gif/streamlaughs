@@ -133,6 +133,7 @@ export class InferencePipeline {
   private nextSound: AudioSource = 'tab';
   private soundError = '';
   ingest(source: AudioSource, frame: Float32Array, ts: number) {
+    const ingestStart = performance.now();
     this.frameCounts[source]++;
     const received = performance.now();
     this.frameTimes[source].push(received);
@@ -218,6 +219,7 @@ export class InferencePipeline {
       }
     }
     if (source === 'mic') frame.fill(0);
+    this.busyMs += performance.now() - ingestStart;
   }
 
   get pendingWork() {

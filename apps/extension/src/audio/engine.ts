@@ -51,6 +51,7 @@ export class AudioEngine {
   private readonly ownerId = crypto.randomUUID();
   readonly frames = new AudioFrameHub();
   private context: AudioContext | null = null;
+  private playbackContext: AudioContext | null = null;
   private tab: MediaStream | null = null;
   private mic: MediaStream | null = null;
   private tabPlayback: MediaStreamAudioSourceNode | null = null;
@@ -132,6 +133,7 @@ export class AudioEngine {
     return {
       phase: this.phase,
       context: this.context?.state ?? 'closed',
+      playbackContext: this.playbackContext?.state ?? 'closed',
       inputSampleRate: this.context?.sampleRate ?? 0,
       sampleRate: 16000 as const,
       frameSamples: 320 as const,
@@ -187,16 +189,17 @@ export class AudioEngine {
     const report = this.status();
     if (report) this.emit(report);
   }
-  private async resumeContext() {
+  private async resumeContext(context = this.context) {
+    if (!context) return;
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       await Promise.race([
-        this.context!.resume(),
+        context.resume(),
         new Promise<never>((_, reject) => {
           timer = setTimeout(() => reject(new Error('audioContext')), 3000);
         }),
       ]);
-      if (this.context?.state !== 'running') throw new Error('audioContext');
+      if (context.state !== 'running') throw new Error('audioContext');
     } finally {
       clearTimeout(timer);
     }
@@ -276,12 +279,16 @@ export class AudioEngine {
             void this.stop();
           };
       }
-      this.context = new AudioContext({ latencyHint: 'interactive' });
       if (this.tab) {
+        this.playbackContext = new AudioContext({ latencyHint: 'playback' });
         // Direct replay is independent of processing/pause/microphone health.
-        this.tabPlayback = this.context.createMediaStreamSource(this.tab);
-        this.tabPlayback.connect(this.context.destination);
+        this.tabPlayback = this.playbackContext.createMediaStreamSource(
+          this.tab,
+        );
+        this.tabPlayback.connect(this.playbackContext.destination);
+        await this.resumeContext(this.playbackContext);
       }
+      this.context = new AudioContext({ latencyHint: 'balanced' });
       await this.context.audioWorklet.addModule(
         chrome.runtime.getURL('/audio-worklet.js'),
       );
@@ -512,10 +519,11 @@ export class AudioEngine {
         this.report();
       }
     }
-    if (this.context?.state === 'suspended' && this.sessionId)
-      void this.resumeContext().catch((error) => {
-        this.lastError = safeError(error);
-      });
+    for (const audioContext of [this.context, this.playbackContext])
+      if (audioContext?.state === 'suspended' && this.sessionId)
+        void this.resumeContext(audioContext).catch((error) => {
+          this.lastError = safeError(error);
+        });
     const now = performance.now(),
       elapsed = Math.max(1, now - this.lastReport);
     this.lastReport = now;
@@ -567,6 +575,9 @@ export class AudioEngine {
     const context = this.context;
     this.context = null;
     if (context && context.state !== 'closed') await context.close();
+    const playback = this.playbackContext;
+    this.playbackContext = null;
+    if (playback && playback.state !== 'closed') await playback.close();
     this.frames.clear();
     this.stats = { mic: emptyStats(), tab: emptyStats() };
     this.metrics = emptyAudioMetrics();

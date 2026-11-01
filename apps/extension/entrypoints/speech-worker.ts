@@ -41,12 +41,14 @@ export default defineUnlistedScript(() => {
         )
           throw new Error('local speech model unavailable');
         busy = true;
+        const start = performance.now();
         text = await models.words(samples);
         models.status.whisper.error = '';
         const result = extractWords(text);
         if (!stopped)
           self.postMessage({
             type: 'speech_result',
+            computeMs: performance.now() - start,
             id: data.id,
             result,
             ...(AUDIO_DEBUG

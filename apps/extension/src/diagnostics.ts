@@ -66,6 +66,8 @@ export const WorkerDiagnosticsSchema = z
       .strict()
       .default(() => emptyStages()),
     laughScore: z.number().min(0).max(1).default(0),
+    soundCpuMsPerSecond: z.number().nonnegative().default(0),
+    speechCpuMsPerSecond: z.number().nonnegative().default(0),
     echo: EchoStateSchema.default(() => ({
       removed: false,
       inputRms: 0,
@@ -123,6 +125,8 @@ export const emptyStages = () => ({
 export const emptyWorkerDiagnostics = (): WorkerDiagnostics => ({
   stages: emptyStages(),
   laughScore: 0,
+  soundCpuMsPerSecond: 0,
+  speechCpuMsPerSecond: 0,
   echo: { removed: false, inputRms: 0, outputRms: 0 },
   models: { vad: modelState(), yamnet: modelState(), whisper: modelState() },
   topClass: { label: 'waiting', score: 0 },
@@ -150,6 +154,7 @@ export const AudioDiagnosticsSchema = z
     errors: z.array(z.string().max(400)).max(10).default([]),
     phase: z.string().max(32),
     context: z.string().max(32),
+    playbackContext: z.string().max(32).default('closed'),
     inputSampleRate: z.number().nonnegative(),
     sampleRate: z.literal(16000),
     frameSamples: z.literal(320),

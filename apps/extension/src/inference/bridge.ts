@@ -41,6 +41,26 @@ export class InferenceBridge {
   private debug: unknown = null;
   private failed = false;
   private lastPhrase = '';
+  private costs = {
+    sound: [] as { at: number; ms: number }[],
+    speech: [] as { at: number; ms: number }[],
+  };
+  private recordCost(source: 'sound' | 'speech', ms: unknown) {
+    if (typeof ms === 'number' && Number.isFinite(ms) && ms >= 0) {
+      const list = this.costs[source];
+      list.push({ at: performance.now(), ms });
+      while (
+        list.length > 50 ||
+        (list[0]?.at ?? Infinity) < performance.now() - 1000
+      )
+        list.shift();
+    }
+  }
+  private cost(source: 'sound' | 'speech') {
+    return this.costs[source]
+      .filter((c) => c.at >= performance.now() - 1000)
+      .reduce((n, c) => n + c.ms, 0);
+  }
   preview() {
     return this.lastPhrase;
   }
@@ -49,6 +69,8 @@ export class InferenceBridge {
     const stale = performance.now() - this.lastWorkerReport > 1500;
     return {
       ...this.productionDiagnostics,
+      soundCpuMsPerSecond: this.cost('sound'),
+      speechCpuMsPerSecond: this.cost('speech'),
       models: {
         ...this.productionDiagnostics.models,
         whisper: this.speechState,
@@ -150,6 +172,7 @@ export class InferenceBridge {
         data.id === this.activeSoundId
       ) {
         this.activeSoundId = null;
+        this.recordCost('sound', data.computeMs);
         worker.postMessage(data);
       }
     };
@@ -193,6 +216,7 @@ export class InferenceBridge {
       } else if (data.type === 'speech_result') {
         if (data.id !== this.activeSpeechId) return;
         this.activeSpeechId = null;
+        this.recordCost('speech', data.computeMs);
         if (
           AUDIO_DEBUG &&
           this.debug &&

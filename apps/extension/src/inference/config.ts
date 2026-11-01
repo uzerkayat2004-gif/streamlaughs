@@ -8,7 +8,7 @@ export const INFERENCE_CONFIG = {
   mergeGapMs: 300,
   maximumSpeechMs: 2400,
   soundWindow: 15600,
-  soundHopMs: 250,
+  soundHopMs: 500,
   maximumEvidenceGapMs: 750,
   thresholds: { laugh: 0.5, scream: 0.55, gasp: 0.45, hype: 0.55 },
   cooldownMs: { laugh: 1500, scream: 2200, gasp: 2500, hype: 2000 },
