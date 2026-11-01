@@ -13,7 +13,9 @@ export function crowdLabel(crowd: CrowdState | null) {
   if (crowd?.source === 'fake') return 'test fans · 3+ people';
   if (crowd?.state === 'live')
     return crowd.testTraffic ? 'live · test traffic' : 'live';
-  return crowd?.state === 'few' ? 'waiting for fans' : 'offline';
+  return crowd?.state === 'few'
+    ? 'you’re one of the first fans here'
+    : 'offline';
 }
 
 export function Mark() {
@@ -166,7 +168,7 @@ export function Blob({
               </strong>
               <p>
                 {crowd?.state === 'few'
-                  ? 'waiting for fans'
+                  ? 'you’re one of the first fans here'
                   : 'reconnecting when available'}
               </p>
             </>

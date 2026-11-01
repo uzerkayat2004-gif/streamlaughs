@@ -6,11 +6,13 @@ import {
   panelPoint,
   restorePanel,
 } from './geometry';
-import { newLaugh, overlayOpacity } from './overlay-behavior';
+import { newLaugh, overlayOpacity, launcherOpacity } from './overlay-behavior';
 
-it('fades after four seconds, stays bright on hover and wakes for a new laugh', () => {
+it('never fades the opened panel; the launcher stays at least 70% visible', () => {
   expect(overlayOpacity(false, 1000, 4999)).toBe(1);
-  expect(overlayOpacity(false, 1000, 5000)).toBe(0.25);
+  expect(overlayOpacity(false, 1000, 5000)).toBe(1);
+  expect(launcherOpacity(false, 1000, 5000)).toBe(0.7);
+  expect(launcherOpacity(true, 1000, 9000)).toBe(1);
   expect(overlayOpacity(true, 1000, 9000)).toBe(1);
   expect(overlayOpacity(false, 9000, 9000)).toBe(1);
   expect(newLaugh('one', 3, 'one', 4)).toBe(true);

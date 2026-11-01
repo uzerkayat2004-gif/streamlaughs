@@ -2147,3 +2147,30 @@ svg {
 .mic-device-picker select { width:100%;max-width:100%;border:1px solid #ffffff30;border-radius:10px;background:#14141A;color:#fff;padding:10px;font:500 13px var(--ui); }
 .mic-bluetooth-tip { background:#FFD23F15;border:1px solid #FFD23F50;border-radius:12px;color:#FFD23F;padding:12px;font-size:13px;line-height:1.5; }
 .copy-diagnostics { min-height:36px; }
+
+/* v0.8.1 readability: an opened panel never fades. */
+.overlay-shell .glass-panel { background:rgba(20,20,26,.94);backdrop-filter:none;-webkit-backdrop-filter:none;border:1px solid rgba(255,255,255,.12);box-shadow:0 16px 50px #0009;border-radius:20px;color:#fffffff2;padding:10px 15px 15px;gap:10px;opacity:1!important;font-size:13px; }
+.overlay-shell .glass-launcher { background:rgba(20,20,26,.9);border:1px solid #FFD23Faa;box-shadow:0 4px 20px #0008;opacity:.7;backdrop-filter:none; }
+.overlay-shell .glass-launcher:hover,.overlay-shell .glass-launcher:focus-visible { opacity:1!important; }
+.fan-panel-content { display:grid;gap:13px;justify-items:center;width:100%;font:500 13px/1.4 var(--ui); }
+.fans-count { display:grid;justify-items:center;gap:4px; }
+.fans-count span,.fan-word>span { color:#ffffffb3;font-size:13px; }
+.fans-count strong { color:#2EE6C5;font:750 50px/1 var(--display);letter-spacing:-.04em; }
+.fans-early { color:#fffffff2;font:650 16px/1.4 var(--display);text-align:center;padding:8px 0; }
+.fan-word { display:grid;justify-items:center;gap:6px;width:100%; }
+.fan-word b { color:#FF5C5C;background:#FF5C5C14;border:1px solid #FF5C5C55;border-radius:99px;padding:5px 15px;font:650 17px var(--display); }
+.overlay-shell .laugh-meter { height:21px;gap:5px;margin:0; }
+.overlay-shell .laugh-meter i { width:6px;height:10px;background:#ffffff30; }
+.overlay-shell .laugh-meter i:nth-child(2),.overlay-shell .laugh-meter i:nth-child(4) { height:16px; }
+.overlay-shell .laugh-meter i:nth-child(3) { height:21px; }
+.overlay-shell .laugh-meter i.lit { background:#2EE6C5; }
+.personal-mic-row { display:flex;align-items:center;gap:10px;width:100%;justify-content:center; }
+.overlay-shell .glass-laugh-chip { color:#FFD23F;background:#FFD23F14;border:1px solid #FFD23F55;font-size:13px;line-height:18px;padding:6px 10px; }
+.panel-mic { display:flex;align-items:center;gap:5px;min-height:36px;border:0;border-radius:12px;background:#ffffff0a;padding:6px 8px;color:#ffffffb3;font-size:13px; }
+.panel-mic i { width:8px;height:8px;border-radius:50%;background:#ffffff50; }
+.panel-mic.hearing i { background:#2EE6C5;box-shadow:0 0 8px #2EE6C544; }
+.panel-mic.problem i { background:#FF5C5C; }
+.overlay-shell .x-cbtn { width:36px;height:36px; }
+.fans-test-label { color:#ffffffb3;font-size:13px;text-align:center; }
+.overlay-shell .recap-toast { border-radius:20px;background:rgba(20,20,26,.94);box-shadow:0 12px 40px #0008; }
+.overlay-shell .recap-toast .saved-flow button { font-size:13px; }

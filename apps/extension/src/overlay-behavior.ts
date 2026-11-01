@@ -4,7 +4,14 @@ export function overlayOpacity(
   activeAt: number,
   now: number,
 ): number {
-  return hovered || now - activeAt < OVERLAY_FADE_MS ? 1 : 0.25;
+  return 1; // Open panels stay readable on any footage.
+}
+export function launcherOpacity(
+  hovered: boolean,
+  activeAt: number,
+  now: number,
+) {
+  return hovered || now - activeAt < OVERLAY_FADE_MS ? 1 : 0.7;
 }
 export function newLaugh(
   previousSession: string | null,

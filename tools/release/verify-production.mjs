@@ -46,7 +46,7 @@ export function verifyProduction(directory, product = readProduct(), origins) {
     .map((file) => readFileSync(path.join(directory, file), 'utf8'))
     .join('\n');
   assert(
-    content.includes('glass-v080') &&
+    content.includes('solid-v081') &&
       content.includes('glass-launcher') &&
       content.includes('fans laughing now') &&
       content.includes('M14 34H50C49 56 15 56 14 34Z'),

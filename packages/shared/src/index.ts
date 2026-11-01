@@ -139,6 +139,7 @@ export const SnapshotSchema = z.object({
 export type Snapshot = z.infer<typeof SnapshotSchema>;
 export const CommandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('GET_STATE') }),
+  z.object({ type: z.literal('OPEN_MIC_TEST') }),
   z.object({ type: z.literal('START'), tabId: z.number().int().optional() }),
   z.object({ type: z.literal('STOP') }),
   z.object({ type: z.literal('DISCARD_RECAP'), id: z.string() }),

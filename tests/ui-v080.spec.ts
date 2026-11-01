@@ -4,6 +4,7 @@ import path from 'node:path';
 import { chromium, expect, test } from '@playwright/test';
 import {
   createRecap,
+  PRODUCT,
   initialSnapshot,
   MySessionSchema,
 } from '../packages/shared/src/index';
@@ -76,7 +77,7 @@ test('v0.8 production website ZIP: glass fade/drag, grouped history, keyboard st
   const manifest = JSON.parse(
     await readFile(path.join(extension, 'manifest.json'), 'utf8'),
   );
-  expect(manifest.version).toBe('0.8.0');
+  expect(manifest.version).toBe(PRODUCT.version);
   expect(manifest.key).toBeTruthy();
   const context = await chromium.launchPersistentContext('', {
     channel: 'chromium',
@@ -201,8 +202,10 @@ test('v0.8 production website ZIP: glass fade/drag, grouped history, keyboard st
     await stream.screenshot({ path: path.join(shots, 'launcher.png') });
     await launcher.click();
     const panel = stream.getByRole('dialog', { name: 'fans box' });
-    await expect(panel.getByText('23 laughs', { exact: true })).toBeVisible();
-    await expect(panel).toHaveCSS('background-color', 'rgba(15, 15, 20, 0.35)');
+    await expect(
+      panel.getByText('you: 23 laughs', { exact: true }),
+    ).toBeVisible();
+    await expect(panel).toHaveCSS('background-color', 'rgba(20, 20, 26, 0.94)');
     expect(
       await panel.evaluate((el) => el.scrollHeight - el.clientHeight),
     ).toBeLessThanOrEqual(1);
@@ -214,7 +217,7 @@ test('v0.8 production website ZIP: glass fade/drag, grouped history, keyboard st
       bounds!.y + bounds!.height,
     );
     await stream.mouse.move(20, 20);
-    await expect(panel).toHaveCSS('opacity', '0.25', { timeout: 6500 });
+    await expect(panel).toHaveCSS('opacity', '1', { timeout: 6500 });
     await panel.hover();
     await expect(panel).toHaveCSS('opacity', '1');
     await stream.mouse.move(20, 20);
@@ -225,7 +228,9 @@ test('v0.8 production website ZIP: glass fade/drag, grouped history, keyboard st
       snapshot,
     );
     await expect(panel).toHaveCSS('opacity', '1');
-    await expect(panel.getByText('24 laughs', { exact: true })).toBeVisible();
+    await expect(
+      panel.getByText('you: 24 laughs', { exact: true }),
+    ).toBeVisible();
     await panel.hover();
     await stream.screenshot({ path: path.join(shots, 'overlay.png') });
     const handle = panel.getByRole('button', {

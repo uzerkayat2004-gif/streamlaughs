@@ -447,6 +447,11 @@ export default defineBackground(() => {
     switch (message.type) {
       case 'GET_STATE':
         break;
+      case 'OPEN_MIC_TEST':
+        await chrome.tabs.create({
+          url: chrome.runtime.getURL('/mic-test.html'),
+        });
+        break;
       case 'START':
         await start(message.tabId);
         break;

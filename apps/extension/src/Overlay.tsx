@@ -1,5 +1,5 @@
-import { PRODUCT, visibleWords } from '@laughline/shared';
-import { ChevronDown, GripHorizontal, Pause, Play } from 'lucide-react';
+import { PRODUCT } from '@laughline/shared';
+import { ChevronDown, GripHorizontal } from 'lucide-react';
 import { type CSSProperties, useEffect, useRef, useState } from 'react';
 import { useStore } from 'zustand';
 import { command, connectSurface, surface } from './bridge';
@@ -18,7 +18,13 @@ import {
   restorePanel,
   snap,
 } from './geometry';
-import { newLaugh, OVERLAY_FADE_MS, overlayOpacity } from './overlay-behavior';
+import {
+  newLaugh,
+  OVERLAY_FADE_MS,
+  overlayOpacity,
+  launcherOpacity,
+} from './overlay-behavior';
+import { FanPanel } from './FanPanel';
 import { PipelineDebug } from './PipelineDebug';
 import { AppIcon } from './AppIcon';
 import { StopSaved } from './StopSaved';
@@ -161,7 +167,7 @@ export function Overlay({
     }
   }, [sessionHere, snapshot.session, snapshot.lastRecapId]);
   useEffect(() => {
-    if (!open || hovered) return;
+    if (hovered) return;
     const delay = Math.max(0, OVERLAY_FADE_MS - (Date.now() - activeAt));
     const timer = setTimeout(() => setClock(Date.now()), delay + 1);
     return () => clearTimeout(timer);
@@ -185,7 +191,7 @@ export function Overlay({
     return () => document.removeEventListener('keydown', onEscape);
   }, [open]);
   async function act(
-    type: 'STOP' | 'PAUSE' | 'OPEN_RECAP' | 'RETRY_MIC',
+    type: 'STOP' | 'PAUSE' | 'OPEN_RECAP' | 'RETRY_MIC' | 'OPEN_MIC_TEST',
     id?: string,
   ) {
     try {
@@ -201,8 +207,8 @@ export function Overlay({
   const size = { width: rect.width, height: rect.height },
     local = launcher ?? dockPoint(dock, size),
     boxSize = {
-      width: Math.min(210, rect.width - 16),
-      height: Math.min(242, Math.max(64, rect.height - 80)),
+      width: Math.min(270, rect.width - 16),
+      height: Math.min(370, Math.max(64, rect.height - 80)),
     };
   const box =
     movingPanel ??
@@ -330,7 +336,11 @@ export function Overlay({
         ref={dotButton}
         type="button"
         className={`x-dot glass-launcher ${status === 'idle' ? 'x-dot--off' : status === 'paused' ? 'x-dot--paused' : ''}`}
-        style={{ left: rect.left + local.x, top: rect.top + local.y }}
+        style={{
+          left: rect.left + local.x,
+          top: rect.top + local.y,
+          opacity: launcherOpacity(hovered, activeAt, clock),
+        }}
         aria-label={`${PRODUCT.name}, ${status}, ${status !== 'idle' ? `${crowdLabel(room)}, ` : ''}drag to move`}
         title={PRODUCT.name}
         aria-expanded={open}
@@ -355,7 +365,7 @@ export function Overlay({
         }}
       >
         <span key={bounce} className={bounce ? 'smile-bounce' : ''}>
-          <AppIcon mono size={24} />
+          <AppIcon size={24} />
         </span>
         {status === 'recording' && <i className="recording-dot" />}
       </button>
@@ -412,81 +422,24 @@ export function Overlay({
               <ChevronDown size={16} />
             </button>
           </div>
-          <div className="panel-smile" key={bounce}>
-            <AppIcon mono size={40} className={bounce ? 'smile-bounce' : ''} />
-          </div>
-          <div className="laugh-meter" aria-label="live laugh meter">
-            {[0, 1, 2, 3, 4].map((n) => (
-              <i
-                key={n}
-                className={
-                  (bounce > 0 && clock - activeAt < 1600) ||
-                  (room?.laughingNow ?? 0) > n * 2
-                    ? 'lit'
-                    : ''
-                }
-              />
-            ))}
-          </div>
-          <p className="panel-live-count">
-            {status === 'idle' ? (
-              'ready when you are'
-            ) : status === 'paused' ? (
-              'paused'
-            ) : room?.state === 'live' ? (
-              <>
-                <b>{room.laughingNow}</b> fans laughing now
-              </>
-            ) : room?.state === 'few' ? (
-              'a few here'
-            ) : (
-              'offline'
-            )}
-          </p>
-          {status !== 'idle' && (
-            <>
-              <div className="panel-words">
-                {visibleWords(room)
-                  .filter((w) => w.word !== '—')
-                  .slice(0, 1)
-                  .map((w) => (
-                    <span key={w.word}>{w.word}</span>
-                  ))}
-              </div>
-              <span className="glass-laugh-chip">
-                <AppIcon mono size={17} />
-                {count} {count === 1 ? 'laugh' : 'laughs'}
-              </span>
-              <div className="x-cfoot">
-                <button
-                  type="button"
-                  className="x-cbtn"
-                  aria-label={status === 'paused' ? 'resume' : 'pause'}
-                  aria-pressed={status === 'paused'}
-                  onClick={() => void act('PAUSE')}
-                >
-                  {status === 'paused' ? (
-                    <Play size={13} />
-                  ) : (
-                    <Pause size={13} />
-                  )}
-                </button>
-                <button
-                  type="button"
-                  className="x-cbtn x-cbtn--stop"
-                  aria-label="stop session"
-                  onClick={() => void act('STOP')}
-                >
-                  <i />
-                </button>
-              </div>
-            </>
-          )}
-          <p className="x-cnote">
-            {status === 'idle'
-              ? `click the ${PRODUCT.name} icon to start`
-              : crowdLabel(room)}
-          </p>
+          <FanPanel
+            room={room}
+            count={count}
+            status={status}
+            micLevel={sessionHere ? snapshot.capture.metrics.micLevel : 0}
+            micProblem={
+              sessionHere &&
+              (snapshot.capture.micLost ||
+                ['error', 'permissionRequired'].includes(
+                  snapshot.capture.phase,
+                ))
+            }
+            listen={snapshot.settings.listen}
+            bounce={clock - activeAt < 1000 ? bounce : 0}
+            onPause={() => void act('PAUSE')}
+            onStop={() => void act('STOP')}
+            onMic={() => void act('OPEN_MIC_TEST')}
+          />
           {error && (
             <p role="alert" className="error">
               {error}
