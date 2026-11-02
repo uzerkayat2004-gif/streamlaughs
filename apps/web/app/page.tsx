@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Arrow } from '../components/brand';
 import {
   FansPlayground,
+  FunBits,
   HomeMotion,
   Smile,
 } from '../components/fans-playground';
@@ -13,34 +14,55 @@ export default function Home() {
   return (
     <main className="home-page">
       <HomeMotion />
-      <section className="full-screen hero" aria-labelledby="hero-title">
-        <div className="section-content hero-content hero-with-smile">
-          <div className="hero-words">
-            <h1 id="hero-title">
-              never laugh
-              <br />
-              <em>alone again.</em>
-            </h1>
-            <p className="hero-copy">
-              A tiny dot on Twitch shows when everyone watching is laughing with
-              you. Your audio never leaves your PC.
-            </p>
-            <div className="hero-actions">
-              <StoreButtons />
-              <Link className="text-link" href="/try">
-                <span className="play-outline">▶</span> watch the demo
-              </Link>
-            </div>
+      <section
+        className="full-screen hero hero-clean"
+        aria-labelledby="hero-title"
+      >
+        <div className="hero-glow" aria-hidden="true" />
+        <div className="section-content hero-content">
+          <p className="hero-kicker">
+            <span aria-hidden="true">✳</span> your stream. your people. one big
+            laugh.
+          </p>
+          <h1 id="hero-title">
+            never laugh
+            <br />
+            <em>alone again.</em>
+          </h1>
+          <p className="hero-copy">
+            A tiny dot on Twitch lights up when everyone laughs.
+            <br />
+            Your audio never leaves your PC.
+          </p>
+          <div className="hero-actions">
+            <StoreButtons />
+            <Link className="text-link" href="/try">
+              <span className="play-outline">▶</span> watch the demo
+            </Link>
           </div>
+        </div>
+      </section>
+      <section
+        className="full-screen feeling-section fun-stage"
+        aria-label="say hi to the smiley"
+      >
+        <FunBits words={['haha', 'lol', 'W', 'brooo', '😂']} variant="big" />
+        <div className="section-content" data-reveal>
           <FansPlayground orbit />
+          <p className="feeling-caption">
+            poke the smiley. <em>it laughs back.</em>
+          </p>
         </div>
       </section>
       <section
         className="full-screen together-section"
         aria-labelledby="together-title"
       >
+        <FunBits words={['hahaha', 'no way', 'LMAO']} variant="group" />
         <div className="section-content together-layout" data-reveal>
-          <FansPlayground group />
+          <div className="group-stage">
+            <FansPlayground group />
+          </div>
           <div className="together-copy">
             <h2 id="together-title">
               you’re never the
@@ -63,6 +85,7 @@ export default function Home() {
         className="full-screen streamer-invite"
         aria-labelledby="streamer-title"
       >
+        <FunBits />
         <div className="section-content" data-reveal>
           <span className="invite-smile" aria-hidden="true">
             <Smile tone="yellow" />
@@ -85,7 +108,19 @@ export default function Home() {
         className="full-screen final-invite"
         aria-labelledby="download-title"
       >
+        <FunBits words={['lol', 'haha', 'W']} variant="final" />
         <div className="section-content" data-reveal>
+          <div className="final-faces" aria-hidden="true">
+            <span>
+              <Smile tone="coral" expression="cheeky" />
+            </span>
+            <span>
+              <Smile tone="yellow" expression="squint" />
+            </span>
+            <span>
+              <Smile tone="teal" />
+            </span>
+          </div>
           <h2 id="download-title">
             ready to laugh
             <br />

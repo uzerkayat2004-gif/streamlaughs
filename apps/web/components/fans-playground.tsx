@@ -12,6 +12,9 @@ export function Smile({
   const id = useId();
   const color =
     tone === 'yellow' ? '#FFD23F' : tone === 'coral' ? '#FF5C5C' : '#2EE6C5';
+  const deep =
+    tone === 'yellow' ? '#E8A90C' : tone === 'coral' ? '#D9343E' : '#13B597';
+  const blush = tone === 'coral' ? '#FFB3BC' : '#FF8FA3';
   return (
     <svg
       className="smile-svg"
@@ -20,25 +23,60 @@ export function Smile({
       aria-hidden="true"
     >
       <defs>
-        <radialGradient id={id} cx=".3" cy=".18" r=".85">
-          <stop stopColor="#ffffff" />
-          <stop offset=".53" stopColor={color} />
-          <stop offset="1" stopColor={color} />
+        <radialGradient id={id} cx=".32" cy=".2" r=".9">
+          <stop stopColor="#ffffff" stopOpacity=".95" />
+          <stop offset=".28" stopColor={color} stopOpacity=".98" />
+          <stop offset=".78" stopColor={color} />
+          <stop offset="1" stopColor={deep} />
         </radialGradient>
+        <radialGradient id={`${id}-rim`} cx=".5" cy=".95" r=".6">
+          <stop stopColor="#ffffff" stopOpacity=".35" />
+          <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
+        </radialGradient>
+        <filter id={`${id}-soft`} x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="6" />
+        </filter>
       </defs>
+      <ellipse
+        cx="120"
+        cy="232"
+        rx="78"
+        ry="8"
+        fill="#000"
+        opacity=".35"
+        filter={`url(#${id}-soft)`}
+      />
       <path
         d="M120 14C174 8 224 55 226 111C235 169 190 223 132 226C77 236 20 198 14 139C4 77 54 17 120 14Z"
         fill={`url(#${id})`}
-        stroke={color}
-        strokeWidth="1.5"
       />
       <path
-        d="M48 65C67 33 102 25 132 29"
-        stroke="white"
-        strokeOpacity=".43"
-        strokeWidth="5"
-        strokeLinecap="round"
+        d="M120 14C174 8 224 55 226 111C235 169 190 223 132 226C77 236 20 198 14 139C4 77 54 17 120 14Z"
+        fill={`url(#${id}-rim)`}
       />
+      <ellipse
+        cx="78"
+        cy="52"
+        rx="30"
+        ry="15"
+        fill="#fff"
+        opacity=".55"
+        transform="rotate(-28 78 52)"
+        filter={`url(#${id}-soft)`}
+      />
+      <ellipse
+        cx="66"
+        cy="58"
+        rx="9"
+        ry="5"
+        fill="#fff"
+        opacity=".9"
+        transform="rotate(-30 66 58)"
+      />
+      <g className="smile-cheeks" fill={blush} opacity=".7">
+        <ellipse cx="60" cy="128" rx="16" ry="9" />
+        <ellipse cx="180" cy="128" rx="16" ry="9" />
+      </g>
       <g className="smile-eyes" fill="#090b10">
         {expression === 'squint' ? (
           <path
@@ -479,4 +517,85 @@ export function HomeMotion() {
     };
   }, []);
   return null;
+}
+
+/** Pure decoration: floating sparkles, dots and little word bubbles. */
+export function FunBits({
+  words = [],
+  variant = 'default',
+}: {
+  words?: string[];
+  variant?: string;
+}) {
+  const sparks = [
+    { x: 8, y: 18, s: 30, c: 'yellow', d: 0 },
+    { x: 88, y: 14, s: 22, c: 'teal', d: -1.5 },
+    { x: 92, y: 70, s: 34, c: 'coral', d: -3 },
+    { x: 5, y: 78, s: 20, c: 'teal', d: -2.2 },
+    { x: 50, y: 6, s: 16, c: 'coral', d: -0.8 },
+  ];
+  const dots = [
+    { x: 18, y: 40, s: 10, c: 'coral' },
+    { x: 80, y: 38, s: 8, c: 'yellow' },
+    { x: 30, y: 88, s: 12, c: 'yellow' },
+    { x: 70, y: 90, s: 9, c: 'teal' },
+    { x: 60, y: 22, s: 7, c: 'teal' },
+    { x: 14, y: 60, s: 6, c: 'yellow' },
+  ];
+  const spots = [
+    { x: 12, y: 30 },
+    { x: 78, y: 24 },
+    { x: 84, y: 82 },
+    { x: 16, y: 84 },
+    { x: 46, y: 92 },
+  ];
+  return (
+    <div className={`fun-bits fun-${variant}`} aria-hidden="true">
+      {sparks.map((p, i) => (
+        <svg
+          key={`s${i}`}
+          className={`fun-spark c-${p.c}`}
+          aria-hidden="true"
+          viewBox="0 0 40 40"
+          style={
+            {
+              left: `${p.x}%`,
+              top: `${p.y}%`,
+              width: p.s,
+              height: p.s,
+              animationDelay: `${p.d}s`,
+            } as React.CSSProperties
+          }
+        >
+          <path d="M20 0C21.5 12 28 18.5 40 20C28 21.5 21.5 28 20 40C18.5 28 12 21.5 0 20C12 18.5 18.5 12 20 0Z" />
+        </svg>
+      ))}
+      {dots.map((p, i) => (
+        <i
+          key={`d${i}`}
+          className={`fun-dot c-${p.c}`}
+          style={{
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            width: p.s,
+            height: p.s,
+            animationDelay: `${-i * 0.9}s`,
+          }}
+        />
+      ))}
+      {words.map((w, i) => (
+        <span
+          key={w}
+          className={`fun-word c-${['yellow', 'teal', 'coral'][i % 3]}`}
+          style={{
+            left: `${spots[i % spots.length]!.x}%`,
+            top: `${spots[i % spots.length]!.y}%`,
+            animationDelay: `${-i * 1.7}s`,
+          }}
+        >
+          {w}
+        </span>
+      ))}
+    </div>
+  );
 }

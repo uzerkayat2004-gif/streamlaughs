@@ -3,13 +3,17 @@ import { ratingColor } from '@laughline/shared';
 import { useEffect, useRef, useState } from 'react';
 import { SAMPLE_FAN_REPORT } from '../lib/sample-ratings';
 import { FanRatings } from './fan-ratings';
-import { Smile } from './fans-playground';
+import { FunBits, Smile } from './fans-playground';
 
 export function RatingsPreview() {
   const root = useRef<HTMLElement>(null);
   const [step, setStep] = useState(0);
   const [score, setScore] = useState<number | null>(null);
+  const [touched, setTouched] = useState(false);
+  const [reasons, setReasons] = useState<string[]>([]);
+  const [userSent, setUserSent] = useState(false);
   useEffect(() => {
+    if (touched) return;
     const reduce = matchMedia('(prefers-reduced-motion: reduce)');
     let visible = false;
     let timer: ReturnType<typeof setInterval> | undefined;
@@ -40,17 +44,28 @@ export function RatingsPreview() {
       document.removeEventListener('visibilitychange', sync);
       reduce.removeEventListener('change', sync);
     };
-  }, []);
+  }, [touched]);
   useEffect(() => {
+    if (touched) return;
     setScore(step > 0 ? 8 : null);
-  }, [step]);
-  const sent = step >= 4;
+    setReasons(
+      step >= 3 ? ['funny', 'chill vibes'] : step >= 2 ? ['funny'] : [],
+    );
+  }, [step, touched]);
+  const sent = touched ? userSent : step >= 4;
+  const take = () => {
+    if (!touched) {
+      setTouched(true);
+      setUserSent(false);
+    }
+  };
   return (
     <section
       ref={root}
       className="full-screen ratings-feature"
       aria-labelledby="ratings-feature-title"
     >
+      <FunBits variant="ratings" />
       <div className="section-content" data-reveal>
         <h2 id="ratings-feature-title">
           your fans <em>rate the stream.</em>
@@ -99,23 +114,48 @@ export function RatingsPreview() {
                   style={
                     { '--pill-color': ratingColor(n) } as React.CSSProperties
                   }
-                  onClick={() => setScore(n)}
+                  onClick={() => {
+                    take();
+                    setUserSent(false);
+                    setScore(n);
+                  }}
                 >
                   {n}
                 </button>
               ))}
             </fieldset>
             <div className="mock-reason-pills">
-              <span className={step >= 2 ? 'picked' : ''}>funny</span>
-              <span className={step >= 3 ? 'picked' : ''}>chill vibes</span>
-              <span>hype moments</span>
+              {['funny', 'chill vibes', 'hype moments', 'good chat'].map(
+                (r) => (
+                  <button
+                    type="button"
+                    key={r}
+                    aria-pressed={reasons.includes(r)}
+                    className={reasons.includes(r) ? 'picked' : ''}
+                    onClick={() => {
+                      take();
+                      setUserSent(false);
+                      setReasons((list) =>
+                        list.includes(r)
+                          ? list.filter((x) => x !== r)
+                          : list.length < 3
+                            ? [...list, r]
+                            : list,
+                      );
+                    }}
+                  >
+                    {r}
+                  </button>
+                ),
+              )}
             </div>
             <button
               type="button"
               className="button yellow"
               onClick={() => {
-                setStep(4);
+                take();
                 setScore(score ?? 8);
+                setUserSent(true);
               }}
             >
               {sent ? 'sent ✓' : 'send'}

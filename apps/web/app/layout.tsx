@@ -67,15 +67,35 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div className="footer-identity">
             <Brand />
             <p>{PRODUCT.pitch}.</p>
+            <div className="footer-badges">
+              <span>free</span>
+              <span>Chrome + Edge</span>
+              <span>audio stays on your PC</span>
+            </div>
           </div>
           <nav aria-label="footer navigation">
-            <Link href="/try">demo</Link>
-            <Link href="/streamers">for streamers</Link>
-            <Link href="/install">install</Link>
-            <Link href="/privacy">privacy</Link>
-            <a href="mailto:kayatuzair525@gmail.com">contact ↗</a>
+            <div>
+              <strong>product</strong>
+              <Link href="/try">demo</Link>
+              <Link href="/install">install</Link>
+            </div>
+            <div>
+              <strong>streamers</strong>
+              <Link href="/streamers">for streamers</Link>
+              <Link href="/demo">sample page</Link>
+            </div>
+            <div>
+              <strong>trust</strong>
+              <Link href="/privacy">privacy</Link>
+              <a href="mailto:kayatuzair525@gmail.com">contact ↗</a>
+            </div>
           </nav>
-          <p className="copyright">© 2026 {PRODUCT.name}</p>
+          <div className="copyright">
+            <span>© 2026 {PRODUCT.name}</span>
+            <span>
+              made for people who laugh at streams · not affiliated with Twitch
+            </span>
+          </div>
         </footer>
       </body>
     </html>

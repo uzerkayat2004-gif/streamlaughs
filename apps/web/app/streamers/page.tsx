@@ -1,6 +1,10 @@
 import Link from 'next/link';
 import { Arrow } from '../../components/brand';
-import { FansPlayground } from '../../components/fans-playground';
+import {
+  FansPlayground,
+  FunBits,
+  Smile,
+} from '../../components/fans-playground';
 import { StoreButtons } from '../../components/store-buttons';
 import { callbackUrl, dashboardConfigured } from '../../lib/config';
 import { loginErrorMessage } from '../../lib/oauth-errors';
@@ -80,7 +84,10 @@ export default async function Streamers({
             see a sample dashboard ↗
           </Link>
         </div>
-        <FansPlayground />
+        <div className="streamer-stage">
+          <FunBits words={['W', 'haha']} variant="streamer" />
+          <FansPlayground />
+        </div>
       </section>
       <section className="streamer-copy">
         <h2>
@@ -111,17 +118,23 @@ export default async function Streamers({
         <p>real reviews from your own fans, not random people. free.</p>
         <ol>
           <li>
-            <span aria-hidden="true">◉</span>
+            <span aria-hidden="true">
+              <Smile tone="yellow" />
+            </span>
             <h3>fans watch.</h3>
             <p>ten minutes or more of your live stream.</p>
           </li>
           <li>
-            <span aria-hidden="true">8</span>
+            <span aria-hidden="true">
+              <Smile tone="teal" expression="squint" />
+            </span>
             <h3>fans rate.</h3>
             <p>a score and a few reason chips in their recap.</p>
           </li>
           <li>
-            <span aria-hidden="true">♡</span>
+            <span aria-hidden="true">
+              <Smile tone="coral" expression="cheeky" />
+            </span>
             <h3>you wake up knowing.</h3>
             <p>
               your average and top reasons, ready next morning. unlocks at 5
@@ -133,8 +146,17 @@ export default async function Streamers({
           see a sample rating ↗
         </Link>
       </section>
-      <section className="try-download">
-        <h2>watching too?</h2>
+      <section className="try-download watching-card">
+        <FunBits variant="card" />
+        <span className="watching-face" aria-hidden="true">
+          <Smile tone="yellow" expression="squint" />
+        </span>
+        <h2>
+          watching <em>too?</em>
+        </h2>
+        <p>
+          get the dot on your own Twitch tab. free, and it stays on your PC.
+        </p>
         <StoreButtons />
       </section>
     </main>
