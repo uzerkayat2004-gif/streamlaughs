@@ -32,7 +32,7 @@ export function LiveCrowd({
         {setupPending
           ? 'fan reactions setup pending'
           : snapshot
-            ? 'recorded test snapshot'
+            ? 'live now · sample fans'
             : live
               ? `live${crowd.testTraffic ? ' · test traffic' : ''}`
               : few
@@ -45,21 +45,23 @@ export function LiveCrowd({
           aria-live="polite"
         >
           {setupPending
-            ? 'coming soon'
+            ? 'soon'
             : live
               ? crowd.laughingNow
               : few
-                ? 'a few here'
-                : 'offline'}
+                ? 'a few'
+                : 'zzz'}
         </strong>
         <span>
           {setupPending
             ? 'your fans will join after setup'
             : live
-              ? 'laughing right now'
+              ? crowd.laughingNow
+                ? 'fans laughing right now'
+                : 'waiting for the first laugh…'
               : few
-                ? 'a little room, for now'
-                : 'we’ll reconnect when we can'}
+                ? 'fans here, waiting for 3+'
+                : 'go live and your fans show up here'}
         </span>
       </CrowdArt>
       <section className="live-words" aria-label="live fan words">
@@ -73,8 +75,8 @@ export function LiveCrowd({
       </section>
       <p className="scene-footnote">
         {live
-          ? `${crowd.laughPercent}% of ${crowd.laughlineViewers} sharing · top word: ${crowd.topWords[0]?.word ?? '—'}`
-          : 'counts and words appear with 3+ people sharing'}
+          ? `${crowd.laughlineViewers} fans watching with StreamLaughs · ${crowd.laughPercent}% laughing`
+          : 'counts and words show up once 3+ fans are here'}
       </p>
     </section>
   );
@@ -84,7 +86,7 @@ export function Dashboard({
   api,
   snapshot,
   children,
-  initialTab = 'live',
+  initialTab = 'past',
   demo = false,
 }: {
   channel: string;
@@ -94,28 +96,22 @@ export function Dashboard({
   initialTab?: string;
   demo?: boolean;
 }) {
-  const [tab, setTab] = useState(initialTab === 'past' ? 'past' : 'live');
+  const [tab, setTab] = useState(initialTab === 'live' ? 'live' : 'past');
   return (
-    <main className="dashboard-page">
+    <main className="dashboard-page streamer-home">
       <div className="dashboard-intro">
         <div>
-          <p className="eyebrow">
-            {demo
-              ? 'a peek inside · simulated contributors'
-              : 'your people. your little universe.'}
-          </p>
           <h1>
-            {demo ? (
-              'a night with the fans.'
-            ) : (
-              <>
-                hey, <span>{channel}.</span>
-              </>
-            )}
+            hey, <span>{channel}.</span>
           </h1>
+          <p className="streamer-sub">
+            {demo
+              ? 'a sample streamer page with made-up fans. this is what you get after a stream.'
+              : 'here’s how your fans felt. all anonymous, only you can see it.'}
+          </p>
         </div>
         {demo ? (
-          <span className="test-tag">demo · test data</span>
+          <span className="sn-tag">sample data</span>
         ) : (
           <form action="/auth/logout" method="post">
             <button type="submit" className="quiet-button">
@@ -126,14 +122,8 @@ export function Dashboard({
       </div>
       {!demo && !api && (
         <p className="soft-note" role="status">
-          you’re signed in. fan reactions and past streams aren’t set up yet.{' '}
-          <a href="/demo">explore the demo ↗</a>
-        </p>
-      )}
-      {demo && (
-        <p className="soft-note">
-          Recorded aggregates from the local simulator. Simulated people,
-          clearly marked. No Twitch login needed.
+          you’re signed in. fan reactions aren’t switched on yet.{' '}
+          <a href="/demo">see the sample ↗</a>
         </p>
       )}
       <div
@@ -149,7 +139,7 @@ export function Dashboard({
           aria-controls="live-panel"
           onClick={() => setTab('live')}
         >
-          live <i />
+          live now <i />
         </button>
         <button
           type="button"
@@ -159,7 +149,7 @@ export function Dashboard({
           aria-controls="past-panel"
           onClick={() => setTab('past')}
         >
-          past streams
+          your nights
         </button>
       </div>
       {tab === 'live' ? (

@@ -1,15 +1,16 @@
-import { PRODUCT } from '@laughline/shared';
 import {
+  PRODUCT,
   parseRecapShare,
   recapShareParams,
   recapShareUrl,
 } from '@laughline/shared';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, expect, it, vi } from 'vitest';
-import Page from '../app/r/page';
 import { GET } from '../app/r/image/route';
-import { recapMetadata } from './recap-share';
+import Page from '../app/r/page';
 import config from '../next.config';
+import { recapMetadata } from './recap-share';
+
 const valid =
   'streamer=vernofps&date=2026-11-01&laughs=16&minutes=47&word=bro&funniest=no+way&moment=760&hype=4&stream=1';
 afterEach(() => vi.unstubAllEnvs());

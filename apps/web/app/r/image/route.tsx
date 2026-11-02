@@ -1,4 +1,4 @@
-import { parseRecapShare, PRODUCT } from '@laughline/shared';
+import { PRODUCT, parseRecapShare } from '@laughline/shared';
 import { ImageResponse } from 'next/og';
 import { recapChips, shareHeaders } from '../../../lib/recap-share';
 export const dynamic = 'force-dynamic';

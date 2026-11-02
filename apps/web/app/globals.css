@@ -2093,3 +2093,76 @@ tbody th {
   gap: 10px;
   white-space: nowrap;
 }
+
+/* streamer home (fun pass) */
+.streamer-home .dashboard-intro h1 {
+  font-size: clamp(48px, 6vw, 78px);
+  letter-spacing: -0.05em;
+}
+.streamer-home .dashboard-intro h1 span {
+  color: var(--yellow);
+}
+.streamer-sub {
+  color: var(--muted);
+  font-size: 15px;
+  margin-top: 10px;
+}
+.streamer-home .dashboard-tabs {
+  border: 0;
+  gap: 8px;
+  margin-top: 30px;
+}
+.streamer-home .dashboard-tabs button {
+  padding: 11px 20px;
+  border-radius: 99px;
+  background: #ffffff08;
+  border: 1px solid #ffffff1c;
+  font-size: 14px;
+  cursor: pointer;
+}
+.streamer-home .dashboard-tabs button[aria-selected="true"] {
+  background: var(--yellow);
+  color: #14141a;
+  border-color: var(--yellow);
+  font-weight: 700;
+}
+.streamer-home .dashboard-tabs button[aria-selected="true"]::after {
+  display: none;
+}
+.streamer-home .dashboard-tabs button[aria-selected="true"] i {
+  background: #14141a;
+}
+.streamer-home .live-pill {
+  padding: 8px 14px;
+  border-radius: 99px;
+  background: #2ee6c514;
+  color: var(--teal);
+}
+.streamer-home .live-scene .crowd-blob {
+  background: radial-gradient(circle at 35% 30%, #5ff5da, #2ee6c5 55%, #17b89b);
+  border: 0;
+  box-shadow:
+    inset 0 -18px 30px #0000002e,
+    0 30px 80px #2ee6c540;
+  animation: streamer-blob 3.2s ease-in-out infinite;
+}
+.streamer-home .live-scene .crowd-blob strong,
+.streamer-home .live-scene .crowd-blob span {
+  color: #14141a;
+}
+.streamer-home .live-words span {
+  border-radius: 99px;
+  background: #14141a;
+  border: 2px solid var(--yellow);
+  color: var(--yellow);
+}
+.streamer-home .live-words span:nth-child(2) {
+  border-color: var(--coral);
+  color: var(--coral);
+}
+@keyframes streamer-blob {
+  50% {
+    border-radius: 55% 45% 48% 52% / 45% 57% 43% 55%;
+    transform: scale(1.04);
+  }
+}

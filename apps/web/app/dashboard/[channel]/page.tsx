@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { Dashboard } from '../../../components/dashboard';
-import { PastStreams } from '../../../components/past-streams';
+import { StreamerNight } from '../../../components/streamer-night';
 import { authenticated } from '../../../lib/auth';
 import { crowdConfigured, workerUrl } from '../../../lib/config';
 import { report } from '../../../lib/report';
@@ -45,15 +45,23 @@ export default async function ChannelDashboard({
         </Link>
       </div>
       {crowdReady ? (
-        <PastStreams
+        <StreamerNight
+          channel={channel}
           streams={data?.streams ?? []}
-          unavailable={!data}
-          vodsUnavailable={data?.vodsUnavailable}
+          // Fan ratings arrive from the Worker (v0.8.7); until then the tile
+          // explains that ratings start next stream.
+          ratings={
+            (
+              data as {
+                ratings?: import('../../../lib/streamer-ratings').StreamerRatings;
+              } | null
+            )?.ratings ?? null
+          }
         />
       ) : (
         <div className="quiet-empty">
           <span>◡</span>
-          <h2>your fans are coming soon.</h2>
+          <h2>your fans are almost here.</h2>
           <p>
             sign-in is ready. past streams will appear after fan reactions are
             set up.

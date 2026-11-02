@@ -1,6 +1,6 @@
 import 'server-only';
+import { PRODUCT, type RecapShare, recapShareUrl } from '@laughline/shared';
 import type { Metadata } from 'next';
-import { PRODUCT, recapShareUrl, type RecapShare } from '@laughline/shared';
 import { siteUrl } from './config';
 export function recapMetadata(data: RecapShare | null): Metadata {
   if (!data)
