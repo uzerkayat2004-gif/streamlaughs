@@ -19,6 +19,24 @@ export default function Home() {
         aria-labelledby="hero-title"
       >
         <div className="hero-glow" aria-hidden="true" />
+        <FunBits
+          words={['haha', 'lol', 'no way', 'W', 'brooo']}
+          variant="hero"
+        />
+        <div className="hero-faces" aria-hidden="true">
+          <div className="hero-face f1">
+            <Smile tone="yellow" expression="squint" />
+          </div>
+          <div className="hero-face f2">
+            <Smile tone="coral" expression="happy" />
+          </div>
+          <div className="hero-face f3">
+            <Smile tone="teal" expression="squint" />
+          </div>
+          <div className="hero-face f4">
+            <Smile tone="yellow" expression="happy" />
+          </div>
+        </div>
         <div className="section-content hero-content">
           <p className="hero-kicker">
             <span aria-hidden="true">✳</span> your stream. your people. one big
@@ -26,19 +44,21 @@ export default function Home() {
           </p>
           <h1 id="hero-title">
             <span className="hero-line-1">
-              your favorite streamer is so funny.
+              your favorite streamer
+              <br />
+              is so funny.
             </span>
             <em className="hero-line-2">see your reaction watching them.</em>
           </h1>
           <p className="hero-copy">
-            Every laugh, every “no way”, every big moment, in one fun recap.
+            Every laugh, every “no way”, in one fun recap.
             <br />
-            Free on Chrome and Edge. Your audio never leaves your PC.
+            Free on Chrome and Edge. Your audio stays on your PC.
           </p>
           <div className="hero-actions">
-            <StoreButtons />
-            <Link className="text-link" href="/try">
-              <span className="play-outline">▶</span> watch the demo
+            <StoreButtons hideNote />
+            <Link className="text-link hero-peek" href="/try">
+              watch the demo <span aria-hidden="true">↗</span>
             </Link>
           </div>
         </div>

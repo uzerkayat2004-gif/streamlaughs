@@ -16,7 +16,13 @@ export function useStoreBrowser() {
   return browser;
 }
 
-export function StoreButtons({ compact = false }: { compact?: boolean }) {
+export function StoreButtons({
+  compact = false,
+  hideNote = false,
+}: {
+  compact?: boolean;
+  hideNote?: boolean;
+}) {
   const browser = useStoreBrowser();
   const [latest, setLatest] = useState(PRODUCT.version);
   const [copied, setCopied] = useState(false);
@@ -78,6 +84,7 @@ export function StoreButtons({ compact = false }: { compact?: boolean }) {
         </button>
       )}
       {!compact &&
+        !hideNote &&
         browser !== 'unsupported' &&
         (both
           ? storeBehind(latest, PRODUCT.chromeStoreVersion) ||
