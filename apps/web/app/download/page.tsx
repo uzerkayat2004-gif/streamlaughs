@@ -8,7 +8,6 @@ export default function Download() {
   return (
     <main className="standard-page install-page">
       <header className="page-intro">
-        <p className="eyebrow">YOUR PEOPLE ARE ONE CLICK AWAY.</p>
         <h1>
           get <em>{PRODUCT.name}.</em>
         </h1>

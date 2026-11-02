@@ -5,15 +5,62 @@ import {
   RatingsReportSchema,
   type RatingsReport,
 } from '@laughline/shared';
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+
+function AnimatedAverage({
+  value,
+  animate,
+}: {
+  value: number;
+  animate: boolean;
+}) {
+  const root = useRef<HTMLElement>(null);
+  const [shown, setShown] = useState(animate ? 0 : value);
+  useEffect(() => {
+    if (!animate) {
+      setShown(value);
+      return;
+    }
+    let frame = 0;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry?.isIntersecting) return;
+      observer.disconnect();
+      const start = performance.now();
+      const tick = (now: number) => {
+        const t = Math.min(1, (now - start) / 750);
+        setShown(value * (1 - (1 - t) ** 3));
+        if (t < 1 && !document.hidden) frame = requestAnimationFrame(tick);
+        else setShown(value);
+      };
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches)
+        setShown(value);
+      else frame = requestAnimationFrame(tick);
+    });
+    if (root.current) observer.observe(root.current);
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+    };
+  }, [value, animate]);
+  return (
+    <strong ref={root}>
+      <span aria-hidden="true">{shown.toFixed(1)}</span>
+      <span className="sr-only">{value.toFixed(1)}</span>
+    </strong>
+  );
+}
 export function FanRatings({
   initial,
   channel,
   sample = false,
+  animate = false,
+  compact = false,
 }: {
   initial: RatingsReport | null;
   channel: string;
   sample?: boolean;
+  animate?: boolean;
+  compact?: boolean;
 }) {
   const [data, setData] = useState(initial),
     [selected, setSelected] = useState('');
@@ -44,7 +91,10 @@ export function FanRatings({
   const result = stream?.rating ?? { locked: true as const, needed: 5 };
   const max = result.locked ? 1 : Math.max(1, ...result.histogram);
   return (
-    <section className="fan-ratings-card" aria-label="fan ratings">
+    <section
+      className={`fan-ratings-card${compact ? ' ratings-compact' : ''}`}
+      aria-label="fan ratings"
+    >
       <header>
         <div>
           <h2>fan ratings</h2>
@@ -59,7 +109,38 @@ export function FanRatings({
       ) : result.locked ? (
         <div className="ratings-locked" role="status">
           <span className="padlock-face" aria-hidden="true">
-            ⌑<i>◡</i>
+            <svg
+              viewBox="0 0 100 110"
+              width="90"
+              height="99"
+              aria-hidden="true"
+            >
+              <path
+                d="M28 44V29a22 22 0 0 1 44 0v15"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="8"
+              />
+              <rect
+                x="12"
+                y="40"
+                width="76"
+                height="65"
+                rx="24"
+                fill="currentColor"
+              />
+              <g fill="#090b10" className="smile-eyes">
+                <circle cx="36" cy="65" r="4" />
+                <circle cx="64" cy="65" r="4" />
+              </g>
+              <path
+                d="M34 81Q50 94 66 81"
+                fill="none"
+                stroke="#090b10"
+                strokeWidth="5"
+                strokeLinecap="round"
+              />
+            </svg>
           </span>
           <h3>
             {result.needed} more {result.needed === 1 ? 'fan' : 'fans'} to
@@ -79,7 +160,7 @@ export function FanRatings({
             }
           >
             <div>
-              <strong>{result.average.toFixed(1)}</strong>
+              <AnimatedAverage value={result.average} animate={animate} />
               <span>out of 10</span>
             </div>
           </div>
@@ -115,26 +196,50 @@ export function FanRatings({
           </div>
         </div>
       )}
-      {!!data?.trend.length && (
+      {!compact && !!data?.trend.length && (
         <fieldset className="ratings-trend" aria-label="last ten rated streams">
+          <legend>your last {data.trend.length} streams · tap a night</legend>
+          <svg
+            viewBox="0 0 1000 110"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <path
+              d={data.trend
+                .map((s, i) =>
+                  s.rating.locked
+                    ? ''
+                    : `${i === 0 || data.trend[i - 1]?.rating.locked ? 'M' : 'L'}${((i + 0.5) * 1000) / data.trend.length},${20 + (10 - s.rating.average) * 6}`,
+                )
+                .join(' ')}
+              fill="none"
+              stroke="#2EE6C5"
+              strokeWidth="2"
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
           {data.trend.map((s, i) => (
             <button
               type="button"
               key={s.streamKey}
               aria-pressed={stream?.streamKey === s.streamKey}
-              title={s.streamKey}
+              title={`${s.streamKey.slice(0, 10)} · ${s.rating.locked ? 'locked' : s.rating.average.toFixed(1)}`}
               onClick={() => setSelected(s.streamKey)}
               aria-label={`stream ${i + 1}, ${s.rating.locked ? 'rating locked' : `${s.rating.average.toFixed(1)} out of 10`}`}
             >
               <span
                 style={{
-                  height: `${s.rating.locked ? 10 : s.rating.average * 5}px`,
+                  top: `${s.rating.locked ? 80 : 20 + (10 - s.rating.average) * 6}px`,
                   background: s.rating.locked
                     ? '#fff'
                     : ratingColor(s.rating.average),
                 }}
               />
-              <small>{i + 1}</small>
+              <small>
+                {s.streamKey.includes('T')
+                  ? s.streamKey.slice(5, 10).replace('-', '/')
+                  : i + 1}
+              </small>
             </button>
           ))}
         </fieldset>

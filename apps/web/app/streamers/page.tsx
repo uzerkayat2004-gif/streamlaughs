@@ -15,7 +15,6 @@ export default async function Streamers({
       <main className="standard-page streamer-page">
         <section className="streamer-hero auth-retry" role="alert">
           <div>
-            <p className="eyebrow">let’s get you back to your fans.</p>
             <h1>your sign-in didn’t finish.</h1>
             <p className="auth-note">{loginErrorMessage(query.reason)}</p>
             {query.reason === 'redirect_mismatch' && (
@@ -43,7 +42,6 @@ export default async function Streamers({
     <main className="standard-page streamer-page">
       <section className="streamer-hero">
         <div>
-          <p className="eyebrow">for the person making the moments.</p>
           <h1>
             your fans have
             <br />a <em>laugh track.</em>
@@ -62,15 +60,13 @@ export default async function Streamers({
               explore the demo <Arrow />
             </Link>
           )}
-          <span className="under-button">
-            nothing to install · just your channel
-          </span>
+          <span className="under-button">free · nothing to install</span>
           <aside className="oauth-trust">
-            <h2>Sign in with Twitch, safely.</h2>
+            <h2>your channel. safely.</h2>
             <p>
-              You log in on twitch.tv, so we never see your password. We only
-              get your Twitch name and ID to show your own stats. You can remove
-              access anytime in Twitch Settings → Connections.
+              We only read your channel name and ID to confirm it’s yours. We
+              can’t post, read chat, or see your password. You sign in on Twitch
+              and can disconnect any time in Twitch Settings → Connections.
             </p>
           </aside>
           {(!configured || query.login) && (
@@ -104,6 +100,38 @@ export default async function Streamers({
             to see.
           </p>
         </div>
+      </section>
+      <section
+        className="streamer-rating-steps"
+        aria-labelledby="tonight-title"
+      >
+        <h2 id="tonight-title">
+          how did <em>tonight go?</em>
+        </h2>
+        <p>real reviews from your own fans, not random people. free.</p>
+        <ol>
+          <li>
+            <span aria-hidden="true">◉</span>
+            <h3>fans watch.</h3>
+            <p>ten minutes or more of your live stream.</p>
+          </li>
+          <li>
+            <span aria-hidden="true">8</span>
+            <h3>fans rate.</h3>
+            <p>a score and a few reason chips in their recap.</p>
+          </li>
+          <li>
+            <span aria-hidden="true">♡</span>
+            <h3>you wake up knowing.</h3>
+            <p>
+              your average and top reasons, ready next morning. unlocks at 5
+              fans.
+            </p>
+          </li>
+        </ol>
+        <Link className="text-link" href="/demo">
+          see a sample rating ↗
+        </Link>
       </section>
       <section className="try-download">
         <h2>watching too?</h2>

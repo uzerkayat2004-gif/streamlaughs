@@ -2,7 +2,8 @@ import { PRODUCT } from '@laughline/shared';
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import Link from 'next/link';
-import { Brand, LogoMark } from '../components/brand';
+import { Brand } from '../components/brand';
+import { SiteMotion } from '../components/site-motion';
 import { StoreButtons } from '../components/store-buttons';
 import { siteUrl } from '../lib/config';
 import './globals.css';
@@ -48,6 +49,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       className={`${display.variable} ${inter.variable}`}
     >
       <body>
+        <SiteMotion />
         <a className="skip-link" href="#content">
           skip to the good part
         </a>
@@ -63,7 +65,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div id="content">{children}</div>
         <footer className="site-footer">
           <div className="footer-identity">
-            <LogoMark />
             <Brand />
             <p>{PRODUCT.pitch}.</p>
           </div>

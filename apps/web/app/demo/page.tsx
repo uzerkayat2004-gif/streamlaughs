@@ -2,6 +2,7 @@ import type { CrowdState } from '@laughline/shared';
 import { Dashboard } from '../../components/dashboard';
 import { StreamerNight } from '../../components/streamer-night';
 import { DEMO_STREAMS } from '../../lib/demo-streams';
+import { SAMPLE_FAN_REPORT } from '../../lib/sample-ratings';
 import { SAMPLE_RATINGS } from '../../lib/streamer-ratings';
 
 export default async function Demo({
@@ -30,6 +31,7 @@ export default async function Demo({
       channel="pixelcamp"
       api=""
       snapshot={snapshot}
+      ratings={SAMPLE_FAN_REPORT}
       initialTab={(await searchParams).tab}
     >
       <StreamerNight

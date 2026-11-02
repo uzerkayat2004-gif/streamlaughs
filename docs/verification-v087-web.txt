@@ -1,0 +1,494 @@
+StreamLaughs v0.8.7 website upgrade verification — 2026-11-02
+Feature commit pushed first: 88e7990509d87a64b324d7884c8d489534980d07.
+Worker version remains 2f997792-0bf6-440b-880f-2008295d1d5c.
+Targeted checks only. No full test suite or e2e runner. No store uploads/tags/releases.
+All 53 protected detection/audio/try/extension-demo source hashes unchanged.
+Public store metadata: Chrome 0.6.4 (Google update endpoint); Edge 0.6.1 (Microsoft product-details endpoint).
+Website pages visually checked with a separate visible Chromium profile at both sizes:
+  / @ 1920x1080: HTTP 200; no horizontal overflow.
+  /install @ 1920x1080: HTTP 200; no horizontal overflow.
+  /download @ 1920x1080: HTTP 200; no horizontal overflow.
+  /privacy @ 1920x1080: HTTP 200; no horizontal overflow.
+  /streamers @ 1920x1080: HTTP 200; no horizontal overflow.
+  /for-streamers @ 1920x1080: HTTP 200; no horizontal overflow.
+  /demo @ 1920x1080: HTTP 200; no horizontal overflow.
+  /demo?tab=live @ 1920x1080: HTTP 200; no horizontal overflow.
+  /dashboard/pixelcamp @ 1920x1080: HTTP 200; no horizontal overflow.
+  /try @ 1920x1080: HTTP 200; no horizontal overflow.
+  /r?streamer=pixelcamp&date=2026-11-01&laughs=16&minutes=42&word=bro&funniest=no+way&moment=640&hype=4&stream=1 @ 1920x1080: HTTP 200; no horizontal overflow.
+  / @ 390x844: HTTP 200; no horizontal overflow.
+  /install @ 390x844: HTTP 200; no horizontal overflow.
+  /download @ 390x844: HTTP 200; no horizontal overflow.
+  /privacy @ 390x844: HTTP 200; no horizontal overflow.
+  /streamers @ 390x844: HTTP 200; no horizontal overflow.
+  /for-streamers @ 390x844: HTTP 200; no horizontal overflow.
+  /demo @ 390x844: HTTP 200; no horizontal overflow.
+  /demo?tab=live @ 390x844: HTTP 200; no horizontal overflow.
+  /dashboard/pixelcamp @ 390x844: HTTP 200; no horizontal overflow.
+  /try @ 390x844: HTTP 200; no horizontal overflow.
+  /r?streamer=pixelcamp&date=2026-11-01&laughs=16&minutes=42&word=bro&funniest=no+way&moment=640&hype=4&stream=1 @ 390x844: HTTP 200; no horizontal overflow.
+Dashboard visual check used a local encrypted synthetic owner session and local aggregate stub; no personal Twitch login was automated.
+Demo locked night, selected rating and reduced-motion state passed. Pointer eye movement and laugh/haha burst passed.
+A 27px trend line/dot offset found visually was corrected; measured alignment difference <0.001px with the final CSS rule.
+Live human browser/device and independent fan-identity attestation are outside these visual checks.
+Universal ZIP: {"version": "0.8.7", "filename": "streamlaughs.zip", "versionedFilename": "streamlaughs-v0.8.7.zip", "sha256": "d6697fc70cb4ef034fbca9bf7af9de87deeb1c7f7da828bdbf4441230468c28d", "bytes": 40462638}
+ZIP identity: fkocldgggcmhihelohiicoakcfomhepg; CRC verified.
+Store ZIP: releases/edge-store/streamlaughs-edge-store-v0.8.7.zip; exactly one root manifest, no key, no downloads permission.
+
+> v087-web-final-tests
+RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  18:29:16
+   Duration  687ms (transform 399ms, setup 0ms, import 1.08s, tests 66ms, environment 0ms)
+
+> v087-web-final-typecheck
+> web@0.8.7 typecheck C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline\apps\web
+> node ../../tools/next-local.mjs typegen && tsc --noEmit
+
+Generating route types...
+✓ Types generated successfully
+
+> v087-web-final-lint
+> web@0.8.7 lint C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline\apps\web
+> biome lint app components lib next.config.ts
+
+Checked 68 files in 48ms. No fixes applied.
+
+> v087-web-final-build
+> web@0.8.7 build C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline\apps\web
+> node ../../tools/build-web.mjs
+
+
+> extension@0.8.7 build C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline\apps\extension
+> node ../../tools/prepare-runtime.mjs && node ../../tools/check-assets.mjs && wxt build && node ../../tools/check-extension-identity.mjs .output/chrome-mv3
+
+onnx: 21,640,503 local runtime bytes
+mediapipe: 12,205,698 local runtime bytes
+Verified 14 local model/license assets against SHA-256 receipts.
+
+WXT 0.21.5
+i Building chrome-mv3 for production with Vite 8.3.5
+
+ WARN  The following entrypoints have been skipped:
+- debug
+
+[?25l
+⠋ Preparing...[K
+⠋ [1/7] audio-worklet[K
+⠋ [2/7] background[K
+⠙ [2/7] background[K
+⠹ [2/7] background[K
+⠹ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠸ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠼ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠴ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠦ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠦ [4/7] inference-worker[K
+⠧ [4/7] inference-worker[K
+⠇ [4/7] inference-worker[K
+⠏ [4/7] inference-worker[K
+[EMPTY_IMPORT_META] `import.meta` may not be a valid syntax with the `iife` output format.
+      ╭─[ ../../node_modules/.pnpm/@huggingface+transformers@3.8.1/node_modules/@huggingface/transformers/dist/transformers.web.js:5101:37 ]
+      │
+ 5101 │     const _import_meta_url = Object(import.meta).url;
+      │                                     ─────┬─────
+      │                                          ╰─────── This `import.meta` will be replaced with an empty object (`{}`) automatically. If this is desired, you can suppress this warning by adding `transform.define: { 'import.meta': {} }`. If `import.meta` needs to be kept as-is, you need to set the output format to `esm`.
+──────╯
+
+⠋ [4/7] inference-worker[K
+⠋ [5/7] sound-worker[K
+⠙ [5/7] sound-worker[K
+⠹ [5/7] sound-worker[K
+[EMPTY_IMPORT_META] `import.meta` may not be a valid syntax with the `iife` output format.
+      ╭─[ ../../node_modules/.pnpm/@huggingface+transformers@3.8.1/node_modules/@huggingface/transformers/dist/transformers.web.js:5101:37 ]
+      │
+⠸ [5/7] sound-worker[K
+ 5101 │     const _import_meta_url = Object(import.meta).url;
+      │                                     ─────┬─────
+      │                                          ╰─────── This `import.meta` will be replaced with an empty object (`{}`) automatically. If this is desired, you can suppress this warning by adding `transform.define: { 'import.meta': {} }`. If `import.meta` needs to be kept as-is, you need to set the output format to `esm`.
+──────╯
+
+⠼ [5/7] sound-worker[K
+⠼ [6/7] speech-worker[K
+⠴ [6/7] speech-worker[K
+⠦ [6/7] speech-worker[K
+⠧ [6/7] speech-worker[K
+⠇ [6/7] speech-worker[K
+⠏ [6/7] speech-worker[K
+[EMPTY_IMPORT_META] `import.meta` may not be a valid syntax with the `iife` output format.
+      ╭─[ ../../node_modules/.pnpm/@huggingface+transformers@3.8.1/node_modules/@huggingface/transformers/dist/transformers.web.js:5101:37 ]
+      │
+ 5101 │     const _import_meta_url = Object(import.meta).url;
+      │                                     ─────┬─────
+      │                                          ╰─────── This `import.meta` will be replaced with an empty object (`{}`) automatically. If this is desired, you can suppress this warning by adding `transform.define: { 'import.meta': {} }`. If `import.meta` needs to be kept as-is, you need to set the output format to `esm`.
+──────╯
+
+⠋ [6/7] speech-worker[K
+⠋ [7/7] twitch[K
+⠙ [7/7] twitch[K
+⠹ [7/7] twitch[K
+⠸ [7/7] twitch[K
+⠼ [7/7] twitch[K
+⠴ [7/7] twitch[K
+⠦ [7/7] twitch[K
+⠧ [7/7] twitch[K
+⠇ [7/7] twitch[K
+⠏ [7/7] twitch[K
+⠋ [7/7] twitch[K
+⠙ [7/7] twitch[K
+⠹ [7/7] twitch[K
+⠸ [7/7] twitch[K
+⠼ [7/7] twitch[K
+⠴ [7/7] twitch[K
+⠦ [7/7] twitch[K
+[K[?25h
+[K[?25h√ Built extension in 5.184 s
+  ├─ .output\chrome-mv3\manifest.json                                                    1.99 kB
+  ├─ .output\chrome-mv3\diagnostics.html                                                 849 B
+  ├─ .output\chrome-mv3\mic-test.html                                                    1.07 kB
+  ├─ .output\chrome-mv3\offscreen.html                                                   515 B
+  ├─ .output\chrome-mv3\popup.html                                                       1.36 kB
+  ├─ .output\chrome-mv3\recap.html                                                       741 B
+  ├─ .output\chrome-mv3\update.html                                                      823 B
+  ├─ .output\chrome-mv3\welcome.html                                                     900 B
+  ├─ .output\chrome-mv3\audio-worklet.js                                                 2.98 kB
+  ├─ .output\chrome-mv3\background.js                                                    241.04 kB
+  ├─ .output\chrome-mv3\chunks\bridge-Cpc0ZGBd.js                                        1.82 kB
+  ├─ .output\chrome-mv3\chunks\components-DEGbp6_H.js                                    4.63 kB
+  ├─ .output\chrome-mv3\chunks\db-DeELiB6B.js                                            101.39 kB
+  ├─ .output\chrome-mv3\chunks\diagnostics-BR_yxlpN.js                                   6.25 kB
+  ├─ .output\chrome-mv3\chunks\diagnostics-DHM7X3pc.js                                   3.79 kB
+  ├─ .output\chrome-mv3\chunks\HistoryView-CPO2ZJ5E.js                                   11.12 kB
+  ├─ .output\chrome-mv3\chunks\install-type-BggUpO8e.js                                  3.88 kB
+  ├─ .output\chrome-mv3\chunks\mic-test-mIStZNeN.js                                      320 B
+  ├─ .output\chrome-mv3\chunks\microphone-Dy8K_YEZ.js                                    1.88 kB
+  ├─ .output\chrome-mv3\chunks\MicTest-BA0CwNaT.js                                       3.97 kB
+  ├─ .output\chrome-mv3\chunks\offscreen-D1DHfYqo.js                                     29.02 kB
+  ├─ .output\chrome-mv3\chunks\PipelinePanel-Cy5jwq-e.js                                 3.81 kB
+  ├─ .output\chrome-mv3\chunks\popup-BvApATwl.js                                         14.67 kB
+  ├─ .output\chrome-mv3\chunks\recap-4ysyVCfV.js                                         45.66 kB
+  ├─ .output\chrome-mv3\chunks\src-YKtUCGTa.js                                           106.07 kB
+  ├─ .output\chrome-mv3\chunks\stutter-Ly1hpWwX.js                                       2.77 kB
+  ├─ .output\chrome-mv3\chunks\styles-0ZMVxZtP.js                                        219.28 kB
+  ├─ .output\chrome-mv3\chunks\ui-status-D8d-SeR1.js                                     1.26 kB
+  ├─ .output\chrome-mv3\chunks\update-BmXroYO5.js                                        2.02 kB
+  ├─ .output\chrome-mv3\chunks\welcome-UTW4rxWw.js                                       5.31 kB
+  ├─ .output\chrome-mv3\content-scripts\twitch.js                                        545.12 kB
+  ├─ .output\chrome-mv3\inference-worker.js                                              1.35 MB
+  ├─ .output\chrome-mv3\runtime\mediapipe\audio_wasm_internal.js                         161.73 kB
+  ├─ .output\chrome-mv3\runtime\mediapipe\audio_wasm_nosimd_internal.js                  161.59 kB
+  ├─ .output\chrome-mv3\sound-worker.js                                                  1.32 MB
+  ├─ .output\chrome-mv3\speech-worker.js                                                 1.33 MB
+  ├─ .output\chrome-mv3\assets\styles-Dj1eVzEl.css                                       74.13 kB
+  ├─ .output\chrome-mv3\brand\app-icon.svg                                               291 B
+  ├─ .output\chrome-mv3\brand\smile-white.svg                                            164 B
+  ├─ .output\chrome-mv3\brand\smile-yellow.svg                                           164 B
+  ├─ .output\chrome-mv3\fonts\bricolage-grotesque-LICENSE.txt                            4.40 kB
+  ├─ .output\chrome-mv3\fonts\bricolage-grotesque.woff2                                  41.34 kB
+  ├─ .output\chrome-mv3\fonts\inter-LICENSE.txt                                          4.48 kB
+  ├─ .output\chrome-mv3\fonts\inter.woff2                                                48.26 kB
+  ├─ .output\chrome-mv3\fonts\jetbrains-mono-LICENSE.txt                                 4.52 kB
+  ├─ .output\chrome-mv3\fonts\jetbrains-mono.woff2                                       40.40 kB
+  ├─ .output\chrome-mv3\icon\128.png                                                     2.51 kB
+  ├─ .output\chrome-mv3\icon\16.png                                                      368 B
+  ├─ .output\chrome-mv3\icon\32.png                                                      609 B
+  ├─ .output\chrome-mv3\icon\48.png                                                      1.01 kB
+  ├─ .output\chrome-mv3\icon\toolbar-16.png                                              455 B
+  ├─ .output\chrome-mv3\icon\toolbar-32.png                                              728 B
+  ├─ .output\chrome-mv3\models\licenses\silero-MIT.txt                                   1.07 kB
+  ├─ .output\chrome-mv3\models\licenses\Transformers-Apache-2.0.txt                      11.36 kB
+  ├─ .output\chrome-mv3\models\licenses\Whisper-MIT.txt                                  1.06 kB
+  ├─ .output\chrome-mv3\models\licenses\Whisper-model-card.md                            14.86 kB
+  ├─ .output\chrome-mv3\models\licenses\YAMNet-Apache-2.0.txt                            11.51 kB
+  ├─ .output\chrome-mv3\models\model-files.json                                          4.97 kB
+  ├─ .output\chrome-mv3\models\silero-v5.onnx                                            2.33 MB
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\config.json                               2.20 kB
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\generation_config.json                    1.65 kB
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\onnx\decoder_model_merged_quantized.onnx  30.72 MB
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\onnx\encoder_model_quantized.onnx         9.36 MB
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\preprocessor_config.json                  339 B
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\special_tokens_map.json                   2.17 kB
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\tokenizer_config.json                     282.66 kB
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\tokenizer.json                            2.41 MB
+  ├─ .output\chrome-mv3\models\yamnet.tflite                                             4.13 MB
+  ├─ .output\chrome-mv3\runtime\mediapipe\audio_wasm_internal.wasm                       6.00 MB
+  ├─ .output\chrome-mv3\runtime\mediapipe\audio_wasm_nosimd_internal.wasm                5.88 MB
+  ├─ .output\chrome-mv3\runtime\mediapipe\LICENSE.txt                                    11.51 kB
+  ├─ .output\chrome-mv3\runtime\onnx\LICENSE.txt                                         1.07 kB
+  ├─ .output\chrome-mv3\runtime\onnx\ort-wasm-simd-threaded.jsep.mjs                     44.48 kB
+  └─ .output\chrome-mv3\runtime\onnx\ort-wasm-simd-threaded.jsep.wasm                    21.60 MB
+Σ Total size: 88.72 MB
+√ Finished in 5.455 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (chrome-mv3)
+
+> extension@0.8.7 build:edge C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline\apps\extension
+> node ../../tools/prepare-runtime.mjs && node ../../tools/check-assets.mjs && wxt build -b edge && node ../../tools/check-extension-identity.mjs .output/edge-mv3
+
+onnx: 21,640,503 local runtime bytes
+mediapipe: 12,205,698 local runtime bytes
+Verified 14 local model/license assets against SHA-256 receipts.
+
+WXT 0.21.5
+i Building edge-mv3 for production with Vite 8.3.5
+
+ WARN  The following entrypoints have been skipped:
+- debug
+
+[?25l
+⠋ Preparing...[K
+⠋ [1/7] audio-worklet[K
+⠋ [2/7] background[K
+⠙ [2/7] background[K
+⠹ [2/7] background[K
+⠹ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠸ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠼ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠴ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠦ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠦ [4/7] inference-worker[K
+⠧ [4/7] inference-worker[K
+⠇ [4/7] inference-worker[K
+⠏ [4/7] inference-worker[K
+[EMPTY_IMPORT_META] `import.meta` may not be a valid syntax with the `iife` output format.
+      ╭─[ ../../node_modules/.pnpm/@huggingface+transformers@3.8.1/node_modules/@huggingface/transformers/dist/transformers.web.js:5101:37 ]
+      │
+ 5101 │     const _import_meta_url = Object(import.meta).url;
+      │                                     ─────┬─────
+      │                                          ╰─────── This `import.meta` will be replaced with an empty object (`{}`) automatically. If this is desired, you can suppress this warning by adding `transform.define: { 'import.meta': {} }`. If `import.meta` needs to be kept as-is, you need to set the output format to `esm`.
+──────╯
+
+⠋ [4/7] inference-worker[K
+⠋ [5/7] sound-worker[K
+⠙ [5/7] sound-worker[K
+⠹ [5/7] sound-worker[K
+⠸ [5/7] sound-worker[K
+[EMPTY_IMPORT_META] `import.meta` may not be a valid syntax with the `iife` output format.
+      ╭─[ ../../node_modules/.pnpm/@huggingface+transformers@3.8.1/node_modules/@huggingface/transformers/dist/transformers.web.js:5101:37 ]
+      │
+ 5101 │     const _import_meta_url = Object(import.meta).url;
+      │                                     ─────┬─────
+      │                                          ╰─────── This `import.meta` will be replaced with an empty object (`{}`) automatically. If this is desired, you can suppress this warning by adding `transform.define: { 'import.meta': {} }`. If `import.meta` needs to be kept as-is, you need to set the output format to `esm`.
+──────╯
+
+⠼ [5/7] sound-worker[K
+⠼ [6/7] speech-worker[K
+⠴ [6/7] speech-worker[K
+⠦ [6/7] speech-worker[K
+⠧ [6/7] speech-worker[K
+⠇ [6/7] speech-worker[K
+⠏ [6/7] speech-worker[K
+[EMPTY_IMPORT_META] `import.meta` may not be a valid syntax with the `iife` output format.
+      ╭─[ ../../node_modules/.pnpm/@huggingface+transformers@3.8.1/node_modules/@huggingface/transformers/dist/transformers.web.js:5101:37 ]
+      │
+ 5101 │     const _import_meta_url = Object(import.meta).url;
+      │                                     ─────┬─────
+      │                                          ╰─────── This `import.meta` will be replaced with an empty object (`{}`) automatically. If this is desired, you can suppress this warning by adding `transform.define: { 'import.meta': {} }`. If `import.meta` needs to be kept as-is, you need to set the output format to `esm`.
+──────╯
+
+⠋ [6/7] speech-worker[K
+⠋ [7/7] twitch[K
+⠙ [7/7] twitch[K
+⠹ [7/7] twitch[K
+⠸ [7/7] twitch[K
+⠼ [7/7] twitch[K
+⠴ [7/7] twitch[K
+⠦ [7/7] twitch[K
+⠧ [7/7] twitch[K
+⠇ [7/7] twitch[K
+⠏ [7/7] twitch[K
+⠋ [7/7] twitch[K
+⠙ [7/7] twitch[K
+⠹ [7/7] twitch[K
+[K[?25h
+[K[?25h√ Built extension in 4.694 s
+  ├─ .output\edge-mv3\manifest.json                                                    1.99 kB
+  ├─ .output\edge-mv3\diagnostics.html                                                 849 B
+  ├─ .output\edge-mv3\mic-test.html                                                    1.07 kB
+  ├─ .output\edge-mv3\offscreen.html                                                   515 B
+  ├─ .output\edge-mv3\popup.html                                                       1.36 kB
+  ├─ .output\edge-mv3\recap.html                                                       741 B
+  ├─ .output\edge-mv3\update.html                                                      823 B
+  ├─ .output\edge-mv3\welcome.html                                                     900 B
+  ├─ .output\edge-mv3\audio-worklet.js                                                 2.98 kB
+  ├─ .output\edge-mv3\background.js                                                    241.04 kB
+  ├─ .output\edge-mv3\chunks\bridge-Cpc0ZGBd.js                                        1.82 kB
+  ├─ .output\edge-mv3\chunks\components-DEGbp6_H.js                                    4.63 kB
+  ├─ .output\edge-mv3\chunks\db-DeELiB6B.js                                            101.39 kB
+  ├─ .output\edge-mv3\chunks\diagnostics-BR_yxlpN.js                                   6.25 kB
+  ├─ .output\edge-mv3\chunks\diagnostics-DHM7X3pc.js                                   3.79 kB
+  ├─ .output\edge-mv3\chunks\HistoryView-CPO2ZJ5E.js                                   11.12 kB
+  ├─ .output\edge-mv3\chunks\install-type-BggUpO8e.js                                  3.88 kB
+  ├─ .output\edge-mv3\chunks\mic-test-mIStZNeN.js                                      320 B
+  ├─ .output\edge-mv3\chunks\microphone-Dy8K_YEZ.js                                    1.88 kB
+  ├─ .output\edge-mv3\chunks\MicTest-BA0CwNaT.js                                       3.97 kB
+  ├─ .output\edge-mv3\chunks\offscreen-D1DHfYqo.js                                     29.02 kB
+  ├─ .output\edge-mv3\chunks\PipelinePanel-Cy5jwq-e.js                                 3.81 kB
+  ├─ .output\edge-mv3\chunks\popup-BvApATwl.js                                         14.67 kB
+  ├─ .output\edge-mv3\chunks\recap-4ysyVCfV.js                                         45.66 kB
+  ├─ .output\edge-mv3\chunks\src-YKtUCGTa.js                                           106.07 kB
+  ├─ .output\edge-mv3\chunks\stutter-Ly1hpWwX.js                                       2.77 kB
+  ├─ .output\edge-mv3\chunks\styles-0ZMVxZtP.js                                        219.28 kB
+  ├─ .output\edge-mv3\chunks\ui-status-D8d-SeR1.js                                     1.26 kB
+  ├─ .output\edge-mv3\chunks\update-BmXroYO5.js                                        2.02 kB
+  ├─ .output\edge-mv3\chunks\welcome-UTW4rxWw.js                                       5.31 kB
+  ├─ .output\edge-mv3\content-scripts\twitch.js                                        545.12 kB
+  ├─ .output\edge-mv3\inference-worker.js                                              1.35 MB
+  ├─ .output\edge-mv3\runtime\mediapipe\audio_wasm_internal.js                         161.73 kB
+  ├─ .output\edge-mv3\runtime\mediapipe\audio_wasm_nosimd_internal.js                  161.59 kB
+  ├─ .output\edge-mv3\sound-worker.js                                                  1.32 MB
+  ├─ .output\edge-mv3\speech-worker.js                                                 1.33 MB
+  ├─ .output\edge-mv3\assets\styles-Dj1eVzEl.css                                       74.13 kB
+  ├─ .output\edge-mv3\brand\app-icon.svg                                               291 B
+  ├─ .output\edge-mv3\brand\smile-white.svg                                            164 B
+  ├─ .output\edge-mv3\brand\smile-yellow.svg                                           164 B
+  ├─ .output\edge-mv3\fonts\bricolage-grotesque-LICENSE.txt                            4.40 kB
+  ├─ .output\edge-mv3\fonts\bricolage-grotesque.woff2                                  41.34 kB
+  ├─ .output\edge-mv3\fonts\inter-LICENSE.txt                                          4.48 kB
+  ├─ .output\edge-mv3\fonts\inter.woff2                                                48.26 kB
+  ├─ .output\edge-mv3\fonts\jetbrains-mono-LICENSE.txt                                 4.52 kB
+  ├─ .output\edge-mv3\fonts\jetbrains-mono.woff2                                       40.40 kB
+  ├─ .output\edge-mv3\icon\128.png                                                     2.51 kB
+  ├─ .output\edge-mv3\icon\16.png                                                      368 B
+  ├─ .output\edge-mv3\icon\32.png                                                      609 B
+  ├─ .output\edge-mv3\icon\48.png                                                      1.01 kB
+  ├─ .output\edge-mv3\icon\toolbar-16.png                                              455 B
+  ├─ .output\edge-mv3\icon\toolbar-32.png                                              728 B
+  ├─ .output\edge-mv3\models\licenses\silero-MIT.txt                                   1.07 kB
+  ├─ .output\edge-mv3\models\licenses\Transformers-Apache-2.0.txt                      11.36 kB
+  ├─ .output\edge-mv3\models\licenses\Whisper-MIT.txt                                  1.06 kB
+  ├─ .output\edge-mv3\models\licenses\Whisper-model-card.md                            14.86 kB
+  ├─ .output\edge-mv3\models\licenses\YAMNet-Apache-2.0.txt                            11.51 kB
+  ├─ .output\edge-mv3\models\model-files.json                                          4.97 kB
+  ├─ .output\edge-mv3\models\silero-v5.onnx                                            2.33 MB
+  ├─ .output\edge-mv3\models\whisper-tiny.en\config.json                               2.20 kB
+  ├─ .output\edge-mv3\models\whisper-tiny.en\generation_config.json                    1.65 kB
+  ├─ .output\edge-mv3\models\whisper-tiny.en\onnx\decoder_model_merged_quantized.onnx  30.72 MB
+  ├─ .output\edge-mv3\models\whisper-tiny.en\onnx\encoder_model_quantized.onnx         9.36 MB
+  ├─ .output\edge-mv3\models\whisper-tiny.en\preprocessor_config.json                  339 B
+  ├─ .output\edge-mv3\models\whisper-tiny.en\special_tokens_map.json                   2.17 kB
+  ├─ .output\edge-mv3\models\whisper-tiny.en\tokenizer_config.json                     282.66 kB
+  ├─ .output\edge-mv3\models\whisper-tiny.en\tokenizer.json                            2.41 MB
+  ├─ .output\edge-mv3\models\yamnet.tflite                                             4.13 MB
+  ├─ .output\edge-mv3\runtime\mediapipe\audio_wasm_internal.wasm                       6.00 MB
+  ├─ .output\edge-mv3\runtime\mediapipe\audio_wasm_nosimd_internal.wasm                5.88 MB
+  ├─ .output\edge-mv3\runtime\mediapipe\LICENSE.txt                                    11.51 kB
+  ├─ .output\edge-mv3\runtime\onnx\LICENSE.txt                                         1.07 kB
+  ├─ .output\edge-mv3\runtime\onnx\ort-wasm-simd-threaded.jsep.mjs                     44.48 kB
+  └─ .output\edge-mv3\runtime\onnx\ort-wasm-simd-threaded.jsep.wasm                    21.60 MB
+Σ Total size: 88.72 MB
+√ Finished in 4.971 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (edge-mv3)
+
+> laughline-monorepo@0.8.7 release:zip C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline
+> node tools/release/pack.mjs
+
+Verified flat chrome ZIP: streamlaughs-chrome-v0.8.7.zip
+Verified flat edge ZIP: streamlaughs-edge-v0.8.7.zip
+Prepared production-configured assets in releases/production; no tag, release or deployment created.
+Universal download: 40462638 bytes; SHA-256 d6697fc70cb4ef034fbca9bf7af9de87deeb1c7f7da828bdbf4441230468c28d
+▲ Next.js 16.4.3 (webpack)
+✓ Running next.config.ts took 40ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 3.8s
+  Running TypeScript ...
+  Finished TypeScript in 2.3s ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/17) ...
+  Generating static pages using 11 workers (4/17)
+  Generating static pages using 11 workers (8/17)
+  Generating static pages using 11 workers (12/17)
+✓ Generating static pages using 11 workers (17/17) in 2.8s
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/dashboard/[channel]
+├ ƒ /api/extension-profile
+├ ƒ /api/ratings/[channel]
+├ ○ /apple-icon
+├ ƒ /auth/callback
+├ ƒ /auth/login
+├ ƒ /auth/logout
+├ ƒ /dashboard
+├ ƒ /dashboard/[channel]
+├ ƒ /demo
+├ ○ /download
+├ ƒ /for-streamers
+├ ○ /icon.svg
+├ ○ /install
+├ ○ /opengraph-image
+├ ○ /privacy
+├ ƒ /r
+├ ƒ /r/image
+├ ƒ /streamers
+├ ○ /try
+└ ƒ /version.json
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+StreamLaughs source, docs and requested website output branding checks passed.
+
+> v087-web-next-final
+▲ Next.js 16.4.3 (webpack)
+✓ Running next.config.ts took 35ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 3.1s
+  Running TypeScript ...
+  Finished TypeScript in 1701ms ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/17) ...
+  Generating static pages using 11 workers (4/17)
+  Generating static pages using 11 workers (8/17)
+  Generating static pages using 11 workers (12/17)
+✓ Generating static pages using 11 workers (17/17) in 2.5s
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/dashboard/[channel]
+├ ƒ /api/extension-profile
+├ ƒ /api/ratings/[channel]
+├ ○ /apple-icon
+├ ƒ /auth/callback
+├ ƒ /auth/login
+├ ƒ /auth/logout
+├ ƒ /dashboard
+├ ƒ /dashboard/[channel]
+├ ƒ /demo
+├ ○ /download
+├ ƒ /for-streamers
+├ ○ /icon.svg
+├ ○ /install
+├ ○ /opengraph-image
+├ ○ /privacy
+├ ƒ /r
+├ ƒ /r/image
+├ ƒ /streamers
+├ ○ /try
+└ ƒ /version.json
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+> v087-web-store-build
+> laughline-monorepo@0.8.7 release:edge-store C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline
+> node tools/release/pack.mjs --edge-store
+
+Verified flat edge ZIP: streamlaughs-edge-store-v0.8.7.zip
+Prepared Edge store CI artifact in releases/edge-store; no publication performed.

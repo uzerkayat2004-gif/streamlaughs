@@ -2,6 +2,7 @@ import { PRODUCT } from '@laughline/shared';
 import Link from 'next/link';
 import { Arrow } from '../components/brand';
 import { FansPlayground, HomeMotion } from '../components/fans-playground';
+import { RatingsPreview } from '../components/ratings-preview';
 import { StoreButtons } from '../components/store-buttons';
 
 export default function Home() {
@@ -9,28 +10,28 @@ export default function Home() {
     <main className="home-page">
       <HomeMotion />
       <section className="full-screen hero" aria-labelledby="hero-title">
-        <div className="section-content hero-content">
-          <p className="eyebrow">
-            <span className="status-spark" /> FOR TWITCH VIEWERS
-          </p>
-          <h1 id="hero-title">
-            laugh with the
-            <br />
-            <em>whole stream.</em>
-          </h1>
-          <p className="hero-copy">
-            See when everyone watching your favourite streamer is laughing too.
-            Live, right on Twitch.
-          </p>
-          <div className="hero-actions">
-            <StoreButtons />
-            <Link className="text-link" href="/try">
-              <span className="play-outline">▶</span> watch the demo
-            </Link>
+        <div className="section-content hero-content hero-with-smile">
+          <div className="hero-words">
+            <h1 id="hero-title">
+              never laugh
+              <br />
+              <em>alone again.</em>
+            </h1>
+            <p className="hero-copy">
+              Your favourite stream. Your kind of funny. See who’s laughing with
+              you, right on Twitch.
+            </p>
+            <div className="hero-actions">
+              <StoreButtons />
+              <Link className="text-link" href="/try">
+                <span className="play-outline">▶</span> watch the demo
+              </Link>
+            </div>
+            <p className="quiet-caption">
+              your people. your stream. your kind of funny.
+            </p>
           </div>
-          <p className="quiet-caption">
-            your people. your stream. your kind of funny.
-          </p>
+          <FansPlayground orbit />
         </div>
         <a
           href="#the-feeling"
@@ -39,9 +40,6 @@ export default function Home() {
         >
           a little more together <span>↓</span>
         </a>
-        <span className="section-index" aria-hidden="true">
-          01 / 05
-        </span>
       </section>
       <section
         className="full-screen feeling-section"
@@ -49,7 +47,6 @@ export default function Home() {
         aria-labelledby="feeling-title"
       >
         <div className="section-content" data-reveal>
-          <p className="eyebrow">GOOD MOMENTS ARE BETTER TOGETHER</p>
           <h2 id="feeling-title" className="sr-only">
             a little feeling of together.
           </h2>
@@ -59,9 +56,6 @@ export default function Home() {
             <br className="mobile-break" /> when the room laughs.
           </p>
         </div>
-        <span className="section-index" aria-hidden="true">
-          02 / 05
-        </span>
       </section>
       <section
         className="full-screen together-section"
@@ -70,7 +64,6 @@ export default function Home() {
         <div className="section-content together-layout" data-reveal>
           <FansPlayground group />
           <div className="together-copy">
-            <p className="eyebrow">NO CHAT TO KEEP UP WITH</p>
             <h2 id="together-title">
               you’re never the
               <br />
@@ -86,10 +79,8 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <span className="section-index" aria-hidden="true">
-          03 / 05
-        </span>
       </section>
+      <RatingsPreview />
       <section
         className="full-screen streamer-invite"
         aria-labelledby="streamer-title"
@@ -98,7 +89,6 @@ export default function Home() {
           <span className="outline-spark" aria-hidden="true">
             ✳
           </span>
-          <p className="eyebrow">STREAMING YOURSELF?</p>
           <h2 id="streamer-title">
             see the moments
             <br />
@@ -113,16 +103,12 @@ export default function Home() {
             {PRODUCT.name} for streamers <Arrow />
           </Link>
         </div>
-        <span className="section-index" aria-hidden="true">
-          04 / 05
-        </span>
       </section>
       <section
         className="full-screen final-invite"
         aria-labelledby="download-title"
       >
         <div className="section-content" data-reveal>
-          <p className="eyebrow">YOUR NEXT GOOD MOMENT IS OUT THERE</p>
           <h2 id="download-title">
             ready to laugh
             <br />
@@ -131,9 +117,6 @@ export default function Home() {
           <StoreButtons />
           <p className="quiet-caption">Chrome, Edge and Brave · free</p>
         </div>
-        <span className="section-index" aria-hidden="true">
-          05 / 05
-        </span>
       </section>
     </main>
   );

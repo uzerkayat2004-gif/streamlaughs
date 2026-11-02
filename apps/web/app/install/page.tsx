@@ -7,7 +7,6 @@ export default function Install() {
   return (
     <main className="standard-page install-page">
       <header className="page-intro">
-        <p className="eyebrow">A LITTLE CLICK. A LOT OF LAUGHS.</p>
         <h1>
           your stream.
           <br />
@@ -31,19 +30,18 @@ export default function Install() {
           [
             '▷',
             'find your stream.',
-            'Open any Twitch stream or replay. Click the smile, then start.',
+            'Open a live Twitch stream. Click the smile, then start.',
           ],
           [
             '♪',
             'allow the mic.',
             'In Welcome, allow your microphone and try “say something”. Choose whether to share anonymous reactions.',
           ],
-        ].map(([icon, title, text], i) => (
+        ].map(([icon, title, text]) => (
           <article className="install-step" key={title}>
             <span className="store-step-icon" aria-hidden="true">
               {icon}
             </span>
-            <p className="eyebrow">0{i + 1}</p>
             <h2>{title}</h2>
             <p>{text}</p>
           </article>

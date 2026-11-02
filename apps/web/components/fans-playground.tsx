@@ -21,26 +21,9 @@ export function Smile({
     >
       <defs>
         <radialGradient id={id} cx=".3" cy=".18" r=".85">
-          <stop
-            stopColor={
-              tone === 'teal'
-                ? '#a0ffe9'
-                : tone === 'yellow'
-                  ? '#fff1ac'
-                  : '#ffb2ab'
-            }
-          />
+          <stop stopColor="#ffffff" />
           <stop offset=".53" stopColor={color} />
-          <stop
-            offset="1"
-            stopColor={
-              tone === 'teal'
-                ? '#139d84'
-                : tone === 'yellow'
-                  ? '#c69514'
-                  : '#bf343b'
-            }
-          />
+          <stop offset="1" stopColor={color} />
         </radialGradient>
       </defs>
       <path
@@ -56,12 +39,12 @@ export function Smile({
         strokeWidth="5"
         strokeLinecap="round"
       />
-      <g className="smile-eyes" fill="#0b2521">
+      <g className="smile-eyes" fill="#090b10">
         {expression === 'squint' ? (
           <path
             d="M68 92Q80 80 92 92M148 92Q160 80 172 92"
             fill="none"
-            stroke="#0b2521"
+            stroke="#090b10"
             strokeWidth="9"
             strokeLinecap="round"
           />
@@ -75,18 +58,22 @@ export function Smile({
       <path
         className="smile-closed"
         d={
-          expression === 'cheeky'
-            ? 'M74 139Q123 181 172 132'
-            : 'M68 135Q120 194 172 135'
+          expression === 'sad'
+            ? 'M75 158Q120 116 165 158'
+            : expression === 'meh'
+              ? 'M78 150H162'
+              : expression === 'cheeky'
+                ? 'M74 139Q123 181 172 132'
+                : 'M68 135Q120 194 172 135'
         }
-        stroke="#0b2521"
+        stroke="#090b10"
         strokeWidth="9"
         strokeLinecap="round"
       />
       <g className="smile-open">
         <path
           d="M67 134Q120 150 173 134C170 193 75 197 67 134Z"
-          fill="#0b2521"
+          fill="#090b10"
         />
         <path d="M90 174Q120 158 151 175Q123 191 90 174" fill="#FF5C5C" />
       </g>
@@ -154,6 +141,11 @@ function Plaything({
       delete document.documentElement.dataset.dragging;
     };
     const tick = (now: number) => {
+      if (document.hidden) {
+        raf = 0;
+        previous = 0;
+        return;
+      }
       const dt = Math.min(2, (now - (previous || now - 16)) / 16.67);
       previous = now;
       const p = position.current;
@@ -228,7 +220,7 @@ function Plaything({
       }
     };
     const start = () => {
-      if (!raf) raf = requestAnimationFrame(tick);
+      if (!raf && !document.hidden) raf = requestAnimationFrame(tick);
     };
     const detach = () => {
       const rect = item.current!.getBoundingClientRect();
@@ -348,6 +340,11 @@ function Plaything({
     window.addEventListener('pointerup', release);
     window.addEventListener('pointercancel', release);
     window.addEventListener('blur', release);
+    const visibility = () => {
+      if (document.hidden) release();
+      else start();
+    };
+    document.addEventListener('visibilitychange', visibility);
     return () => {
       cancelAnimationFrame(raf);
       stopCapture();
@@ -356,6 +353,7 @@ function Plaything({
       window.removeEventListener('pointerup', release);
       window.removeEventListener('pointercancel', release);
       window.removeEventListener('blur', release);
+      document.removeEventListener('visibilitychange', visibility);
     };
   }, [kind]);
   useEffect(() => {
@@ -387,7 +385,14 @@ function Plaything({
       }}
     >
       {kind === 'face' ? (
-        <Smile tone={tone} expression={expression} />
+        <>
+          <Smile tone={tone} expression={expression} />
+          {laughing && (
+            <span className="haha-burst" aria-hidden="true">
+              haha
+            </span>
+          )}
+        </>
       ) : kind === 'spark' ? (
         <svg viewBox="0 0 80 80" aria-hidden="true">
           <path
@@ -408,10 +413,18 @@ function Plaything({
   );
 }
 
-export function FansPlayground({ group = false }: { group?: boolean }) {
+export function FansPlayground({
+  group = false,
+  orbit = false,
+}: {
+  group?: boolean;
+  orbit?: boolean;
+}) {
   const [reset, setReset] = useState(0);
   return (
-    <div className={`fans-playground ${group ? 'playground-group' : ''}`}>
+    <div
+      className={`fans-playground ${group ? 'playground-group' : ''} ${orbit ? 'playground-orbiting' : ''}`}
+    >
       <div className="playground-orbit" aria-hidden="true" />
       <Plaything kind="face" label="teal smiley" reset={reset} />
       {group ? (

@@ -23,7 +23,7 @@ export function ManualInstall() {
       className="manual-install manual-advanced"
       id="manual"
     >
-      <summary>Advanced: manual install (for testers)</summary>
+      <summary>Latest build (for testers and developers)</summary>
       <p>ZIP installs don’t update automatically.</p>
       <InstallDownload />
       <InstallGuide />

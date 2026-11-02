@@ -18,7 +18,6 @@ export default function Privacy() {
   return (
     <main className="standard-page privacy-page">
       <header className="page-intro">
-        <p className="eyebrow">SMALL FOOTPRINT. GOOD COMPANY.</p>
         <h1>
           your audio
           <br />
@@ -27,31 +26,6 @@ export default function Privacy() {
         <p>Here’s what {PRODUCT.name} does with your data. In plain words.</p>
         <p className="policy-date">Last updated: November 2, 2026</p>
       </header>
-      <section className="privacy-rating-note" id="stream-ratings">
-        <h2>stream ratings</h2>
-        <p>
-          After a live stream of 10+ minutes, you can send a score from 1 to 10
-          and up to three reason chips. We receive the channel and stream key.
-          No username, free text or audio is sent. Our app does not store your
-          IP address; short-lived, keyed hashes rate-limit requests.
-        </p>
-        <p>
-          A keyed anonymous dedupe hash plus the previous score and reasons lets
-          you change a rating for 24 hours. This temporary replacement record is
-          deleted after 48 hours. Only per-stream totals, score distributions
-          and reason counts remain, for the last 30 streams. New ratings close
-          24 hours after the first fan rating; existing ratings can still be
-          edited for their full 24 hours. This prevents a deleted dedupe hash
-          from being used to vote twice.
-        </p>
-        <p>
-          Only the streamer can read the results, and nothing appears before
-          five fans rate. Turn off “send stream ratings” in the extension
-          settings to stop sending. Deleting local history does not retract an
-          already anonymous aggregate. Cloudflare processes network addresses to
-          deliver requests; application request logging is off.
-        </p>
-      </section>
       <aside className="privacy-short" aria-labelledby="short-version">
         <h2 id="short-version">the short version.</h2>
         <ul>
@@ -59,7 +33,10 @@ export default function Privacy() {
             Audio is processed on your computer. It is never recorded to a file
             or uploaded.
           </li>
-          <li>Sharing is off unless you turn it on.</li>
+          <li>
+            Live reaction sharing is off unless you turn it on. Ratings are sent
+            only when you press send.
+          </li>
           <li>
             Shared reactions are anonymous counts plus up to 3 approved words or
             phrases.
@@ -69,7 +46,6 @@ export default function Privacy() {
       </aside>
       <div className="policy-layout">
         <nav className="policy-toc" aria-label="privacy contents">
-          <p className="eyebrow">ON THIS PAGE</p>
           {topics.map(([id, title]) => (
             <a key={id} href={`#${id}`}>
               {title}
@@ -80,10 +56,10 @@ export default function Privacy() {
           <section id="on-your-pc">
             <h2>what happens on your computer.</h2>
             <p>
-              When you start listening, the extension processes your microphone
-              and the watched Twitch tab’s audio with bundled, on-device models.
-              The tab audio helps distinguish your reactions from the stream.
-              Your stream keeps playing through your speakers or headphones.
+              When you start listening, bundled models process your microphone
+              on your computer. Tab audio capture is off by default: Twitch
+              plays natively through your speakers or headphones. Optional tab
+              analysis is available in the hidden diagnostics lab.
             </p>
             <p>
               Audio frames stay in temporary memory buffers holding up to 30
@@ -139,8 +115,10 @@ export default function Privacy() {
             <p>
               The channel watched corresponds to the store disclosure “web
               history”; approved reaction words correspond to “website content”.
-              We do not send your wider browsing history, Twitch account
-              identity or a permanent installation ID.
+              We do not send your wider browsing history or Twitch account
+              identity. Live reactions do not use a permanent installation ID.
+              Optional ratings use a separate random installation token for
+              deduplication, as described below.
             </p>
             <p>
               Even with sharing off, the live fan view connects to the server
@@ -156,14 +134,41 @@ export default function Privacy() {
               proof of three different humans.
             </p>
           </section>
+          <section id="stream-ratings">
+            <h2>stream ratings</h2>
+            <p>
+              After a live stream of 10+ minutes, you can send a score from 1 to
+              10 and up to three reason chips. We receive the channel and stream
+              key. No username, free text or audio is sent. Our app does not
+              store your IP address; short-lived, keyed hashes rate-limit
+              requests.
+            </p>
+            <p>
+              A keyed anonymous dedupe hash plus the previous score and reasons
+              lets you change a rating for 24 hours. This temporary replacement
+              record is deleted after 48 hours. Only per-stream totals, score
+              distributions and reason counts remain, for the last 30 streams.
+              New ratings close 24 hours after the first fan rating; existing
+              ratings can still be edited for their full 24 hours. This prevents
+              a deleted dedupe hash from being used to vote twice.
+            </p>
+            <p>
+              Only the streamer can read the results, and nothing appears before
+              five fans rate. Turn off “send stream ratings” in the extension
+              settings to stop sending. Deleting local history does not retract
+              an already anonymous aggregate. Cloudflare processes network
+              addresses to deliver requests; application request logging is off.
+            </p>
+          </section>
           <section id="never">
             <h2>what we never collect.</h2>
             <p>
               No microphone recordings, stream audio, video, chat messages,
               passwords or browsing activity outside twitch.tv. We do not upload
               raw model inputs or full transcripts. Names and blocked terms are
-              filtered; swear text is not shared. We do not create per-viewer
-              database records.
+              filtered; swear text is not shared. Live reaction storage contains
+              only aggregate summaries. Ratings keep a temporary keyed
+              replacement record for 48 hours, then only stream totals remain.
             </p>
             <p>
               Hosting providers can see normal network information such as IP
@@ -212,8 +217,8 @@ export default function Privacy() {
           <section id="permissions">
             <h2>permissions, explained.</h2>
             <p>
-              These come from the real extension manifest. No downloads or
-              management permission is requested.
+              Store installs request no downloads or management permission. The
+              manual ZIP build also uses downloads to save its update ZIP.
             </p>
             <div className="permission-scroll">
               <table>
@@ -242,8 +247,8 @@ export default function Privacy() {
                   <tr>
                     <th scope="row">tabCapture</th>
                     <td>
-                      Capture that tab’s audio after you press Start or the
-                      keyboard shortcut.
+                      Off by default. Enables optional tab-audio diagnostics
+                      after you choose it; normal listening uses the mic only.
                     </td>
                   </tr>
                   <tr>
@@ -293,10 +298,11 @@ export default function Privacy() {
             <p>
               The Worker stores only aggregate minute summaries that meet the
               three-contributor floor, for up to 30 days, with automatic
-              cleanup. It stores no audio or per-viewer rows. Past anonymous
-              totals cannot be traced back or individually removed; they expire
-              with the summaries. Providers apply their own infrastructure
-              retention policies.
+              cleanup. It stores no audio or per-viewer reaction rows. The
+              separate rating retention rules are above. Past anonymous totals
+              cannot be traced back or individually removed; they expire with
+              the summaries. Providers apply their own infrastructure retention
+              policies.
             </p>
             <p>
               The website fetches public version metadata to show whether a

@@ -9,6 +9,7 @@ export function downloadMetadata() {
     version: PRODUCT.version,
     installUrl: `${siteUrl()}/install`,
     downloadUrl: `${siteUrl()}/download/zip`,
+    // TODO: update product.config.json store versions only after each store approves them.
     chromeStoreVersion: PRODUCT.chromeStoreVersion,
     edgeStoreVersion: PRODUCT.edgeStoreVersion,
     sha256: matches && /^[a-f0-9]{64}$/.test(sha256 ?? '') ? sha256 : null,

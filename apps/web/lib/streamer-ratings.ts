@@ -1,5 +1,7 @@
 // Fan ratings as the streamer dashboard shows them. The Worker returns these
 // aggregates (never single ratings); anything under 5 raters stays locked.
+import { SAMPLE_FAN_RATING, SAMPLE_FAN_REPORT } from './sample-ratings';
+
 export type RatingReason = { id: string; label: string; percent: number };
 
 export type StreamerRatings =
@@ -35,7 +37,7 @@ export const NEGATIVE_REASONS = new Set(['slow', 'ads', 'audio', 'short']);
 
 export function ratingTone(score: number): 'coral' | 'yellow' | 'teal' {
   if (score < 5) return 'coral';
-  if (score < 7.5) return 'yellow';
+  if (score < 8) return 'yellow';
   return 'teal';
 }
 
@@ -55,33 +57,28 @@ export function ratingSummary(reasons: RatingReason[]) {
   );
   const parts: string[] = [];
   if (good.length)
-    parts.push(
-      `Most fans loved the ${good.map((r) => r.label).join(' and the ')}.`,
-    );
+    parts.push(`Fans loved ${good.map((r) => r.label).join(' and ')}.`);
   if (bad) parts.push(`A few said ${bad.label}.`);
   return parts.join(' ') || 'Your fans rated the night.';
 }
 
-export const SAMPLE_RATINGS: StreamerRatings = {
-  locked: false,
-  count: 1204,
-  average: 8.4,
-  histogram: [6, 4, 9, 14, 31, 58, 121, 268, 341, 352],
-  reasons: [
-    { id: 'funny', label: 'funny', percent: 71 },
-    { id: 'chill', label: 'chill vibes', percent: 44 },
-    { id: 'chat', label: 'good chat', percent: 29 },
-    { id: 'ads', label: 'too many ads', percent: 12 },
-  ],
-  summary:
-    'Most fans loved the funny moments and the chill vibes. Ads barely came up.',
-  trend: [
-    { label: 'Oct 21', average: 7.1 },
-    { label: 'Oct 22', average: 7.6 },
-    { label: 'Oct 23', average: 6.8 },
-    { label: 'Oct 24', average: 7.9 },
-    { label: 'Oct 25', average: 8.1 },
-    { label: 'Oct 26', average: 7.7 },
-    { label: 'tonight', average: 8.4 },
-  ],
-};
+export const SAMPLE_RATINGS: StreamerRatings = SAMPLE_FAN_RATING.locked
+  ? SAMPLE_FAN_RATING
+  : {
+      locked: false,
+      count: 1204,
+      average: SAMPLE_FAN_RATING.average,
+      histogram: SAMPLE_FAN_RATING.histogram,
+      reasons: [
+        { id: 'funny', label: 'funny', percent: 71 },
+        { id: 'chill', label: 'chill vibes', percent: 54 },
+        { id: 'hype', label: 'hype moments', percent: 40 },
+        { id: 'ads', label: 'too many ads', percent: 22 },
+      ],
+      summary: SAMPLE_FAN_RATING.summary,
+      trend: SAMPLE_FAN_REPORT.trend.flatMap((s) =>
+        s.rating.locked
+          ? []
+          : [{ label: s.streamKey.slice(5, 10), average: s.rating.average }],
+      ),
+    };

@@ -84,8 +84,8 @@ export function StoreButtons({ compact = false }: { compact?: boolean }) {
             storeBehind(latest, PRODUCT.edgeStoreVersion)
           : storeBehind(latest, choice.version)) && (
           <p className="store-review">
-            The store update to v{latest} is in review. Want it now?{' '}
-            <a href="/install#manual">Manual install.</a>
+            latest tester build: v{latest}.{' '}
+            <a href="/install#manual">manual install ↗</a>
           </p>
         )}
     </div>
