@@ -44,25 +44,47 @@ it('terminates the speech worker for the safety pause, keeps the laugh worker, a
   vi.stubGlobal('chrome', {
     runtime: { getURL: (p: string) => `chrome-extension://test${p}` },
   });
-  const bridge = new InferenceBridge(new AudioFrameHub(), vi.fn());
-  bridge.sync(report());
+  const hub = new AudioFrameHub(),
+    bridge = new InferenceBridge(hub, vi.fn());
+  bridge.sync({ ...report(), hasTab: false });
   const [rt, speech, sound] = WorkerFake.instances;
+  rt!.deliver({
+    type: 'status',
+    health: { ...emptyInferenceHealth(), phase: 'ready' },
+    events: [],
+  });
   bridge.setLab({ laughModel: true, speechModel: true }, true);
   expect(speech!.terminate).toHaveBeenCalledOnce();
   expect(sound!.terminate).not.toHaveBeenCalled();
   expect(rt!.terminate).not.toHaveBeenCalled();
+  hub.onFrame('mic', new Float32Array(320).fill(0.1), 1000);
+  expect(rt!.postMessage).toHaveBeenCalledWith(
+    expect.objectContaining({ type: 'frame', source: 'mic' }),
+    expect.any(Array),
+  );
+  expect(rt!.postMessage).toHaveBeenCalledWith({
+    type: 'modes',
+    laugh: true,
+    speech: false,
+  });
   bridge.setLab({ laughModel: true, speechModel: true }, false);
   expect(WorkerFake.instances).toHaveLength(4);
+  expect(rt!.postMessage).toHaveBeenCalledWith({
+    type: 'modes',
+    laugh: true,
+    speech: true,
+  });
   bridge.close();
 });
-it('aborts an in-flight speech budget overrun, retains laughs and retries after a bounded cooldown', () => {
+it('lets a slow native-session speech result finish without pausing words or laughs', () => {
   vi.useFakeTimers({ toFake: ['performance'] });
   vi.stubGlobal('Worker', WorkerFake);
   vi.stubGlobal('chrome', {
     runtime: { getURL: (p: string) => `chrome-extension://test${p}` },
   });
   const bridge = new InferenceBridge(new AudioFrameHub(), vi.fn());
-  bridge.sync(report());
+  const native = { ...report(), hasTab: false };
+  bridge.sync(native);
   const [rt, speech, sound] = WorkerFake.instances;
   speech!.deliver({
     type: 'speech_status',
@@ -74,17 +96,44 @@ it('aborts an in-flight speech budget overrun, retains laughs and retries after 
     samples: new Float32Array(16000),
   });
   vi.advanceTimersByTime(3001);
-  bridge.sync(report());
-  expect(speech!.terminate).toHaveBeenCalledOnce();
+  bridge.sync(native);
+  expect(speech!.terminate).not.toHaveBeenCalled();
   expect(sound!.terminate).not.toHaveBeenCalled();
+  expect(rt!.terminate).not.toHaveBeenCalled();
   expect(bridge.diagnostics()).toMatchObject({
-    speechOverruns: 1,
-    speechCooldownMs: 30000,
-    health: { lowPower: true },
+    speechOverruns: 0,
+    speechCooldownMs: 0,
   });
-  vi.advanceTimersByTime(30001);
-  bridge.setLab({ laughModel: true, speechModel: true });
-  expect(WorkerFake.instances).toHaveLength(4);
+  speech!.deliver({
+    type: 'speech_result',
+    id: 77,
+    result: { phrases: [{ text: 'bro', count: 1, class: 'ok' }], hype: false },
+  });
+  expect(rt!.postMessage).toHaveBeenCalledWith(
+    expect.objectContaining({ type: 'speech_result', id: 77 }),
+  );
+  expect(WorkerFake.instances).toHaveLength(3);
+  bridge.close();
+});
+it('feeds mic frames to inference when the watched tab is never captured', () => {
+  vi.stubGlobal('Worker', WorkerFake);
+  vi.stubGlobal('chrome', {
+    runtime: { getURL: (p: string) => `chrome-extension://test${p}` },
+  });
+  const hub = new AudioFrameHub(),
+    bridge = new InferenceBridge(hub, vi.fn());
+  bridge.sync({ ...report(), hasTab: false });
+  const realtime = WorkerFake.instances[0]!;
+  realtime.deliver({
+    type: 'status',
+    health: { ...emptyInferenceHealth(), phase: 'ready' },
+    events: [],
+  });
+  hub.onFrame('mic', new Float32Array(320).fill(0.1), 1000);
+  expect(realtime.postMessage).toHaveBeenCalledWith(
+    expect.objectContaining({ type: 'frame', source: 'mic' }),
+    expect.any(Array),
+  );
   bridge.close();
 });
 it('caps stop drain at 1500ms, stops frame input and keeps tracks/workers alive for the final save', async () => {

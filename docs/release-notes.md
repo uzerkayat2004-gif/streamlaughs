@@ -1,8 +1,8 @@
-# StreamLaughs v0.8.4
+# StreamLaughs v0.8.5
 
 see who's laughing with you.
 
-- Twitch audio stays native by default. An optional speaker echo reference has dedicated direct playback, while the hidden live stutter lab isolates capture, model and panel work. Repeated output glitches pause speech first and recover after a smooth interval. Detector thresholds and word rules stay unchanged.
+- Mic capture starts before the independent analysis context; interrupted audio analysis resumes without capturing Twitch. Remove the premature speech-job timeout that killed valid word results. Measured playback glitches still pause only speech and recover automatically. Twitch playback stays native, and v0.8.3 detector thresholds and word rules are unchanged.
 - Personal VOD/clip replay sessions, with automatic owner detection and a channel-name fallback; replay moments use playback time and never join the crowd server.
 - Transparent SVG jelly smiley, global and per-tab toolbar cleanup, readable streamer hover/focus, and balanced sparse share cards. Word-state bounds and reaction matching are fixed; positive events are delivered immediately. Instant stop feedback retains its bounded final save. Saved-stream unread badges remain inside My streamers.
 - Accurate short-session recap copy, first-stream history and approved-word timing for your funniest word. Comfortable story controls, a locally drawn 1080x1920 PNG with QR, and public stat-only recap links with social preview images.

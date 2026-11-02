@@ -83,7 +83,7 @@ export function StutterLab({
           ? 'direct playback context; analysis is separate'
           : 'Twitch plays natively; no extension tab capture/passthrough'}
       </p>
-      {(playback?.speechPaused || !!r?.inference?.speechCooldownMs) && (
+      {playback?.speechPaused && (
         <p role="status">
           speech paused for smooth audio · laughs stay on; resumes after 30
           smooth seconds
@@ -103,10 +103,6 @@ export function StutterLab({
         {Math.round(r?.inference?.vadCpuMsPerSecond ?? 0)} · laugh{' '}
         {Math.round(r?.inference?.soundCpuMsPerSecond ?? 0)} · words{' '}
         {Math.round(r?.inference?.speechCpuMsPerSecond ?? 0)}
-      </p>
-      <p>
-        speech budget overruns: {r?.inference?.speechOverruns ?? 0} · retry in{' '}
-        {Math.ceil((r?.inference?.speechCooldownMs ?? 0) / 1000)} s
       </p>
       {tasks.map(([name, t]) => (
         <p key={name}>

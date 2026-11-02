@@ -26,7 +26,9 @@ it('caps Twitch state paints at four a second and applies the latest snapshot af
       },
     },
   });
-  const { connectSurface, surface } = await import('./bridge');
+  const { connectSurface, surface, panelDeliveryStats } = await import(
+    './bridge'
+  );
   const { labSurface } = await import('./stutter-surface');
   const close = connectSurface(250);
   await Promise.resolve();
@@ -42,6 +44,10 @@ it('caps Twitch state paints at four a second and applies the latest snapshot af
     }
     expect(paints).toBeLessThanOrEqual(4);
     expect(surface.store.getState().snapshot.revision).toBe(20);
+    expect(panelDeliveryStats()).toMatchObject({
+      updates: paints + 1,
+      revision: 20,
+    });
     labSurface.accept({ ...labSurface.get(), overlay: false });
     storage(
       { 'laughline:state': { newValue: { ...state, revision: 21 } } },
@@ -54,6 +60,7 @@ it('caps Twitch state paints at four a second and applies the latest snapshot af
       switches: { ...labSurface.get(), overlay: true },
     });
     expect(surface.store.getState().snapshot.revision).toBe(21);
+    expect(panelDeliveryStats()).toMatchObject({ revision: 21 });
   } finally {
     close();
     unsubscribe();

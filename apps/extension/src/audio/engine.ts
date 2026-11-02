@@ -318,18 +318,25 @@ export class AudioEngine {
         this.tabPlayback.connect(this.playbackContext.destination);
         await this.resumeContext(this.playbackContext);
       }
-      this.context = new AudioContext({ latencyHint: 'balanced' });
-      await this.context.audioWorklet.addModule(
-        chrome.runtime.getURL('/audio-worklet.js'),
-      );
-      await this.resumeContext();
-      if (this.context.state !== 'running') throw new Error('audioContext');
-      if (this.tab) this.attach('tab', this.tab, generation);
+      // Active microphone capture must exist before analysis is resumed. With
+      // native Twitch playback there is no tab capture to unlock Web Audio or
+      // settle an input/output device change (notably Bluetooth) for us.
       try {
         await this.openMic(generation);
       } catch (error) {
         this.recordError(error);
         this.loseMic();
+      }
+      if (generation !== this.generation) throw new Error('device');
+      this.context = new AudioContext({ latencyHint: 'balanced' });
+      await this.context.audioWorklet.addModule(
+        chrome.runtime.getURL('/audio-worklet.js'),
+      );
+      if (this.tab) this.attach('tab', this.tab, generation);
+      if (this.mic) this.attach('mic', this.mic, generation);
+      if (this.mic || this.tab) {
+        await this.resumeContext();
+        if (this.context.state !== 'running') throw new Error('audioContext');
       }
       this.deviceSignature = await this.inputDevices();
       navigator.mediaDevices.addEventListener?.(
@@ -449,7 +456,7 @@ export class AudioEngine {
         }
       };
     }
-    this.attach('mic', mic, generation);
+    if (this.context) this.attach('mic', mic, generation);
     // Track state / the actual capture result are authoritative. Permissions API
     // can report denied for a working extension-origin getUserMedia grant.
     this.micLost = false;
@@ -508,9 +515,9 @@ export class AudioEngine {
       stopTracks(this.mic);
       this.mic = null;
       this.stats.mic = emptyStats();
+      await this.openMic(generation);
       await this.resumeContext();
       if (generation !== this.generation || !this.context) return this.status();
-      await this.openMic(generation);
       this.phase = this.paused ? 'paused' : 'active';
       this.setProcessing();
       this.report();
@@ -551,7 +558,12 @@ export class AudioEngine {
       }
     }
     for (const audioContext of [this.context, this.playbackContext])
-      if (audioContext?.state === 'suspended' && this.sessionId)
+      if (
+        audioContext &&
+        ['suspended', 'interrupted'].includes(audioContext.state) &&
+        this.sessionId &&
+        (this.mic || this.tab)
+      )
         void this.resumeContext(audioContext).catch((error) => {
           this.lastError = safeError(error);
         });

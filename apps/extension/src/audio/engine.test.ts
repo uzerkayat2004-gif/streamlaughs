@@ -22,6 +22,7 @@ function stream() {
 const connect = () => ({ connect: vi.fn(), disconnect: vi.fn() });
 describe('offscreen audio ownership', () => {
   let contextRequests: AudioContextOptions[] = [];
+  let requireActiveCapture = false;
   let mic: ReturnType<typeof stream>,
     tab: ReturnType<typeof stream>,
     context: {
@@ -41,6 +42,7 @@ describe('offscreen audio ownership', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     contextRequests = [];
+    requireActiveCapture = false;
     mic = stream();
     tab = stream();
     nodes = [];
@@ -67,6 +69,11 @@ describe('offscreen audio ownership', () => {
         createMediaStreamSource = vi.fn(connect);
         createGain = vi.fn(() => ({ ...connect(), gain: { value: 1 } }));
         resume = vi.fn(async () => {
+          if (
+            requireActiveCapture &&
+            !vi.mocked(navigator.mediaDevices.getUserMedia).mock.calls.length
+          )
+            throw new Error('no active capture');
           this.state = 'running';
         });
         close = vi.fn(async () => {
@@ -109,6 +116,70 @@ describe('offscreen audio ownership', () => {
     expect(nodes).toHaveLength(1);
     await vi.advanceTimersByTimeAsync(120001);
     expect(engine.status()?.phase).toBe('active');
+  });
+  it('opens the mic before resuming analysis and delivers frames with tab capture off', async () => {
+    requireActiveCapture = true;
+    await engine.start({ sessionId: 'capture-first', nativePlayback: true });
+    const node = nodes[0]!;
+    const processing = node.port.postMessage.mock.calls
+      .map(([m]) => m)
+      .findLast((m) => m.type === 'processing');
+    node.port.onmessage?.({
+      data: {
+        type: 'frame',
+        segment: processing.segment,
+        frame: new Float32Array(320).fill(0.1),
+        ts: 1000,
+      },
+    });
+    node.port.onmessage?.({
+      data: {
+        type: 'metrics',
+        segment: processing.segment,
+        frames: 1,
+        rms: 0.1,
+        peak: 0.2,
+        dropped: 0,
+        cpuMs: 1,
+        intervalMs: 250,
+      },
+    });
+    await vi.advanceTimersByTimeAsync(250);
+    expect(engine.frames.size('mic')).toBe(320);
+    expect(engine.status()).toMatchObject({
+      hasMic: true,
+      hasTab: false,
+      metrics: { micFrames: 1 },
+    });
+    expect(engine.diagnostics().playbackContext).toBe('closed');
+  });
+  it('resumes analysis after an input/output device interruption without capturing the tab', async () => {
+    await engine.start({ sessionId: 'interrupted', nativePlayback: true });
+    context.state = 'interrupted';
+    context.resume.mockClear();
+    await vi.advanceTimersByTimeAsync(250);
+    expect(context.resume).toHaveBeenCalledOnce();
+    expect(context.state).toBe('running');
+    expect(engine.status()?.hasTab).toBe(false);
+  });
+  it('keeps a native session crowd-only on mic denial and resumes after retry', async () => {
+    vi.mocked(navigator.mediaDevices.getUserMedia).mockRejectedValueOnce(
+      new DOMException('denied', 'NotAllowedError'),
+    );
+    await engine.start({ sessionId: 'retry-native', nativePlayback: true });
+    expect(engine.status()).toMatchObject({
+      phase: 'micLost',
+      hasMic: false,
+      hasTab: false,
+    });
+    expect(context.resume).not.toHaveBeenCalled();
+    await engine.retryMic();
+    expect(engine.status()).toMatchObject({
+      phase: 'active',
+      hasMic: true,
+      hasTab: false,
+    });
+    expect(context.resume).toHaveBeenCalledOnce();
   });
   it('switches tab and mic capture live without ending or replacing the saved session', async () => {
     await engine.start({ sessionId: 'live-switch', nativePlayback: true });
@@ -299,20 +370,25 @@ describe('offscreen audio ownership', () => {
   it('does not reopen a microphone after stop interrupts an async retry', async () => {
     await engine.start({ sessionId: 'one', streamId: 'opaque' });
     mic.item.onended?.();
-    let resume!: () => void;
-    context.resume.mockImplementationOnce(
+    const lateMic = stream();
+    let acquired!: (value: MediaStream) => void;
+    vi.mocked(navigator.mediaDevices.getUserMedia).mockImplementationOnce(
       () =>
-        new Promise<void>((resolve) => {
-          resume = resolve;
+        new Promise<MediaStream>((resolve) => {
+          acquired = resolve;
         }),
     );
     const calls = vi.mocked(navigator.mediaDevices.getUserMedia).mock.calls
       .length;
     const retry = engine.retryMic();
+    await vi.advanceTimersByTimeAsync(0);
     await engine.stop();
-    resume();
+    acquired(lateMic as unknown as MediaStream);
     await retry;
-    expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledTimes(calls);
+    expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledTimes(
+      calls + 1,
+    );
+    expect(lateMic.item.stop).toHaveBeenCalled();
     expect(engine.status()).toBeNull();
   });
 });

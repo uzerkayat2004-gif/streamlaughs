@@ -2,7 +2,7 @@
 
 # StreamLaughs final manual acceptance · one 30-minute pass
 
-For v0.8.4 audio, first follow the [five-minute wired and optional five-minute Bluetooth comparison](audio-stutter-v084.md#owner-check-wired-then-bluetooth). Tab capture is off by default; inspect Alt+Shift+D → stutter lab before opting into the speaker echo reference.
+For v0.8.5 detection, check [mic frames, laughs and words](detection-v085.md), then follow the [five-minute wired and optional five-minute Bluetooth comparison](audio-stutter-v084.md#owner-check-wired-then-bluetooth). Tab capture is off by default; inspect Alt+Shift+D → stutter lab before opting into the speaker echo reference.
 
 This is the canonical final checklist. It is a smoke/acceptance pass, not an accuracy benchmark or a two-hour soak. Mark only things you observe. Record date, Chrome/Edge versions, OS, build version, configured origins and result beside each item. No private audio, cookies, tokens or OAuth codes in evidence.
 

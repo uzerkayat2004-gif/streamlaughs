@@ -89,11 +89,6 @@ export class InferenceBridge {
     return {
       ...this.productionDiagnostics,
       workerTasks: { ...this.taskStats },
-      speechOverruns: this.speechOverruns,
-      speechCooldownMs: Math.max(
-        0,
-        this.speechCooldownUntil - performance.now(),
-      ),
       soundCpuMsPerSecond: this.cost('sound'),
       speechCpuMsPerSecond: this.cost('speech'),
       models: {
@@ -102,19 +97,10 @@ export class InferenceBridge {
         yamnet: this.soundState,
       },
       ...(stale ? { micFps: 0, tabFps: 0 } : {}),
-      health: {
-        ...this.health,
-        lowPower:
-          this.health.lowPower || performance.now() < this.speechCooldownUntil,
-      },
+      health: { ...this.health },
     };
   }
   private modes = { laugh: true, speech: true };
-  private requestedModes = { laughModel: true, speechModel: true };
-  private watchdogPause = false;
-  private speechDeadline = 0;
-  private speechCooldownUntil = 0;
-  private speechOverruns = 0;
   private taskStats = {
     realtime: emptyTasks(),
     sound: emptyTasks(),
@@ -124,14 +110,11 @@ export class InferenceBridge {
     switches: Pick<LabSwitches, 'laughModel' | 'speechModel'>,
     automaticSpeechPause = false,
   ) {
-    this.requestedModes = { ...switches };
-    this.watchdogPause = automaticSpeechPause;
     const next = {
       laugh: switches.laughModel,
-      speech:
-        switches.speechModel &&
-        !automaticSpeechPause &&
-        performance.now() >= this.speechCooldownUntil,
+      // Only measured playback trouble pauses this worker. Wall time includes
+      // cold WASM work and browser scheduling; it does not prove audio trouble.
+      speech: switches.speechModel && !automaticSpeechPause,
     };
     if (next.laugh === this.modes.laugh && next.speech === this.modes.speech)
       return;
@@ -314,10 +297,6 @@ export class InferenceBridge {
       const pending = this.pendingSpeech;
       this.pendingSpeech = null;
       this.activeSpeechId = pending.id;
-      // Reuse the existing speech RTF budget; a stalled job must not hog a core indefinitely.
-      this.speechDeadline =
-        performance.now() +
-        Math.max(3000, (pending.samples.length / 16) * C.whisperBudgetRtf);
       this.speechWorker.postMessage(
         { type: 'speech', id: pending.id, samples: pending.samples },
         [pending.samples.buffer],
@@ -366,17 +345,7 @@ export class InferenceBridge {
     });
   }
   sync(owner: AudioReport) {
-    if (this.owner?.sessionId !== owner.sessionId) this.speechCooldownUntil = 0;
     this.owner = owner;
-    if (
-      this.activeSpeechId !== null &&
-      performance.now() > this.speechDeadline
-    ) {
-      this.speechOverruns++;
-      this.speechCooldownUntil = performance.now() + 30000;
-      this.setLab(this.requestedModes, this.watchdogPause);
-      return;
-    }
     if (this.finishing) return;
     if (
       (!this.modes.laugh && !this.modes.speech) ||
@@ -492,11 +461,7 @@ export class InferenceBridge {
       type: 'INFERENCE_STATUS',
       ownerId: this.owner.ownerId,
       sessionId: this.owner.sessionId,
-      health: {
-        ...this.health,
-        lowPower:
-          this.health.lowPower || performance.now() < this.speechCooldownUntil,
-      },
+      health: this.health,
     });
   }
 

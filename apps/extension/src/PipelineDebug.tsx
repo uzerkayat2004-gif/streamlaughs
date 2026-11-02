@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { selectedMicrophone } from './audio/microphone';
 import { StutterLab } from './StutterLab';
 import { labSurface } from './stutter-surface';
+import { panelDeliveryStats } from './bridge';
 import {
   copyableReport,
   type DiagnosticsReport,
@@ -85,6 +86,12 @@ export function micProblem(report: DiagnosticsReport | null) {
     return 'microphone is muted · unmute your input';
   if (report.audio.context !== 'running')
     return 'audio context is suspended · restart audio';
+  if (report.inference?.health.phase === 'ready') {
+    if (!report.audio.metrics.micFrames)
+      return 'microphone is live but no frames arrive · retry audio';
+    if (!report.inference.micFrames)
+      return 'mic frames aren’t reaching detection · restart audio';
+  }
   if (
     report.audio.metrics.micFrames > 200 &&
     !report.inference?.stages.nonzeroFrames
@@ -105,7 +112,8 @@ export function micProblem(report: DiagnosticsReport | null) {
 export function PipelineDebug({ close }: { close: () => void }) {
   const { report: r, phrase } = usePipelineReport(true, true, true);
   const ai = r?.inference,
-    audio = r?.audio;
+    audio = r?.audio,
+    delivered = panelDeliveryStats();
 
   return (
     <section
@@ -144,8 +152,10 @@ export function PipelineDebug({ close }: { close: () => void }) {
         → 16000 Hz
       </p>
       <p>
-        frames: {ai?.micFrames ?? 0} · {Math.round(ai?.micFps ?? 0)}/s ·
-        nonzero: {ai?.stages.nonzeroFrames ?? 0}
+        mic frames in: {audio?.metrics.micFrames ?? 0} · RMS{' '}
+        {(audio?.metrics.micLevel ?? 0).toFixed(5)} · frames to worker:{' '}
+        {ai?.micFrames ?? 0} · {Math.round(ai?.micFps ?? 0)}/s · nonzero:{' '}
+        {ai?.stages.nonzeroFrames ?? 0}
       </p>
       <p>
         VAD: {(ai?.health.vadProbability ?? 0) >= 0.5 ? 'speech' : 'quiet'} ·
@@ -182,6 +192,10 @@ export function PipelineDebug({ close }: { close: () => void }) {
         {r?.sessionMatches ? 'matched' : 'not matched'}
       </p>
       <p role="status">{micProblem(r) || 'pipeline running'}</p>
+      <p>
+        panel updates delivered: {delivered.updates} · panel shows{' '}
+        {delivered.laughs} laughs / {delivered.words} words
+      </p>
       <p>
         laugh delivery latency: {Math.round(r?.laughPanelLatencyMs ?? 0)} ms ·
         recognized audio frame → panel (not first-sound onset)

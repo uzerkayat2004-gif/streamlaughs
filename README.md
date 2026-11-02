@@ -4,7 +4,7 @@
 
 A little crowd for Twitch: your local laughs, everyone’s anonymous reactions, and a Wrapped-style recap when the stream ends.
 
-**v0.8.4:** Twitch audio stays native by default, with a hidden live stutter lab, playback diagnostics and a speech-first safety pause. Laugh/word thresholds and matching rules are unchanged. [Evidence, limits and hardware checks](docs/audio-stutter-v084.md).
+**v0.8.5:** Microphone analysis starts independently of tab capture and recovers after device interruptions. Valid speech jobs can finish instead of being killed by a premature timeout. Twitch audio stays native; laugh thresholds and word rules are unchanged. [Detection evidence and update steps](docs/detection-v085.md).
 
 > **Demo GIF / screenshot placeholder:** replace this line with the final crowd-blob GIF after recording. [Current extension screenshots](docs/screenshots/part6) · [Website preview](docs/screenshots/part5/home-desktop.png).
 
@@ -92,7 +92,7 @@ Original code: [MIT](LICENSE). Models, fonts, runtimes and dependencies retain t
 
 The microphone pipeline was reproduced with the packaged production extension before the UI changed. See [the diagnosis and headed WAV proof](docs/detection-v080.md) and [the v0.8 UI/data notes and final acceptance steps](docs/ui-v080.md). The new laughing-face icon, glass live meter, mic check, saved-stream actions, unread recap badge, yellow/coral/teal stories, grouped streamer history and local PNG export ship together. Missing facts are skipped; fan peaks are never presented as fan totals or personal coincidence.
 
-**Updating a ZIP install:** download from the website, unzip and replace the files in the **same existing installed folder**, click **reload** in `chrome://extensions`, then **refresh the Twitch tab**. Never click Remove. Your browser keeps its existing local recaps and settings. The popup and hidden debug panel show v0.8.4; an update also offers a glass refresh note on already open Twitch tabs.
+**Updating a ZIP install:** download from the website, unzip and replace the files in the **same existing installed folder**, click **reload** in `chrome://extensions`, then **refresh the Twitch tab**. Never click Remove. Your browser keeps its existing local recaps and settings. The popup and hidden debug panel show v0.8.5; an update also offers a glass refresh note on already open Twitch tabs.
 
 ### Latest: v0.8.1 real-device fixes
 

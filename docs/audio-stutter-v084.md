@@ -1,5 +1,7 @@
 # StreamLaughs v0.8.4 — native Twitch sound and a local stutter lab
 
+Current release: [v0.8.5](detection-v085.md) removes the premature speech timeout and fixes mic startup/recovery. This document preserves the v0.8.4 investigation and its failed timing target.
+
 ## What the evidence establishes
 
 The v0.8.3 Start path **always captured the watched tab**, muting its native output and replacing it with an extension AudioContext. Tab reference audio helps reject speaker spill, but the microphone detectors do not require it to detect an independent laugh or reaction. The fixture recognizes both with native video playback and mic-only capture. v0.8.4 therefore leaves Twitch playback native by default. This removes the extension passthrough and one stream of analysis work from the normal session. Tab capture remains an explicit, session-only lab opt-in for the speaker echo reference.

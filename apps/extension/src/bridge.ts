@@ -3,11 +3,27 @@ import { createSurfaceStore } from './sync-store';
 import { labSurface } from './stutter-surface';
 
 export const surface = createSurfaceStore();
+let deliveredSnapshots = 0;
+function acceptSnapshot(payload: unknown) {
+  const before = surface.store.getState();
+  surface.accept(payload);
+  if (before !== surface.store.getState()) deliveredSnapshots++;
+}
+/** RAM-only delivery counters for this UI; never persisted or sent. */
+export function panelDeliveryStats() {
+  const { snapshot } = surface.store.getState();
+  return {
+    updates: deliveredSnapshots,
+    revision: snapshot.revision,
+    laughs: snapshot.session?.laughCount ?? 0,
+    words: snapshot.session?.topWords.reduce((n, w) => n + w.count, 0) ?? 0,
+  };
+}
 export async function command(message: Command) {
   const reply: Reply = await chrome.runtime.sendMessage(message);
   if (!reply?.ok)
     throw new Error(reply?.error ?? 'The extension is restarting. Try again.');
-  surface.accept(reply.state);
+  acceptSnapshot(reply.state);
   return reply.state;
 }
 export function connectSurface(throttleMs = 0) {
@@ -26,7 +42,7 @@ export function connectSurface(throttleMs = 0) {
       return;
     }
     last = performance.now();
-    surface.accept(payload);
+    acceptSnapshot(payload);
   };
   const onStorage = (
     changes: Record<string, chrome.storage.StorageChange>,

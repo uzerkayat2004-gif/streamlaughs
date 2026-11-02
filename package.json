@@ -17,7 +17,8 @@
     "release:edge-store": "node tools/release/pack.mjs --edge-store",
     "release:preview": "node tools/release/offline-preview.mjs",
     "test:reactions": "node tools/eval/reaction-regression.mjs",
-    "test:stutter": "node tools/eval/stutter-regression.mjs"
+    "test:stutter": "node tools/eval/stutter-regression.mjs",
+    "test:mic-session": "node tools/eval/mic-session-regression.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.0",
@@ -26,5 +27,5 @@
     "typescript": "^5.9.3",
     "vitest": "^4.0.0"
   },
-  "version": "0.8.4"
+  "version": "0.8.5"
 }
