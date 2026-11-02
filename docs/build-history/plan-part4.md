@@ -1,6 +1,6 @@
 # Part 4 implementation plan
 
-1. Write and show [crowd-threat-model.md](crowd-threat-model.md) and [crowd-api.md](crowd-api.md) before application changes. Keep per-viewer live/rate state in RAM; persist only eligible minute aggregates. Explain provider IP visibility, receive-only presence and anonymous-session/Sybil limits.
+1. Write and show [crowd-threat-model.md](../crowd-threat-model.md) and [crowd-api.md](../crowd-api.md) before application changes. Keep per-viewer live/rate state in RAM; persist only eligible minute aggregates. Explain provider IP visibility, receive-only presence and anonymous-session/Sybil limits.
 2. Add shared strict wire schemas and an exact shared crowd phrase allowlist. Build Hono routes, HMAC sessions, a SQLite-backed Durable Object per validated lowercase channel, hibernatable sockets, bounded aggregation/rates, minute summaries, retention alarms, operator-only timeline placeholder and kill switch.
 3. Add RealCrowdSource with immediate opt-out, no watch-only sends, latest-only bounded buffering and reconnect jitter. Keep FakeCrowdSource only in explicit dev/test builds. Extend live/few/offline UI states and real crowd recap availability without changing local audio/inference privacy.
 4. Add the marked demo simulator with local/dev target guard. Exercise real Workers runtime sockets/hibernation/reconnect/floors/storage, and Playwright against wrangler dev. Keep original UI/audio/model regressions and run recursive typecheck/tests and extension builds.

@@ -1,101 +1,208 @@
-# StreamLaughs
+<div align="center">
 
-**see who's laughing with you**
+<img src="docs/assets/banner.png" alt="StreamLaughs: see who's laughing with you" />
 
-A little crowd for Twitch: your local laughs, everyone’s anonymous reactions, and a Wrapped-style recap when the stream ends.
+A free Chrome and Edge extension that lets Twitch viewers feel the room laugh together.
+Your mic is processed **on your own computer**. Only anonymous counts ever leave it.
 
-**v0.8.5:** Microphone analysis starts independently of tab capture and recovers after device interruptions. Valid speech jobs can finish instead of being killed by a premature timeout. Twitch audio stays native; laugh thresholds and word rules are unchanged. [Detection evidence and update steps](docs/detection-v085.md).
+[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-install-FFD23F?style=for-the-badge&logo=googlechrome&logoColor=14141A&labelColor=FFD23F)](https://chromewebstore.google.com/detail/streamlaughs/lofdkbfimkjjfglhhnpkiljocbikmkej)
+[![Edge Add-ons](https://img.shields.io/badge/Edge%20Add--ons-install-2EE6C5?style=for-the-badge&logo=microsoftedge&logoColor=14141A&labelColor=2EE6C5)](https://microsoftedge.microsoft.com/addons/detail/fkdfjgnhifofdjpbenlkhpfhmmhglmkb)
+[![Website](https://img.shields.io/badge/website-streamlaughs.vercel.app-FF5C5C?style=for-the-badge&labelColor=FF5C5C&logoColor=14141A)](https://streamlaughs.vercel.app)
 
-> **Demo GIF / screenshot placeholder:** replace this line with the final crowd-blob GIF after recording. [Current extension screenshots](docs/screenshots/part6) · [Website preview](docs/screenshots/part5/home-desktop.png).
+Built for the **Codex × TwitchCon Hackathon** · made with OpenAI Codex
 
-## Install in three steps
+<br />
 
-1. [Download StreamLaughs](https://streamlaughs.vercel.app/install?downloaded=1) and unzip it into a permanent folder. One ZIP contains the same extension for Windows, Mac and Linux. Mac: double-click in Finder. Linux: choose Extract here in your file manager.
-2. Open `chrome://extensions` (Edge: `edge://extensions`, Brave: `brave://extensions`), enable **Developer mode**, choose **Load unpacked**, and select the extracted folder containing `manifest.json`. [Illustrated install guide](https://streamlaughs.vercel.app/install).
-3. Pin the icon. Finish **Welcome → allow mic → sharing choice**, open a Twitch stream and press **start** in the toolbar popup, or **Alt+Shift+L**. “watch without mic” keeps the crowd view without opening either audio input.
+<img src="docs/assets/on-twitch.jpg" width="900" alt="StreamLaughs panel open on a Twitch stream, showing your laughs and how many fans are laughing right now" />
 
-Twitch sound stays native by default. `tabCapture` is retained only for an optional, session-only speaker echo reference in **Alt+Shift+D → stutter lab**; `offscreen` owns local mic capture and processing. The lab shows granted device settings and numeric performance counters, never saved audio. [Stutter lab, evidence and five-minute wired/Bluetooth checks](docs/audio-stutter-v084.md).
+<sub>The StreamLaughs panel on a Twitch stream (demo data, labelled "test fans · simulated traffic").</sub>
 
-To update from v0.6.2 onward, open the popup and choose **update to v…**. The extension checks and downloads the ZIP, then shows three illustrated steps: unzip, copy its contents into your **same existing folder** and replace files, then press **finish update**. It saves any active recording before reloading; recaps and settings stay saved. Refresh Twitch afterwards. Earlier installs need one manual download, same-folder replacement and reload to get this flow. [Update details and troubleshooting](docs/popup-updates-part12.md).
+</div>
 
-The **downloads** permission saves and monitors your requested ZIP-install update. Store packages omit this permission from v0.6.4 onward. Public version checks for ZIP installs are cached for up to one hour and send no account, channel or installation identifier. **Edge Add-ons is in review:** store installs use a separate ID and Edge's automatic updates, with no ZIP update button. The Install page will show its store link only after the approved URL is configured. [Store package and CI artifacts](docs/edge-store-part13.md).
+---
 
-Every successful main deployment rebuilds the download; no release or manual upload is needed. The fixed unpacked ID is **fkocldgggcmhihelohiicoakcfomhepg**. Parts 1–4 installs change origin once; [migration details](docs/extension-identity.md). No Chrome Web Store listing is claimed. [Download/checksum build and browser verification limits](docs/website-downloads-part8.md).
+## The idea
 
-**Mic check and troubleshooting:** choose **test my mic** in the popup, then laugh or say “let’s go”. It runs the actual local models and shows a live input bar, “heard you!” or the failing stage. On Twitch, **Alt+Shift+D** opens local counters and a filtered phrase preview. **Shift-click the version** in settings for the full counter report; copied reports contain no audio or transcripts. [v0.8.0 diagnosis and proof](docs/detection-v080.md).
+A stream can make thousands of people laugh at the same second, but watching alone still feels quiet. Chat shows what people *type*, not how the room *feels*.
 
-The **scripting** permission adds a small refresh notice to already-open Twitch tabs after an extension update. It uses only the existing Twitch host access and never reloads a tab automatically. Replace files in the same installed folder, reload the extension, then refresh Twitch; never Remove the extension.
+StreamLaughs adds a tiny dot to Twitch. Press start, and it notices when **you** laugh, cheer or say things like "let's go". If you choose to share, your laugh becomes one anonymous tick in a live **fans** meter that everyone with the extension sees: *12 fans laughing now*. When the stream ends, you get a colourful, Wrapped-style recap of your night.
 
-**Live services:** [streamlaughs.vercel.app](https://streamlaughs.vercel.app) and [streamlaughs-crowd.streamlaughs.workers.dev](https://streamlaughs-crowd.streamlaughs.workers.dev/health) are connected. Twitch login works, and the owner dashboard loads live crowd and eligible aggregate history. The Cloudflare Worker uses free-plan-compatible SQLite Durable Objects; production simulator traffic stays disabled. [Deployment, connected ZIPs and safe demo instructions](docs/production-part7.md). The repository is `uzerkayat2004-gif/streamlaughs`; env overrides remain supported. Nothing has been tagged or released. Connected ZIPs are in local `releases/production/`; offline previews remain separate. Follow the [release handoff](docs/release-part6.md) before publishing. [Internal compatibility identifiers](docs/internal-identifiers.md) remain unchanged.
+No uploads of your voice. No account. No chat spam. Just the feeling of laughing with a crowd.
 
-## Privacy in three bullets
+## What it does
 
-Recap links are a separate, deliberate sharing action: their URL contains the selected stats and approved labels, with no viewer identity, audio or transcript. Anyone with the link can see them; hosting and social-preview providers may receive or log the URL. No recap database is used. Approved-word timestamps for the funniest-word calculation stay local. [Details](https://streamlaughs.vercel.app/privacy#recap-links).
+| For viewers | For streamers |
+| --- | --- |
+| **Live fans meter** right on the stream: how many people are laughing now, plus the top reaction word | **Owner-only dashboard** after Twitch login: laugh waves over your stream, aggregate only |
+| **Your laughs and words**, counted locally from your mic | **Funniest moments** with matching VOD links when Twitch has them |
+| **Recap stories** after each stream: your laughs, your biggest minute, your words, your history with that streamer | **Privacy floor**: nothing is shown unless 3+ anonymous viewers contributed |
+| **My streamers**: every channel you watched, with laugh sparklines | No bot, no chat permission, no extra OAuth scopes |
+| **Share card**: a 1080×1920 image and a stat-only link, made only when you tap share | |
+| Works on live streams and on **VODs and replays** (replays stay personal) | |
 
-- **Audio is processed on your PC and never saved or sent.** Bundled models use short RAM buffers; full transcripts are discarded.
-- **Sharing is optional and off by default.** Only anonymous counts and allowlisted words leave the extension. Counts and each word need three anonymous contributors; this is not proof of three unique humans. Watch-only still establishes a network connection.
-- **No viewer accounts or analytics.** Only eligible aggregate minutes are kept for 30 days. The website uses one essential streamer-auth cookie. Providers see network metadata; [boundaries and deletion](docs/technical-guide.md#privacy).
+## Screenshots
 
-Profile photos are optional: sign in on the website, then choose **connect Twitch profile photos** in **my streamers** and approve access to this site. Only public channel logins go to that lookup; photos are cached locally. Recap statistics and viewing dates stay local. Initials work without permission, sign-in or a network connection. Share images are made locally from selected stats; sharing a PNG is always your action. No extra Twitch OAuth scopes or cookie-reading permission are requested.
+<table>
+  <tr>
+    <td width="50%"><img src="docs/assets/popup.png" alt="Toolbar popup before and during a stream" /></td>
+    <td width="50%"><img src="docs/assets/fans-panel.jpg" alt="The fans panel on Twitch" /></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Toolbar popup.</b> One button to start, live laugh count while you watch.</td>
+    <td align="center"><b>Fans panel.</b> You vs. the room, attached to a small draggable dot.</td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="docs/assets/recap-stories.png" alt="Recap story slides in yellow, coral and teal" /></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><b>Recap stories.</b> Your laughs, your biggest minute, your words and your streak with that streamer.</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/assets/my-streamers.png" alt="My streamers page" /></td>
+    <td width="50%"><img src="docs/assets/streamer-timeline.png" alt="Saved streams for one streamer with laugh sparklines" /></td>
+  </tr>
+  <tr>
+    <td align="center"><b>My streamers.</b> Everyone you laughed with, kept in your browser.</td>
+    <td align="center"><b>Streamer timeline.</b> Every saved stream with its laugh sparkline.</td>
+  </tr>
+</table>
+
+<p align="center"><img src="docs/assets/stop-sheet.png" width="420" alt="Stream saved sheet with see recap and later buttons" /><br /><sub>Stop a session and it's saved instantly: see the recap now, or later.</sub></p>
+
+## Try it
+
+**Easiest:** install from the [Chrome Web Store](https://chromewebstore.google.com/detail/streamlaughs/lofdkbfimkjjfglhhnpkiljocbikmkej) or [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/fkdfjgnhifofdjpbenlkhpfhmmhglmkb).
+
+> Store reviews take time, so the store copy can be a few versions behind this repository. To test the **latest build**, use the ZIP below.
+
+**Latest build (ZIP):**
+
+1. Download it from [streamlaughs.vercel.app/install](https://streamlaughs.vercel.app/install) and unzip it into a folder you'll keep.
+2. Open `chrome://extensions` (or `edge://extensions`), turn on **Developer mode**, click **Load unpacked**, and pick the folder that contains `manifest.json`.
+3. Pin the smiley, finish the short welcome (allow the mic), open any Twitch stream and press **start**. Shortcut: **Alt+Shift+L**.
+
+Use only one copy at a time: turn off the store copy if you load the ZIP.
+
+**No mic?** Choose "watch without mic" to see the fans meter without sending anything. **Want to check your mic?** Open the popup and tap **test my mic**.
 
 ## How it works
 
 ```mermaid
 flowchart LR
-  PC[on your PC: audio → local models] -->|sharing on: counts + approved words| C[anonymous counts]
-  C --> S[crowd server: 3-person floors]
-  S --> E[everyone: crowd blob + words]
-  PC --> R[local Wrapped recap]
-  S --> D[streamer: aggregate moments only]
+  subgraph PC["Your computer"]
+    M[Mic] --> W[AudioWorklet]
+    W --> V[Silero VAD]
+    W --> Y[YAMNet + DSP laugh check]
+    V --> S[Whisper tiny.en, short words only]
+    Y --> L[Your laughs]
+    S --> A[Approved reaction words]
+    L --> R[Local recap · IndexedDB]
+    A --> R
+  end
+  L -- "sharing on: anonymous count" --> C
+  A -- "sharing on: approved word" --> C
+  C[Cloudflare Worker<br/>one Durable Object per channel<br/>3-person floor] -- WebSocket --> F[Fans meter on every viewer's Twitch tab]
+  C --> D[Streamer dashboard<br/>Twitch login · aggregates only]
 ```
 
-Chrome/Edge MV3 · WXT · React/TypeScript · Web Audio + AudioWorklet · Silero VAD / YAMNet / Whisper tiny.en · ONNX Runtime Web / MediaPipe / Transformers.js · Zustand + Dexie · Hono + Cloudflare Workers / SQLite Durable Objects / WebSockets · Next.js App Router + Tailwind · Twitch OAuth + Helix · Vercel target · pnpm / Vitest / Playwright.
+- **Audio never leaves your computer.** It is analysed in small RAM buffers inside an offscreen document and local workers. Nothing is recorded or saved. Full transcripts are thrown away; only words on a short reaction allowlist are kept.
+- **All three models ship inside the extension** (Silero VAD, YAMNet, Whisper tiny.en), running on ONNX Runtime Web and MediaPipe with WebGPU or WASM. No model is downloaded at runtime.
+- **Twitch keeps playing natively.** The extension does not capture or re-route the stream's audio.
+- **The fans meter is anonymous.** Sharing is off until you turn it on. The Worker only accepts counts and allowlisted words, and only shows a number or word once at least three anonymous contributors sent it.
+- **Streamers sign in with Twitch** (identity only, no extra scopes). The dashboard only reads data for the channel you own, and only aggregate minutes are kept, for 30 days.
+
+Full details: [technical guide](docs/technical-guide.md) · [fans API](docs/crowd-api.md) · [threat model](docs/crowd-threat-model.md) · [privacy policy](https://streamlaughs.vercel.app/privacy)
 
 ## Built with Codex
 
-The owner supplied six scoped parts and the approved Night Crowd design. Codex planned and implemented the monorepo/UI, real local audio capture, bundled inference, anonymous crowd backend, fixed identity and owner dashboard, then this release/accessibility pass. It wrote regression tests, ran local builds/browser tests, and documented failures and limits. The owner selected StreamLaughs and still registers provider accounts, verifies real hardware/OAuth, records the video and publishes. [Build log](docs/codex-log.md) · [Devpost draft](docs/devpost.md).
+StreamLaughs was built by one person working with **OpenAI Codex** as the engineer.
 
-## Develop and verify
+- **Planning to code.** I wrote the product brief and the design (Night Crowd: yellow, coral, teal, no Twitch purple). Codex turned it into a pnpm monorepo: the WXT extension, a Next.js website and a Cloudflare Worker, sharing one typed protocol package.
+- **One scoped prompt per part.** Real mic capture and AudioWorklets, bundled on-device models, the anonymous fans backend with SQLite Durable Objects, Twitch login and the owner dashboard, the website, store packaging and auto-updates. Each prompt had a clear goal and a way to prove it.
+- **Debugging on real hardware.** When real tests failed (no laughs detected, Twitch audio stuttering, false laughs from normal talking), Codex added stage counters, a hidden debug panel (Alt+Shift+D), a mic test and a "stutter lab", then reproduced each bug with recorded WAV fixtures before fixing it.
+- **Proof, not promises.** Codex wrote unit, Worker (Miniflare) and Playwright tests that load the real packaged extension, plus CI that builds the store ZIP and checks the manifest.
+- **Shipping.** Codex deployed the Worker with Wrangler, wired Vercel auto-deploys, and prepared the Chrome Web Store and Edge packages. The extension is live on both stores.
 
-Node 24.11.1, Python 3 and pnpm 10.33.2 are the verified toolchain. Run commands from the repository root.
+The version-by-version build log is in [docs/codex-log.md](docs/codex-log.md), and the full history of prompts and checks is in [docs/build-history](docs/build-history/).
 
-```powershell
+## Tech stack
+
+**Extension:** Chrome/Edge Manifest V3 · WXT · React 19 · TypeScript · Web Audio + AudioWorklet · Silero VAD · YAMNet (MediaPipe) · Whisper tiny.en (Transformers.js) · ONNX Runtime Web (WebGPU/WASM) · Zustand · Dexie (IndexedDB)
+
+**Backend:** Cloudflare Workers · Hono · SQLite Durable Objects · hibernatable WebSockets
+
+**Website:** Next.js App Router · Tailwind CSS · Twitch OAuth + Helix API · Vercel
+
+**Tooling:** pnpm workspaces · Vitest · Playwright · Biome · GitHub Actions
+
+## Run it yourself
+
+Requirements: Node 24 (verified with 24.11.1), pnpm 10.33, Python 3.
+
+```bash
+git clone https://github.com/uzerkayat2004-gif/streamlaughs.git
+cd streamlaughs
 pnpm install --frozen-lockfile
-python tools/fetch-models.py
-pnpm -r typecheck
-pnpm -r test
-$env:SITE_URL='https://streamlaughs.vercel.app'
-$env:VITE_CROWD_API_URL='https://streamlaughs-crowd.streamlaughs.workers.dev'
-pnpm build
-pnpm --filter extension build:debug
-pnpm release:preview
+python tools/fetch-models.py         # checks the bundled models against their SHA-256 receipts
+
+# Extension: builds to apps/extension/.output/chrome-mv3
+pnpm --filter extension build
+# then Load unpacked that folder at chrome://extensions
+
+# Website on http://localhost:3000 (public pages and /demo need no Twitch keys)
+pnpm --filter web dev
+
+# Fans backend on local Wrangler (no Cloudflare account needed)
+pnpm --filter api dev
 ```
 
-`pnpm release:version 0.7.0` changes the single product version source and regenerates notes. The manifest and website `/version.json` read `product.config.json`. Change the product name there too; ZIP filenames derive from it. Internal storage/protocol/package names stay stable. Public configuration remains `SITE_URL`, `RELEASE_REPO_OWNER`, `RELEASE_REPO_NAME`, `VITE_CROWD_API_URL`. Never put Twitch/session/Worker secrets into extension build variables.
+To point a build at the live services:
 
-For the local website: `pnpm --filter web dev`. Public pages and the clearly labelled recorded `/demo` need no Twitch credentials. [Provider/env setup and exact redirect URLs](docs/deploy-part5.md).
+```bash
+SITE_URL=https://streamlaughs.vercel.app \
+VITE_CROWD_API_URL=https://streamlaughs-crowd.streamlaughs.workers.dev \
+pnpm --filter extension build
+```
 
-Browser tests need separate debug/ui-test/crowd-test/site-test builds; a licensed recorded human laugh/speech fixture is committed for the real-model tests. [Exact reproduction commands](docs/release-part6.md#reproduce-final-verification). The production ZIP suite also exercises actual tab capture with a test invocation grant. Physical audio/AEC, a native toolbar grant, hosted OAuth and multiple profiles need the [one final 30-minute checklist](docs/manual-part6.md). We do not claim a bug-free release or unmeasured detection accuracy.
+Tests:
 
-## Submission files
+```bash
+pnpm -r typecheck
+pnpm -r test                         # unit + Worker tests
+pnpm test:e2e                        # Playwright, loads the real built extension
+```
 
-- [Release workflow, ZIPs, versioning and exact publish steps](docs/release-part6.md)
-- [Under-three-minute demo script + recording checklist](docs/demo-script.md)
-- [Devpost draft and required personal fill-ins](docs/devpost.md)
-- [Final command evidence](docs/verification-part6.txt)
-- [Full technical/privacy guide](docs/technical-guide.md), [crowd API](docs/crowd-api.md), [threat model](docs/crowd-threat-model.md), [model benchmarks](docs/benchmark-part3.md)
+Twitch app keys, Worker secrets and redirect URLs for your own deployment: [deploy guide](docs/deploy-part5.md) and [Vercel setup](docs/vercel-production.md). Never put Twitch or Worker secrets in extension build variables.
 
-Original code: [MIT](LICENSE). Models, fonts, runtimes and dependencies retain their [third-party licenses](THIRD_PARTY_NOTICES.md). Only the public manifest key ships; private signing material is ignored and excluded from CI and release assets.
+## Project structure
 
+```
+apps/extension     the Chrome/Edge extension (WXT + React)
+apps/web           streamlaughs.vercel.app: install, privacy, streamer dashboard
+workers/api        the fans backend (Cloudflare Worker + Durable Objects)
+packages/shared    the shared protocol, recap logic and privacy rules
+tests              Playwright tests against the packaged extension
+tools              model fetch, release packaging, evaluation scripts
+docs               guides, screenshots and the build history
+```
 
-### v0.8.0 detection and colourful recaps
+## Honest status
 
-The microphone pipeline was reproduced with the packaged production extension before the UI changed. See [the diagnosis and headed WAV proof](docs/detection-v080.md) and [the v0.8 UI/data notes and final acceptance steps](docs/ui-v080.md). The new laughing-face icon, glass live meter, mic check, saved-stream actions, unread recap badge, yellow/coral/teal stories, grouped streamer history and local PNG export ship together. Missing facts are skipped; fan peaks are never presented as fan totals or personal coincidence.
+- Laugh and word detection runs fully on-device and works on real hardware. Telling a real laugh apart from normal talking is still being tuned, and we don't claim a measured accuracy number yet.
+- The fans meter only shows numbers once three or more people with the extension are watching the same channel. Fewer than that shows "a few here", by design.
+- The store copies update after each review, so they can lag behind the ZIP.
 
-**Updating a ZIP install:** download from the website, unzip and replace the files in the **same existing installed folder**, click **reload** in `chrome://extensions`, then **refresh the Twitch tab**. Never click Remove. Your browser keeps its existing local recaps and settings. The popup and hidden debug panel show v0.8.5; an update also offers a glass refresh note on already open Twitch tabs.
+## Privacy in short
 
-### Latest: v0.8.1 real-device fixes
+- Your audio is processed on your computer and never saved or sent.
+- Sharing is optional and off by default. Only anonymous counts and approved words are sent.
+- No viewer accounts, no analytics, no ads.
+- Recaps live in your browser. Sharing a recap is always your own tap.
 
-Robust Twitch/VOD popup detection, a selectable mic, visible permission check, model-independent DSP fallback, isolated tab replay and a readable solid panel. See [the diagnosis, CPU measurement scope and manual retest](docs/fixes-v081.md) and [targeted verification](docs/verification-v081.txt).
+Read the full [privacy policy](https://streamlaughs.vercel.app/privacy).
 
-Replace files in the **same installed folder** → **reload** in chrome://extensions → **refresh Twitch** → open **test my mic** → pick the right input → laugh and say “let’s go”. **Never click Remove.** If it fails, use **copy diagnostics** and share the text. No audio or full transcript is copied or uploaded automatically.
+## License
+
+Code: [MIT](LICENSE). Bundled models, fonts and libraries keep their own licenses: see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+StreamLaughs is an independent project and is not affiliated with or endorsed by Twitch.

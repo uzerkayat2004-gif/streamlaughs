@@ -1,8 +1,8 @@
 # Technical guide · Parts 1–5 foundations
 
-Current audio default: [v0.8.5 independent microphone detection and native Twitch playback](detection-v085.md). The captured-tab default described in the historical foundations below is now an opt-in speaker echo reference.
+Current audio default: [v0.8.5 independent microphone detection and native Twitch playback](build-history/detection-v085.md). The captured-tab default described in the historical foundations below is now an opt-in speaker echo reference.
 
-Current release preparation and canonical final acceptance: [Part 6 release guide](release-part6.md) and [30-minute checklist](manual-part6.md). The following preserves the implementation and privacy detail from Part 5.
+Current release preparation and canonical final acceptance: [Part 6 release guide](build-history/release-part6.md) and [30-minute checklist](build-history/manual-part6.md). The following preserves the implementation and privacy detail from Part 5.
 
 # streamlaughs · Part 5
 
@@ -10,7 +10,7 @@ Chrome/Edge MV3 extension for Twitch. Personal reactions use **bundled local mod
 
 Part 5 adds the Night Crowd **Next.js App Router website**, Twitch-owner dashboard and fixed unpacked identity. Part 12 adds hourly version checks and in-extension ZIP update instructions. The unpacked Chrome/Edge ID is **`fkocldgggcmhihelohiicoakcfomhepg`**. Every build contains its public key; the private key stays outside the checkout in `C:\Users\Asus\Documents\StreamLaughs-keys` (configured with `EXTENSION_KEY_PATH`) and never enters a release archive. [Identity, backups and store migration](extension-identity.md).
 
-Start with [Part 5 setup/deployment](deploy-part5.md), [manual acceptance](manual-part5.md), [plan](plan-part5.md) and [verification](verification-part5.txt). Product name/version have one source, `product.config.json`. Set `SITE_URL=https://streamlaughs.vercel.app`, `RELEASE_REPO_OWNER=uzerkayat2004-gif`, and `RELEASE_REPO_NAME=streamlaughs`. These are the selected defaults, not proof of publication. No repository, website domain, Twitch app or account has been created. Offline preview ZIPs explicitly disable service connections.
+Start with [Part 5 setup/deployment](deploy-part5.md), [manual acceptance](build-history/manual-part5.md), [plan](build-history/plan-part5.md) and [verification](build-history/verification-part5.txt). Product name/version have one source, `product.config.json`. Set `SITE_URL=https://streamlaughs.vercel.app`, `RELEASE_REPO_OWNER=uzerkayat2004-gif`, and `RELEASE_REPO_NAME=streamlaughs`. These are the selected defaults, not proof of publication. No repository, website domain, Twitch app or account has been created. Offline preview ZIPs explicitly disable service connections.
 
 ## Install and build
 
@@ -35,9 +35,9 @@ Welcome's **allow mic** gets permission once and stops its temporary tracks. On 
 
 ## Privacy
 
-v0.8.0 keeps a successful user mic-grant receipt (one boolean). The actual `getUserMedia` result and track state govern capture; an extension-origin Permissions API preflight can disagree with working capture. The user-opened mic check runs in the same local offscreen/model pipeline without creating a watched session or saving a recap; it stops on close or after two minutes. Production debug counters and its filtered approved-phrase preview are local and transient; copied reports exclude the preview. The new scripting permission only injects the post-update refresh notice into existing Twitch tabs. [Diagnosis and regression](detection-v080.md).
+v0.8.0 keeps a successful user mic-grant receipt (one boolean). The actual `getUserMedia` result and track state govern capture; an extension-origin Permissions API preflight can disagree with working capture. The user-opened mic check runs in the same local offscreen/model pipeline without creating a watched session or saving a recap; it stops on close or after two minutes. Production debug counters and its filtered approved-phrase preview are local and transient; copied reports exclude the preview. The new scripting permission only injects the post-update refresh notice into existing Twitch tabs. [Diagnosis and regression](build-history/detection-v080.md).
 
-v0.7.0 adds optional access to the configured website for signed-in public profile-photo lookup. The explicit connect button requests it; no permission means no photo request. The server receives only a public channel login and uses an app token, not a retained user token. Cached images live in the existing local database. Initials remain the offline default. No recaps, counts, phrases or watched timestamps enter this endpoint. Third-party-cookie blocking can prevent the optional authenticated lookup; initials still work. Canvas share cards contain selected recap statistics only and are exported only by a user action. [UI/migration checks](ui-v070.md).
+v0.7.0 adds optional access to the configured website for signed-in public profile-photo lookup. The explicit connect button requests it; no permission means no photo request. The server receives only a public channel login and uses an app token, not a retained user token. Cached images live in the existing local database. Initials remain the offline default. No recaps, counts, phrases or watched timestamps enter this endpoint. Third-party-cookie blocking can prevent the optional authenticated lookup; initials still work. Canvas share cards contain selected recap statistics only and are exported only by a user action. [UI/migration checks](build-history/ui-v070.md).
 
 **Audio is processed on your PC and never saved or sent.** Audio, transcripts and model calls never go to a server. The extension records no audio files and has no MediaRecorder or analytics. Sharing is off for a fresh install; existing explicit preferences remain. Sharing sends one tiny count packet every two seconds: laughing/intensity, bounded scream/gasp/hype counts, one numeric masked-swear count and up to three phrases from an exact crowd allowlist. Personal phrase history is never uploaded. The server validates the same shared rules again.
 
@@ -62,7 +62,7 @@ Parts 3–5 add no extension permissions or extra host permissions. Exact fixed-
 
 Existing storage, tabs and Twitch-only host permissions remain. Mic consent is ordinary getUserMedia permission on the extension origin; no desktop, debugger or extra host permission is requested.
 
-Part 12 adds **downloads** to save and monitor the user-requested, checksum-verified update ZIP. Application code queries only that download ID. It adds no extra host permission. [Update lifecycle and privacy](popup-updates-part12.md).
+Part 12 adds **downloads** to save and monitor the user-requested, checksum-verified update ZIP. Application code queries only that download ID. It adds no extra host permission. [Update lifecycle and privacy](build-history/popup-updates-part12.md).
 
 ## Website privacy and updates
 
@@ -102,7 +102,7 @@ If inference time per processed audio second exceeds 1, loss persists over a sec
 
 ## Debug, evaluation and verification
 
-Build debug, load `.output/chrome-mv3-audio-debug`, then open `chrome-extension://YOUR_ID/debug.html`. Production keeps the development debug screen/commands disabled, but includes the safe hidden diagnostics view: popup gear → Shift-click version. Its copy report excludes audio/transcripts. See [the microphone investigation and retest](microphone-part11.md). Debug shows both audio meters/FPS, drops/worklet timing, VAD, live scores, bounded decision reasons, headphones estimate, load/inference times, queues, RTF/low-power and optional redacted transcript. No raw-audio endpoint exists.
+Build debug, load `.output/chrome-mv3-audio-debug`, then open `chrome-extension://YOUR_ID/debug.html`. Production keeps the development debug screen/commands disabled, but includes the safe hidden diagnostics view: popup gear → Shift-click version. Its copy report excludes audio/transcripts. See [the microphone investigation and retest](build-history/microphone-part11.md). Debug shows both audio meters/FPS, drops/worklet timing, VAD, live scores, bounded decision reasons, headphones estimate, load/inference times, queues, RTF/low-power and optional redacted transcript. No raw-audio endpoint exists.
 
 **test microphone** uses real mic/worklet/models without saving a session. Playwright uses a debug-page-only `DEBUG_MIC_START` with a Twitch fixture tab ID to exercise actual personal counts/UI; it bypasses only tabCapture authorization, never models or event rules. Before Playwright, build the production/debug/ui-test/crowd-test fixtures using [these exact steps](crowd-setup.md#reproduce-verification); crowd-test needs the localhost API build value. Its test starts and stops Wrangler and crowd-sim automatically.
 
@@ -118,7 +118,7 @@ pnpm exec playwright test --trace off
 
 The Node/Vitest harness runs the same bundled worker/pipeline in local Chromium, with no HTTP audio server or Playwright recording/tracing. Input: mono 16 kHz PCM16/Float32 WAV. `clip.labels.json` contains intervals such as `[{"start":1,"end":3,"label":"laugh"}]`. Labels: laugh, speech, scream, silence, stream-through-speakers, keyboard. Optional synchronized `clip.tab.wav` supplies tab audio. Precision/recall match each labelled bout once, allowing 0.5 s early/1 s late; repeat predictions in one bout count as extras. Undefined rates print null. Negative labels report false positives and observed minutes. Tiny fixtures are smoke checks, not an accuracy benchmark.
 
-Generated silence/keyboard fixtures and a small, licensed recorded human laugh/speech regression WAV are committed; the latter lives only in `tests/fixtures/audio`, outside release builds. **eval/local/** is gitignored and excluded from archives. Use [the ten-minute recording guide](recording-guide.md). Positive Playwright defaults to the committed human laugh/speech fixture; `LAUGHLINE_TEST_WAV` optionally selects another local WAV. A missing selected fixture fails rather than silently skipping. Verification used a temporary [public-domain laugh recording by ezwa](https://commons.wikimedia.org/wiki/File:Laughter.ogg), resampled locally, outside the repo/archive. Synthetic laugh-like tones did not meet the actual threshold and were not used to fake a pass.
+Generated silence/keyboard fixtures and a small, licensed recorded human laugh/speech regression WAV are committed; the latter lives only in `tests/fixtures/audio`, outside release builds. **eval/local/** is gitignored and excluded from archives. Use [the ten-minute recording guide](build-history/recording-guide.md). Positive Playwright defaults to the committed human laugh/speech fixture; `LAUGHLINE_TEST_WAV` optionally selects another local WAV. A missing selected fixture fails rather than silently skipping. Verification used a temporary [public-domain laugh recording by ezwa](https://commons.wikimedia.org/wiki/File:Laughter.ogg), resampled locally, outside the repo/archive. Synthetic laugh-like tones did not meet the actual threshold and were not used to fake a pass.
 
 Optional reproduction with that public-domain recording, if ffmpeg is installed (download/setup only; never part of the installed extension):
 
@@ -129,7 +129,7 @@ ffmpeg -i eval/local/laugh.ogg -ac 1 -ar 16000 -c:a pcm_s16le eval/local/laugh.w
 pnpm exec playwright test --trace off
 ```
 
-Original Part 1/2 tests remain, with new gate, contamination, privacy/masking, queue, low-power, worker teardown/retry, VAD segment and recap tests. Fake-media Playwright verifies real mic permission/capture and YAMNet count updates in dot/popup. **Fake flags do not establish genuine tabCapture grants, audible replay, speaker/AEC accuracy, hardware unplug or physical Edge behavior.** See [precise manual checks](manual-part3.md). A two-hour physical memory/accuracy soak is also manual; unit tests exercise bounded histories/overload, not a completed two-hour hardware run.
+Original Part 1/2 tests remain, with new gate, contamination, privacy/masking, queue, low-power, worker teardown/retry, VAD segment and recap tests. Fake-media Playwright verifies real mic permission/capture and YAMNet count updates in dot/popup. **Fake flags do not establish genuine tabCapture grants, audible replay, speaker/AEC accuracy, hardware unplug or physical Edge behavior.** See [precise manual checks](build-history/manual-part3.md). A two-hour physical memory/accuracy soak is also manual; unit tests exercise bounded histories/overload, not a completed two-hour hardware run.
 
 Real machine timings/package size: [benchmark record](benchmark-part3.md), with raw JSON alongside it. Final command output: `docs/verification-part3.txt`.
 
