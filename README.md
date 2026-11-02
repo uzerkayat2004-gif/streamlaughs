@@ -3,7 +3,7 @@
 <img src="docs/assets/banner.png" alt="StreamLaughs: see who's laughing with you" />
 
 A free Chrome and Edge extension that lets Twitch viewers feel the room laugh together.
-Your mic is processed **on your own computer**. Only optional anonymous counts and approved words leave it.
+Your mic is processed **on your own computer**. You choose whether to send anonymous reactions and stream ratings.
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-install-FFD23F?style=for-the-badge&logo=googlechrome&logoColor=14141A&labelColor=FFD23F)](https://chromewebstore.google.com/detail/streamlaughs/lofdkbfimkjjfglhhnpkiljocbikmkej)
 [![Edge Add-ons](https://img.shields.io/badge/Edge%20Add--ons-install-2EE6C5?style=for-the-badge&logo=microsoftedge&logoColor=14141A&labelColor=2EE6C5)](https://microsoftedge.microsoft.com/addons/detail/fkdfjgnhifofdjpbenlkhpfhmmhglmkb)
@@ -21,7 +21,7 @@ Built for the **Codex × TwitchCon Hackathon** · made with OpenAI Codex
 
 ---
 
-**v0.8.6:** more selective local laugh/word detection, quiet calibration, sensitivity and not-me undo, with native Twitch playback. [Accuracy proof](docs/accuracy-v086.md) · [five-minute performance proof](docs/audio-stutter-v086.md).
+**v0.8.7:** rate a live stream from your recap. Scores and up to three reason chips stay anonymous; only the streamer sees averages after five fans rate. [Ratings and privacy details](docs/fan-ratings-v087.md). Native audio and detection are unchanged.
 
 ## The idea
 
@@ -38,6 +38,7 @@ No uploads of your voice. No account. No chat spam. Just the feeling of laughing
 | **Live fans meter** right on the stream: how many people are laughing now, plus the top reaction word | **Owner-only dashboard** after Twitch login: laugh waves over your stream, aggregate only |
 | **Your laughs and words**, counted locally from your mic | **Funniest moments** with matching VOD links when Twitch has them |
 | **Recap stories** after each stream: your laughs, your biggest minute, your words, your history with that streamer | **Privacy floor**: nothing is shown unless 3+ anonymous viewers contributed |
+| **Rate tonight’s stream**: 1–10 and optional reason chips after 10+ minutes live | **Fan ratings**: anonymous average and top reasons from 5+ fans |
 | **My streamers**: every channel you watched, with laugh sparklines | No bot, no chat permission, no extra OAuth scopes |
 | **Share card**: a 1080×1920 image and a stat-only link, made only when you tap share | |
 | Works on live streams and on **VODs and replays** (replays stay personal) | |

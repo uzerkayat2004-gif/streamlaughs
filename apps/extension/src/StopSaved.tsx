@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import { canRateStream } from '@laughline/shared';
+import { db } from './db';
+import { liveQuery } from 'dexie';
+import { useEffect, useState } from 'react';
 import { command } from './bridge';
 import { duration } from './recap-story';
 export function StopSaved({
@@ -14,6 +17,22 @@ export function StopSaved({
 }) {
   const [confirm, setConfirm] = useState(false),
     [error, setError] = useState('');
+  const [eligible, setEligible] = useState(false);
+  useEffect(() => {
+    const sub = liveQuery(async () => {
+      const [r, reply] = await Promise.all([
+        db.recaps.get(id),
+        chrome.runtime.sendMessage({ type: 'GET_STATE' }),
+      ]);
+      return (
+        !!r &&
+        canRateStream(r) &&
+        reply?.ok &&
+        reply.state.settings.sendRatings !== false
+      );
+    }).subscribe({ next: setEligible, error: () => setEligible(false) });
+    return () => sub.unsubscribe();
+  }, [id]);
   return (
     <div className="saved-flow">
       <p>
@@ -46,6 +65,19 @@ export function StopSaved({
           {confirm ? 'keep it' : 'later'}
         </button>
       </div>
+      {eligible && !confirm && (
+        <button
+          type="button"
+          className="saved-rate"
+          onClick={() => {
+            void command({ type: 'OPEN_RECAP', id, rating: true })
+              .then(close)
+              .catch(() => setError('couldn’t open · try again'));
+          }}
+        >
+          rate it
+        </button>
+      )}
       {!confirm && (
         <button
           type="button"

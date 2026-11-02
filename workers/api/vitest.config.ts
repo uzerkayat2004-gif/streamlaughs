@@ -10,7 +10,7 @@ export default defineConfig({
           CROWD_ENABLED: 'true',
           ALLOW_TEST_TRAFFIC: 'true',
           EXTENSION_ORIGINS:
-            'chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,chrome-extension://fkocldgggcmhihelohiicoakcfomhepg,chrome-extension://fkdfjgnhifofdjpbenlkhpfhmmhglmkb',
+            'chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,chrome-extension://fkocldgggcmhihelohiicoakcfomhepg,chrome-extension://fkdfjgnhifofdjpbenlkhpfhmmhglmkb,chrome-extension://lofdkbfimkjjfglhhnpkiljocbikmkej',
           HMAC_KEY: 'local-development-only-signing-key-00000000000000000000',
           WORKER_OWNER_KEY:
             'local-development-only-owner-key-00000000000000000000',

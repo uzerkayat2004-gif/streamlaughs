@@ -181,6 +181,11 @@ export function HistoryView({
                   </span>
                   <span>
                     <b>{stream.laughs} laughs</b>
+                    {stream.recap.rating && (
+                      <small className="stream-rating">
+                        you rated {stream.recap.rating}
+                      </small>
+                    )}
                     <small>
                       {stream.recap.wordCount
                         ? `“${stream.word}”`

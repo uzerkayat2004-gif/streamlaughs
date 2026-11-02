@@ -17,9 +17,17 @@ SITE_ORIGINS = "https://streamlaughs.vercel.app"
 name = "CHANNELS"
 class_name = "ChannelCrowd"
 
+[[durable_objects.bindings]]
+name = "RATINGS"
+class_name = "ChannelRatings"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["ChannelCrowd"]
+
+[[migrations]]
+tag = "v2-fan-ratings"
+new_sqlite_classes = ["ChannelRatings"]
 
 [env.dev]
 name = "streamlaughs-crowd-dev"
@@ -33,3 +41,7 @@ SITE_ORIGINS = "http://localhost:3000,http://127.0.0.1:3000"
 [[env.dev.durable_objects.bindings]]
 name = "CHANNELS"
 class_name = "ChannelCrowd"
+
+[[env.dev.durable_objects.bindings]]
+name = "RATINGS"
+class_name = "ChannelRatings"

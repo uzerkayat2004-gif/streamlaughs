@@ -1,3 +1,4 @@
+import { ratingStreamKey } from '@laughline/shared';
 import {
   type AudioReport,
   AudioReportSchema,
@@ -480,6 +481,10 @@ export default defineBackground(() => {
                 },
               }
             : {}),
+          live: context.isLive && !replay,
+          streamKey: replay
+            ? undefined
+            : ratingStreamKey(channel, context.streamStartedAt, now),
           startedAt: now,
           endedAt: null,
           laughCount: 0,
@@ -701,7 +706,9 @@ export default defineBackground(() => {
           db.sessions,
           db.recaps,
           db.streamerProfiles,
+          db.ratings,
           async () => {
+            await db.ratings.clear();
             await db.sessions.clear();
             await db.recaps.clear();
             await db.streamerProfiles.clear();
@@ -724,7 +731,7 @@ export default defineBackground(() => {
         const id = message.id ?? state.lastRecapId;
         await chrome.tabs.create({
           url: chrome.runtime.getURL(
-            `/recap.html${message.view === 'streamers' ? '?view=streamers' : id ? `?session=${encodeURIComponent(id)}` : ''}`,
+            `/recap.html${message.view === 'streamers' ? '?view=streamers' : id ? `?session=${encodeURIComponent(id)}${message.rating ? '&slide=rating' : ''}` : ''}`,
           ),
         });
         break;

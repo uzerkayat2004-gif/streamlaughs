@@ -1,3 +1,4 @@
+import { fanRatings } from '../../../lib/ratings';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { Dashboard } from '../../../components/dashboard';
@@ -24,11 +25,15 @@ export default async function ChannelDashboard({
   const data = crowdReady
     ? await report(user, channel, days).catch(() => null)
     : null;
+  const ratings = crowdReady
+    ? await fanRatings(user, channel).catch(() => null)
+    : null;
   return (
     <Dashboard
       channel={channel}
       api={crowdReady ? workerUrl() : ''}
       initialTab={query.tab}
+      ratings={ratings}
     >
       <div className="history-range">
         <Link
@@ -46,17 +51,9 @@ export default async function ChannelDashboard({
       </div>
       {crowdReady ? (
         <StreamerNight
+          hideRatings
           channel={channel}
           streams={data?.streams ?? []}
-          // Fan ratings arrive from the Worker (v0.8.7); until then the tile
-          // explains that ratings start next stream.
-          ratings={
-            (
-              data as {
-                ratings?: import('../../../lib/streamer-ratings').StreamerRatings;
-              } | null
-            )?.ratings ?? null
-          }
         />
       ) : (
         <div className="quiet-empty">

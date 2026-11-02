@@ -2166,3 +2166,34 @@ tbody th {
     transform: scale(1.04);
   }
 }
+
+/* Owner-only fan ratings. */
+.fan-ratings-card { border:1px solid #ffffff20; border-radius:32px; padding:clamp(20px,4vw,38px); margin:28px 0; background:var(--surface,#14141A); }
+.fan-ratings-card header { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; }
+.fan-ratings-card h2 { font-family:var(--display); font-size:clamp(28px,3vw,40px); margin:0; }
+.fan-ratings-card header p,.ratings-locked p { color:var(--muted); font-size:14px; }
+.ratings-details { display:grid; grid-template-columns:200px minmax(0,1fr); align-items:center; gap:38px; margin-top:26px; }
+.rating-ring { width:180px; aspect-ratio:1; border-radius:50%; padding:11px; background:conic-gradient(var(--rating-color) var(--rating-turn),#ffffff15 0); }
+.rating-ring>div { width:100%; height:100%; border-radius:50%; background:var(--bg,#14141A); display:flex; align-items:center; justify-content:center; flex-direction:column; }
+.rating-ring strong { color:var(--rating-color); font:750 58px/1 var(--display); }
+.rating-ring span { margin-top:8px; font-size:13px; }
+.rating-histogram { display:flex; align-items:flex-end; gap:8px; min-height:104px; }
+.rating-histogram>div { flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; gap:7px; }
+.rating-histogram>div>span:not(.sr-only) { width:100%; border-radius:999px; max-width:30px; }
+.rating-histogram small { color:var(--muted); font-size:11px; }
+.rating-top-reasons { display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; }
+.rating-top-reasons span { border:1px solid #ffffff30; border-radius:999px; padding:8px 13px; font-size:12px; }
+.rating-top-reasons b { color:#2EE6C5; margin-left:6px; }
+.rating-summary { font-size:15px; line-height:1.6; max-width:600px; }
+.ratings-locked { text-align:center; padding:25px 12px; }
+.ratings-locked h3 { font:650 clamp(21px,3vw,28px)/1.2 var(--display); }
+.padlock-face { display:inline-flex; position:relative; font-size:70px; color:#FFD23F; }
+.padlock-face i { position:absolute; font-size:25px; color:#FFD23F; bottom:0; left:22px; }
+.ratings-trend { display:flex; align-items:flex-end; gap:14px; margin-top:28px; }
+.ratings-trend button { display:flex; flex-direction:column; align-items:center; flex:1; gap:7px; min-width:0; border:0; background:none; color:var(--muted); cursor:pointer; }
+.ratings-trend button>span { width:9px; border-radius:999px; }
+.ratings-trend button[aria-pressed=true] { color:#FFD23F; }
+.fan-ratings-card button:focus-visible { outline:3px solid #FFD23F; outline-offset:4px; }
+@media(max-width:600px) { .ratings-details {grid-template-columns:1fr;gap:15px;} .rating-ring{margin:auto;} .rating-histogram{gap:5px;} }
+
+.ratings-trend {border:0;min-width:0;padding:0;}

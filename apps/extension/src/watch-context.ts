@@ -7,6 +7,7 @@ export const WatchContextSchema = z.object({
     .regex(/^[a-z0-9_]{1,25}$/)
     .nullable(),
   isLive: z.boolean(),
+  streamStartedAt: z.string().optional(),
   displayName: z.string().max(100).optional(),
   unknown: z.boolean().optional(),
   replay: z.boolean().optional(),
@@ -92,7 +93,7 @@ export function pageWatchContext(
         doc.querySelector<HTMLMetaElement>('meta[property="og:description"]')
           ?.content ?? '';
       const match =
-        /^Watch ([A-Za-z0-9_]{1,25})(?:'s|’s) (?:clip|video|stream)/i.exec(
+        /^Watch ([A-Za-z0-9_]{1,25})(?:'s|â€™s) (?:clip|video|stream)/i.exec(
           description,
         );
       if (match) channel = cleanChannel(match[1]!);
@@ -107,9 +108,42 @@ export function pageWatchContext(
     )
     ?.textContent?.trim()
     .slice(0, 100);
+  let streamStartedAt: string | undefined;
+  if (!replay) {
+    const meta = doc.querySelector<HTMLMetaElement>(
+      'meta[property="video:release_date"]',
+    )?.content;
+    if (meta && Number.isFinite(Date.parse(meta)))
+      streamStartedAt = new Date(meta).toISOString();
+    if (!streamStartedAt)
+      try {
+        const raw =
+          doc.querySelector('script[type="application/ld+json"]')
+            ?.textContent ?? '';
+        if (raw.length < 50000) {
+          const parsed = JSON.parse(raw),
+            nodes = Array.isArray(parsed)
+              ? parsed
+              : (parsed['@graph'] ?? [parsed]);
+          for (const node of nodes.slice(0, 32)) {
+            const publication = Array.isArray(node.publication)
+              ? node.publication
+              : [node.publication];
+            for (const item of publication)
+              if (
+                item?.isLiveBroadcast === true &&
+                typeof item.startDate === 'string' &&
+                Number.isFinite(Date.parse(item.startDate))
+              )
+                streamStartedAt = new Date(item.startDate).toISOString();
+          }
+        }
+      } catch {}
+  }
   const video = doc.querySelector<HTMLVideoElement>('video');
   return {
     onTwitch,
+    streamStartedAt,
     channel,
     isLive: !!channel && !replay && !!video,
     displayName: name || channel || undefined,

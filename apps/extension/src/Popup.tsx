@@ -577,6 +577,19 @@ export function Popup() {
                   privacy ↗
                 </a>
               )}
+              <Toggle
+                title="send stream ratings"
+                detail="anonymous. streamers only see averages from 5+ fans."
+                on={snapshot.settings.sendRatings !== false}
+                click={() =>
+                  void act({
+                    type: 'SETTINGS',
+                    settings: {
+                      sendRatings: snapshot.settings.sendRatings === false,
+                    },
+                  })
+                }
+              />
               <HistoryTransfer save={manual} />
               {manual && (
                 <button

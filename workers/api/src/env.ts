@@ -1,6 +1,8 @@
 import type { ChannelCrowd } from './room';
+import type { ChannelRatings } from './ratings';
 export interface Env {
   CHANNELS: DurableObjectNamespace<ChannelCrowd>;
+  RATINGS: DurableObjectNamespace<ChannelRatings>;
   HMAC_KEY: string;
   WORKER_OWNER_KEY?: string;
   SITE_ORIGINS?: string;

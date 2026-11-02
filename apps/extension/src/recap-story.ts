@@ -1,3 +1,4 @@
+import { canRateStream } from '@laughline/shared';
 import {
   isApprovedPhrase,
   funniestWord,
@@ -53,6 +54,7 @@ export function storyData(
   recap: Recap,
   session?: MySession,
   group?: StreamerHistory,
+  ratingsEnabled = true,
 ) {
   const words = (
     session?.topWords ?? [{ word: recap.topWord, count: recap.wordCount }]
@@ -90,13 +92,17 @@ export function storyData(
   // The server publishes concurrent snapshots, not unique fan totals or personal coincidence.
   // Those facts cannot be reconstructed from CrowdSummary peaks; skip that story.
   const slides = empty
-    ? ['empty']
+    ? [
+        'empty',
+        ...(ratingsEnabled && canRateStream(recap) ? ['rating', 'final'] : []),
+      ]
     : ([
         seconds > 0 && 'intro',
         recap.totalLaughs > 0 && 'laughs',
         moment && 'moment',
         (words.length || chips.length) && 'words',
         streams.length && 'history',
+        ratingsEnabled && canRateStream(recap) && 'rating',
         'final',
       ].filter(Boolean) as string[]);
   return {

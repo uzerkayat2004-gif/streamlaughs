@@ -1,0 +1,109 @@
+StreamLaughs v0.8.7 fan ratings verification — 2026-11-02
+Targeted checks only; no full suite or e2e. No store uploads/tags/releases.
+Protected detection/audio and /try/extension-demo files unchanged; bundled model files unchanged.
+SQLite-backed ratings DO migration v2-fan-ratings; Worker version 2f997792-0bf6-440b-880f-2008295d1d5c.
+
+> worker-tests
+
+ RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/workers/api
+
+
+ Test Files  2 passed (2)
+      Tests  17 passed (17)
+   Start at  18:00:42
+   Duration  30.96s (transform 6.76s, setup 0ms, import 15.34s, tests 18.63s, environment 2ms)
+
+
+
+> extension-tests
+
+ RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/apps/extension
+
+
+ Test Files  5 passed (5)
+      Tests  43 passed (43)
+   Start at  18:03:14
+   Duration  731ms (transform 593ms, setup 0ms, import 1.78s, tests 171ms, environment 1ms)
+
+
+
+> shared-tests
+
+ RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/packages/shared
+
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  18:03:16
+   Duration  296ms (transform 31ms, setup 0ms, import 97ms, tests 6ms, environment 0ms)
+
+
+
+> web-tests
+
+ RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/apps/web
+
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  18:03:17
+   Duration  566ms (transform 149ms, setup 0ms, import 335ms, tests 34ms, environment 0ms)
+
+
+
+> typecheck
+Scope: 7 of 8 workspace projects
+packages/shared typecheck$ tsc --noEmit
+tools/crowd-sim typecheck$ node --check cli.mjs && node --check record-demo.mjs
+tools/eval typecheck$ node --check cli.mjs && node --check browser.mjs && node --check wav.mjs && node --check metrics.mjs && node --check reaction-regression.mjs && node --check stutter-regression.mjs && node --check mic-session-regression.mjs && node --check accuracy-regression.mjs
+tools/release typecheck$ node --check config.mjs && node --check version.mjs && node --check verify-production.mjs && node --check branding.mjs && node --check offline-preview.mjs && node --check pack.mjs && node --check dependency-notices.mjs && node --check web-download.mjs && node --check ../build-web.mjs && python -m py_compile pack.py verify-store.py
+tools/crowd-sim typecheck: Done
+tools/eval typecheck: Done
+tools/release typecheck: Done
+packages/shared typecheck: Done
+apps/extension typecheck$ wxt prepare && tsc --noEmit
+apps/web typecheck$ node ../../tools/next-local.mjs typegen && tsc --noEmit
+workers/api typecheck$ tsc --noEmit
+apps/web typecheck: Generating route types...
+apps/web typecheck: ✓ Types generated successfully
+workers/api typecheck: Done
+apps/extension typecheck: WXT 0.21.5
+apps/web typecheck: Done
+apps/extension typecheck: i Generating types...
+apps/extension typecheck:  WARN  The following entrypoints have been skipped:
+apps/extension typecheck: - debug
+apps/extension typecheck: √ Finished in 3.246 s
+apps/extension typecheck: Done
+
+
+> web-lint
+
+> web@0.8.7 lint C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline\apps\web
+> biome lint app components lib next.config.ts
+
+Checked 59 files in 46ms. No fixes applied.
+
+
+> production-smoke
+{"postOrigins":[{"origin":"lofdkbfimkjjfglhhnpkiljocbikmkej","status":204},{"origin":"fkdfjgnhifofdjpbenlkhpfhmmhglmkb","status":204},{"origin":"fkocldgggcmhihelohiicoakcfomhepg","status":204}],"stranger":403,"publicRead":403,"oneSyntheticContributor":true}
+
+
+Builds: Worker dry-run, Chrome, Edge, Next.js production and store ZIP passed.
+Fixed ZIP ID: fkocldgggcmhihelohiicoakcfomhepg
+Local download metadata: {
+  "version": "0.8.7",
+  "filename": "streamlaughs.zip",
+  "versionedFilename": "streamlaughs-v0.8.7.zip",
+  "sha256": "3ee18e639128f058390d5cd5d8bf8263b72c77fbd28e384adf8cf00921f946ec",
+  "bytes": 40462321
+}
+
+Integration with newer upstream 186cab5: preserved the popup streamer link and streamer-night design; display one canonical owner-only ratings card. Targeted integration extension tests: 11 passed. Targeted integration web tests: 6 passed. Web lint/typecheck and combined production/store builds passed.
+Final ZIP metadata:
+{
+  "version": "0.8.7",
+  "filename": "streamlaughs.zip",
+  "versionedFilename": "streamlaughs-v0.8.7.zip",
+  "sha256": "d06a3eab518cfe7615475cc934e8a1da4f98dd1d96b9238fb8597878f27df6e7",
+  "bytes": 40462626
+}

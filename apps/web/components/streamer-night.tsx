@@ -492,11 +492,13 @@ export function StreamerNight({
   ratings,
   channel,
   demo = false,
+  hideRatings = false,
 }: {
   streams: StreamStory[];
   ratings?: StreamerRatings | null;
   channel: string;
   demo?: boolean;
+  hideRatings?: boolean;
 }) {
   const [pick, setPick] = useState(0);
   const [sharing, setSharing] = useState(false);
@@ -578,7 +580,7 @@ export function StreamerNight({
           <Face />
         </article>
 
-        <RatingTile ratings={pick === 0 ? ratings : null} />
+        {!hideRatings && <RatingTile ratings={pick === 0 ? ratings : null} />}
 
         <article className="sn-tile sn-moment">
           <p className="sn-kicker">the moment that got everyone</p>
@@ -638,7 +640,9 @@ export function StreamerNight({
           </div>
         </article>
 
-        {pick === 0 && ratings && <TrendTile ratings={ratings} />}
+        {!hideRatings && pick === 0 && ratings && (
+          <TrendTile ratings={ratings} />
+        )}
 
         {stream.moments.length > 1 && (
           <article className="sn-tile sn-more">

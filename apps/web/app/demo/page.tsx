@@ -33,6 +33,7 @@ export default async function Demo({
       initialTab={(await searchParams).tab}
     >
       <StreamerNight
+        hideRatings
         demo
         channel="pixelcamp"
         streams={DEMO_STREAMS}

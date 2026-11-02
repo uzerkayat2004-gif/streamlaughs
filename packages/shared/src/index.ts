@@ -21,6 +21,7 @@ export * from './recap-share';
 export * from './reaction-words';
 export * from './replay';
 export * from './laugh-undo';
+export * from './ratings';
 
 export const WordSchema = z.object({
   word: z.string().max(80),
@@ -53,6 +54,9 @@ export const MySessionSchema = z.object({
   displayName: z.string().max(100).optional(),
   tabId: z.number().int(),
   replay: ReplaySchema.optional(),
+  live: z.boolean().optional(),
+  streamKey: z.string().max(80).optional(),
+  rating: z.number().int().min(1).max(10).optional(),
   startedAt: z.number(),
   endedAt: z.number().nullable(),
   laughCount: z.number().int().nonnegative(),
@@ -133,6 +137,9 @@ export const RecapSchema = z.object({
   funniestWord: z.string().max(80).refine(isApprovedPhrase).optional(),
   saving: z.boolean().optional(),
   replay: z.boolean().optional(),
+  live: z.boolean().optional(),
+  streamKey: z.string().max(80).optional(),
+  rating: z.number().int().min(1).max(10).optional(),
   replayUrl: z
     .string()
     .max(240)
@@ -156,6 +163,7 @@ export const SettingsSchema = z.object({
   listen: z.boolean(),
   share: z.boolean(),
   sensitivity: z.enum(['strict', 'normal', 'sensitive']).optional(),
+  sendRatings: z.boolean().optional(),
 });
 export const SnapshotSchema = z.object({
   revision: z.number().int(),
@@ -204,6 +212,7 @@ export const CommandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('DELETE_DATA') }),
   z.object({
     type: z.literal('OPEN_RECAP'),
+    rating: z.boolean().optional(),
     id: z.string().optional(),
     view: z.literal('streamers').optional(),
   }),
@@ -322,6 +331,9 @@ export function createRecap(session: MySession, now: number): Recap {
     wordCount: word?.count ?? 0,
     funniestWord: funniestWord(session),
     replay: !!session.replay,
+    live: session.live,
+    streamKey: session.streamKey,
+    rating: session.rating,
     replayUrl: session.replay?.url,
     hardestLaughAt: peak
       ? Math.max(

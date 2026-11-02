@@ -1,8 +1,10 @@
+import { RatingSlide } from './RatingSlide';
 import {
   type MySession,
   PRODUCT,
   type Recap as RecapData,
   RecapSchema,
+  ratingId,
 } from '@laughline/shared';
 import { Share2 } from 'lucide-react';
 import { liveQuery } from 'dexie';
@@ -27,6 +29,19 @@ export function Recap() {
   const [selected, setSelected] = useState<string | null>(
     new URLSearchParams(location.search).get('session'),
   );
+  const [ratingsEnabled, setRatingsEnabled] = useState(false);
+  const [ratingJump, setRatingJump] = useState(
+    new URLSearchParams(location.search).get('slide') === 'rating',
+  );
+  useEffect(() => {
+    void chrome.runtime
+      .sendMessage({ type: 'GET_STATE' })
+      .then((reply) =>
+        setRatingsEnabled(
+          reply?.ok && reply.state.settings.sendRatings !== false,
+        ),
+      );
+  }, []);
   const [index, setIndex] = useState(0),
     [cycle, setCycle] = useState(0),
     [loading, setLoading] = useState(true),
@@ -43,12 +58,19 @@ export function Recap() {
     group = groups.find((g) => g.login === recap?.channel);
   const session = sessions.find((s) => s.id === recap?.sessionId),
     profile = group?.profile;
-  const data = recap ? storyData(recap, session, group) : null;
-  const storyIndex = Math.min(index, (data?.slides.length ?? 1) - 1),
+  const data = recap ? storyData(recap, session, group, ratingsEnabled) : null;
+  const storyIndex =
+      ratingJump && data?.slides.includes('rating')
+        ? data.slides.indexOf('rating')
+        : Math.min(index, (data?.slides.length ?? 1) - 1),
     slide = data?.slides[storyIndex];
-  const color = STORY_COLORS[storyIndex % STORY_COLORS.length]!;
+  const color =
+    slide === 'rating'
+      ? '#14141A'
+      : STORY_COLORS[storyIndex % STORY_COLORS.length]!;
   const go = useCallback(
     (next: number) => {
+      setRatingJump(false);
       setIndex(Math.max(0, Math.min((data?.slides.length ?? 1) - 1, next)));
       setCycle((n) => n + 1);
     },
@@ -64,15 +86,24 @@ export function Recap() {
         db.sessions.toArray(),
         db.recaps.orderBy('createdAt').reverse().toArray(),
         db.streamerProfiles.toArray(),
+        db.ratings.toArray(),
       ]),
     ).subscribe({
-      next: ([saved, items, people]) => {
+      next: ([saved, items, people, ratings]) => {
+        const scores = new Map(ratings.map((r) => [r.id, r.score]));
         setSessions(saved);
         setRecaps(
           completeRecaps(
             saved,
             items.map((r) => RecapSchema.parse(r)),
-          ).sort((a, b) => b.createdAt - a.createdAt),
+          )
+            .map((r) => ({
+              ...r,
+              rating: r.streamKey
+                ? (scores.get(ratingId(r.channel, r.streamKey)) ?? r.rating)
+                : r.rating,
+            }))
+            .sort((a, b) => b.createdAt - a.createdAt),
         );
         setProfiles(people);
         setLoading(false);
@@ -99,6 +130,7 @@ export function Recap() {
       sharing ||
       recap?.saving ||
       slide === 'final' ||
+      slide === 'rating' ||
       slide === 'empty'
     )
       return;
@@ -108,6 +140,7 @@ export function Recap() {
   useEffect(() => {
     if (view !== 'story' || sharing) return;
     const key = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).closest('button,input,select')) return;
       if (['ArrowLeft', 'ArrowRight'].includes(e.key)) {
         e.preventDefault();
         go(storyIndex + (e.key === 'ArrowRight' ? 1 : -1));
@@ -217,7 +250,7 @@ export function Recap() {
           aria-roledescription="story"
           aria-label={`your recap · story ${storyIndex + 1} of ${data.slides.length} · arrow keys or tap either half`}
           onClick={(e) => {
-            if ((e.target as Element).closest('button,a')) return;
+            if ((e.target as Element).closest('button,a,.rating-slide')) return;
             const b = e.currentTarget.getBoundingClientRect();
             go(storyIndex + (e.clientX - b.left < b.width / 2 ? -1 : 1));
           }}
@@ -274,6 +307,9 @@ export function Recap() {
                 </p>
                 <div className="x-ln">{micCheck}</div>
               </>
+            )}
+            {slide === 'rating' && (
+              <RatingSlide recap={recap} next={() => go(storyIndex + 1)} />
             )}
             {slide === 'intro' && (
               <>

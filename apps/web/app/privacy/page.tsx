@@ -5,6 +5,7 @@ const topics = [
   ['on-your-pc', 'on your computer'],
   ['sharing', 'what is shared'],
   ['recap-links', 'recap links'],
+  ['stream-ratings', 'stream ratings'],
   ['never', 'what we never collect'],
   ['streamers', 'streamer sign-in'],
   ['permissions', 'permissions'],
@@ -24,8 +25,33 @@ export default function Privacy() {
           stays <em>yours.</em>
         </h1>
         <p>Here’s what {PRODUCT.name} does with your data. In plain words.</p>
-        <p className="policy-date">Last updated: November 1, 2026</p>
+        <p className="policy-date">Last updated: November 2, 2026</p>
       </header>
+      <section className="privacy-rating-note" id="stream-ratings">
+        <h2>stream ratings</h2>
+        <p>
+          After a live stream of 10+ minutes, you can send a score from 1 to 10
+          and up to three reason chips. We receive the channel and stream key.
+          No username, free text or audio is sent. Our app does not store your
+          IP address; short-lived, keyed hashes rate-limit requests.
+        </p>
+        <p>
+          A keyed anonymous dedupe hash plus the previous score and reasons lets
+          you change a rating for 24 hours. This temporary replacement record is
+          deleted after 48 hours. Only per-stream totals, score distributions
+          and reason counts remain, for the last 30 streams. New ratings close
+          24 hours after the first fan rating; existing ratings can still be
+          edited for their full 24 hours. This prevents a deleted dedupe hash
+          from being used to vote twice.
+        </p>
+        <p>
+          Only the streamer can read the results, and nothing appears before
+          five fans rate. Turn off “send stream ratings” in the extension
+          settings to stop sending. Deleting local history does not retract an
+          already anonymous aggregate. Cloudflare processes network addresses to
+          deliver requests; application request logging is off.
+        </p>
+      </section>
       <aside className="privacy-short" aria-labelledby="short-version">
         <h2 id="short-version">the short version.</h2>
         <ul>

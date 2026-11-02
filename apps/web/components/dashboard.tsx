@@ -1,5 +1,6 @@
 'use client';
-
+import { FanRatings } from './fan-ratings';
+import type { RatingsReport } from '@laughline/shared';
 import type { CrowdState } from '@laughline/shared';
 import { useEffect, useState } from 'react';
 import { RealCrowdSource } from '../../extension/src/real-crowd-source';
@@ -88,6 +89,7 @@ export function Dashboard({
   children,
   initialTab = 'past',
   demo = false,
+  ratings = null,
 }: {
   channel: string;
   api: string;
@@ -95,6 +97,7 @@ export function Dashboard({
   children: React.ReactNode;
   initialTab?: string;
   demo?: boolean;
+  ratings?: RatingsReport | null;
 }) {
   const [tab, setTab] = useState(initialTab === 'live' ? 'live' : 'past');
   return (
@@ -126,6 +129,7 @@ export function Dashboard({
           <a href="/demo">see the sample ↗</a>
         </p>
       )}
+      <FanRatings initial={ratings} channel={channel} sample={demo} />
       <div
         className="dashboard-tabs"
         role="tablist"

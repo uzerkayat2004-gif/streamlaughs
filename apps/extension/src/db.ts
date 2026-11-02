@@ -1,8 +1,9 @@
-import type { MySession, Recap } from '@laughline/shared';
+import type { MySession, Recap, LocalRating } from '@laughline/shared';
 import Dexie, { type EntityTable } from 'dexie';
 import { channelIdentity, type StreamerProfile } from './history';
 export function createDatabase(name?: string) {
   const db = (name ? new Dexie(name) : new Dexie('laughline')) as Dexie & {
+    ratings: EntityTable<LocalRating, 'id'>;
     sessions: EntityTable<MySession, 'id'>;
     recaps: EntityTable<Recap, 'id'>;
     streamerProfiles: EntityTable<StreamerProfile, 'login'>;
@@ -69,6 +70,12 @@ export function createDatabase(name?: string) {
           r.seenAt ??= r.createdAt;
         });
     });
+  db.version(4).stores({
+    sessions: 'id,channel,startedAt,endedAt',
+    recaps: 'id,sessionId,channel,createdAt',
+    streamerProfiles: 'login,fetchedAt',
+    ratings: 'id,channel,streamKey',
+  });
   return db;
 }
 export const db = createDatabase();

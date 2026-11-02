@@ -2929,3 +2929,35 @@ svg {
 .streamer-row .streamer-link {
   margin: 4px 0 0;
 }
+
+/* Fan ratings: the existing Night Crowd palette, scoped to the recap. */
+.rating-slide { width:100%; color:#fff; text-align:center; padding:0 4px; }
+.rating-slide h1 { font-size:clamp(23px,4vw,31px); line-height:1.1; margin:0 0 14px; }
+.rating-score { display:flex; align-items:center; justify-content:center; gap:18px; margin-bottom:14px; }
+.rating-score strong { color:var(--rating-color); font-size:64px; line-height:1; }
+.rating-score small { color:#fff; font-size:18px; }
+.rating-numbers { display:grid; grid-template-columns:repeat(10,minmax(0,1fr)); gap:4px; width:100%; }
+.rating-numbers button { border:1px solid var(--pill-color); aspect-ratio:1; min-width:0; padding:0; border-radius:50%; background:transparent; color:#fff; font-family:inherit;font-size:14px;font-weight:700; cursor:pointer; }
+.rating-numbers button.is-picked { background:var(--pill-color); color:#14141A; animation:rating-jelly .4s ease; }
+.rating-reasons { display:flex; flex-wrap:wrap; justify-content:center; gap:7px; }
+.rating-reasons button { background:transparent; color:#fff; border:1px solid #ffffff55; border-radius:999px; font:inherit; font-size:12px; padding:8px 11px; cursor:pointer; }
+.rating-reasons button[aria-pressed=true] { background:var(--rating-color); color:#14141A; border-color:var(--rating-color); }
+.rating-reasons button:disabled:not([aria-pressed=true]) { opacity:.4; }
+.rating-hint { font-size:11px; margin:13px 0; line-height:1.5; color:#ffffffc4; }
+.rating-actions { display:flex; justify-content:center; align-items:center; gap:18px; }
+.rating-send { border:0; border-radius:999px; background:#FFD23F; color:#14141A; padding:12px 30px; font-family:inherit;font-size:15px;font-weight:700; cursor:pointer; }
+.rating-send:disabled { opacity:.45; }
+.rating-skip { border:0; background:none; color:#fff; text-decoration:underline; font:inherit; cursor:pointer; padding:10px; }
+.rating-error { color:#FF5C5C; font-size:12px; }
+.rating-sent { padding:24px 0; }
+.rating-sent h2 { font-size:24px; line-height:1.25; }
+.rating-confetti { color:#2EE6C5; font-size:34px; letter-spacing:10px; animation:rating-confetti .8s ease-out; }
+.saved-rate { border:1px solid #FFD23F; color:#FFD23F; background:none; border-radius:999px; padding:7px 15px; cursor:pointer; }
+.stream-rating { color:#2EE6C5; }
+.x-card:has(.rating-slide) .recap-streamer,.x-card:has(.rating-slide) .recap-card-brand { color:#fff; }
+.rating-slide button:focus-visible,.saved-rate:focus-visible { outline:3px solid #fff; outline-offset:3px; }
+@keyframes rating-jelly { 40% {transform:scale(1.15,.86)} 70% {transform:scale(.94,1.1)} }
+@keyframes rating-confetti { from {transform:translateY(20px) scale(.7);opacity:0} to {transform:translateY(0) scale(1);opacity:1} }
+@media(prefers-reduced-motion:reduce) { .rating-slide * {animation:none!important;transition:none!important;} }
+
+.rating-numbers,.rating-reasons {border:0;padding:0;margin:0;min-width:0;}
