@@ -20,7 +20,7 @@ export default function Home() {
       >
         <div className="hero-glow" aria-hidden="true" />
         <FunBits
-          words={['haha', 'lol', 'no way', 'W', 'brooo']}
+          words={['haha', 'lol', 'no way', 'brooo']}
           variant="hero"
         />
         <div className="hero-faces" aria-hidden="true">
@@ -44,9 +44,7 @@ export default function Home() {
           </p>
           <h1 id="hero-title">
             <span className="hero-line-1">
-              your favorite streamer
-              <br />
-              is so funny.
+              your favorite streamer is so funny.
             </span>
             <em className="hero-line-2">see your reaction watching them.</em>
           </h1>
