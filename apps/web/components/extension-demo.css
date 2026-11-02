@@ -16,6 +16,8 @@
   position: sticky;
   top: 0;
   height: 100vh;
+  padding-bottom: 64px;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1547,6 +1549,7 @@ html.demo-immersive .site-header {
   .td-sticky {
     position: static;
     height: auto;
+    padding-bottom: 0;
     flex-direction: column;
     gap: 16px;
   }

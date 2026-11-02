@@ -159,16 +159,19 @@ function useScrollZoom(
       else {
         const a = clamp((vh - r.top) / vh);
         const b = clamp(-r.top / Math.max(1, r.height - vh));
-        if (b <= 0) z = 0.58 + 0.17 * ease(a);
-        else if (b < 0.3) z = 0.75 + 0.25 * ease(b / 0.3);
-        else if (b < 0.68) z = 1;
-        else z = 1 - 0.25 * ease((b - 0.68) / 0.32);
+        // Peak stays at 86% of a full-screen fit so the frame never spills
+        // off screen and the guide dock has room underneath.
+        const PEAK = 0.86;
+        if (b <= 0) z = 0.55 + 0.15 * ease(a);
+        else if (b < 0.3) z = 0.7 + (PEAK - 0.7) * ease(b / 0.3);
+        else if (b < 0.68) z = PEAK;
+        else z = PEAK - (PEAK - 0.7) * ease((b - 0.68) / 0.32);
       }
       const s = full * z;
       scaleRef.current = s;
       f.style.width = `${W * s}px`;
       f.style.height = `${H * s}px`;
-      const radius = 16 * clamp((1 - z) / 0.25 + 0.0001);
+      const radius = 16;
       f.style.borderRadius = `${radius}px`;
       st.style.transform = `scale(${s})`;
       st.style.setProperty('--td-r', `${radius / s}px`);
