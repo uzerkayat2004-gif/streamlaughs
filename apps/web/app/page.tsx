@@ -25,14 +25,15 @@ export default function Home() {
             laugh.
           </p>
           <h1 id="hero-title">
-            never laugh
-            <br />
-            <em>alone again.</em>
+            <span className="hero-line-1">
+              your favorite streamer is so funny.
+            </span>
+            <em className="hero-line-2">see your reaction watching them.</em>
           </h1>
           <p className="hero-copy">
-            A tiny dot on Twitch lights up when everyone laughs.
+            Every laugh, every “no way”, every big moment, in one fun recap.
             <br />
-            Your audio never leaves your PC.
+            Free on Chrome and Edge. Your audio never leaves your PC.
           </p>
           <div className="hero-actions">
             <StoreButtons />

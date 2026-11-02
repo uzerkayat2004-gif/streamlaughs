@@ -3400,3 +3400,56 @@ tbody th {
     letter-spacing: 0.14em;
   }
 }
+.hero-clean .hero-content {
+  max-width: 1500px;
+}
+.hero-clean h1 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.12em;
+  font-size: inherit;
+  margin: 0 auto 32px;
+}
+.hero-line-1 {
+  display: block;
+  font-size: clamp(44px, 6.4vw, 118px);
+  line-height: 1;
+  letter-spacing: -0.06em;
+  text-wrap: balance;
+}
+.hero-clean .hero-line-2 {
+  display: block;
+  font-size: clamp(32px, 4.3vw, 80px);
+  line-height: 1.05;
+  letter-spacing: -0.05em;
+  color: var(--teal);
+  text-wrap: balance;
+}
+@media (max-width: 600px) {
+  .hero-line-1 {
+    font-size: clamp(40px, 11.5vw, 60px);
+  }
+  .hero-clean .hero-line-2 {
+    font-size: clamp(28px, 8vw, 42px);
+  }
+}
+@media (min-width: 1001px) {
+  .hero-line-1 {
+    font-size: clamp(56px, 4.7vw, 104px);
+    white-space: nowrap;
+  }
+  .hero-clean .hero-line-2 {
+    font-size: clamp(40px, 3.3vw, 72px);
+    white-space: nowrap;
+  }
+}
+.hero-clean .hero-actions {
+  align-items: flex-start;
+}
+.hero-clean .hero-actions > .text-link {
+  min-height: 56px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
