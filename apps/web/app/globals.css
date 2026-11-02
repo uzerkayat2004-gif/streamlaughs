@@ -3849,3 +3849,9 @@ tbody th {
   .hero-face.f4 { bottom: 2%; right: 8%; }
   .home-page .hero-clean .hero-content { padding-bottom: 96px; }
 }
+@media (max-width: 600px) {
+  .hero-face.f1,
+  .hero-face.f2 {
+    display: none;
+  }
+}
