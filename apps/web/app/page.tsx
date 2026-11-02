@@ -20,7 +20,7 @@ export default function Home() {
       >
         <div className="hero-glow" aria-hidden="true" />
         <FunBits
-          words={['haha', 'lol', 'no way', 'brooo']}
+          words={['haha', 'lol', 'no way', 'brooo', 'W', 'LMAO']}
           variant="hero"
         />
         <div className="hero-faces" aria-hidden="true">
@@ -43,16 +43,10 @@ export default function Home() {
             laugh.
           </p>
           <h1 id="hero-title">
-            <span className="hero-line-1">
-              your favorite streamer is so funny.
-            </span>
-            <em className="hero-line-2">see your reaction watching them.</em>
+            <span className="hero-line-1">your favorite streamer</span>
+            <em className="hero-line-2">is so funny.</em>
           </h1>
-          <p className="hero-copy">
-            Every laugh, every “no way”, in one fun recap.
-            <br />
-            Free on Chrome and Edge. Your audio stays on your PC.
-          </p>
+          <p className="hero-copy">see your reaction watching them.</p>
           <div className="hero-actions">
             <StoreButtons hideNote />
             <Link className="text-link hero-peek" href="/try">
