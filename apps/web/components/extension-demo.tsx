@@ -124,18 +124,73 @@ function pick<T>(list: T[]) {
   return list[Math.floor(Math.random() * list.length)]!;
 }
 
-function useStageScale(ref: RefObject<HTMLDivElement | null>) {
-  const [scale, setScale] = useState(1);
+const clamp = (v: number) => Math.max(0, Math.min(1, v));
+const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
+
+/**
+ * Scroll-driven zoom: the demo starts small under the title, grows to fill the
+ * whole screen (site header slides away), holds, then shrinks as you scroll on.
+ * Writes styles directly so scrolling never re-renders React.
+ */
+function useScrollZoom(
+  track: RefObject<HTMLDivElement | null>,
+  frame: RefObject<HTMLDivElement | null>,
+  stage: RefObject<HTMLDivElement | null>,
+  scaleRef: { current: number },
+) {
   useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const update = () => setScale(Math.min(1, el.clientWidth / W));
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [ref]);
-  return scale;
+    let raf = 0;
+    let immersive = false;
+    const apply = () => {
+      raf = 0;
+      const t = track.current,
+        f = frame.current,
+        st = stage.current;
+      if (!t || !f || !st) return;
+      const vw = document.documentElement.clientWidth;
+      const vh = window.innerHeight;
+      const r = t.getBoundingClientRect();
+      const full = Math.min(vw / W, vh / H);
+      const reduce = window.matchMedia(
+        '(prefers-reduced-motion: reduce)',
+      ).matches;
+      let z: number;
+      if (reduce || vw < 760) z = Math.min(1, (vw - 24) / W / full);
+      else {
+        const a = clamp((vh - r.top) / vh);
+        const b = clamp(-r.top / Math.max(1, r.height - vh));
+        if (b <= 0) z = 0.58 + 0.17 * ease(a);
+        else if (b < 0.3) z = 0.75 + 0.25 * ease(b / 0.3);
+        else if (b < 0.68) z = 1;
+        else z = 1 - 0.25 * ease((b - 0.68) / 0.32);
+      }
+      const s = full * z;
+      scaleRef.current = s;
+      f.style.width = `${W * s}px`;
+      f.style.height = `${H * s}px`;
+      const radius = 16 * clamp((1 - z) / 0.25 + 0.0001);
+      f.style.borderRadius = `${radius}px`;
+      st.style.transform = `scale(${s})`;
+      st.style.setProperty('--td-r', `${radius / s}px`);
+      const on = r.top <= 1 && r.bottom >= vh - 1 && !reduce && vw >= 760;
+      if (on !== immersive) {
+        immersive = on;
+        document.documentElement.classList.toggle('demo-immersive', on);
+      }
+    };
+    const queue = () => {
+      if (!raf) raf = requestAnimationFrame(apply);
+    };
+    apply();
+    window.addEventListener('scroll', queue, { passive: true });
+    window.addEventListener('resize', queue);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('scroll', queue);
+      window.removeEventListener('resize', queue);
+      document.documentElement.classList.remove('demo-immersive');
+    };
+  }, [track, frame, stage, scaleRef]);
 }
 
 function Icon({ d, size = 18 }: { d: string; size?: number }) {
@@ -605,9 +660,11 @@ function ShareCard({
 /* --------------------------------- demo ---------------------------------- */
 
 export function ExtensionDemo() {
+  const track = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLDivElement>(null);
-  const scale = useStageScale(frame);
+  const scaleRef = useRef(1);
+  useScrollZoom(track, frame, stage, scaleRef);
 
   const iconRef = useRef<HTMLButtonElement>(null);
   const startRef = useRef<HTMLButtonElement>(null);
@@ -710,8 +767,8 @@ export function ExtensionDemo() {
     const a = el.getBoundingClientRect(),
       b = s.getBoundingClientRect();
     return {
-      x: (a.left - b.left + a.width / 2) / scale,
-      y: (a.top - b.top + a.height / 2) / scale,
+      x: (a.left - b.left + a.width / 2) / scaleRef.current,
+      y: (a.top - b.top + a.height / 2) / scaleRef.current,
     };
   };
 
@@ -869,337 +926,337 @@ export function ExtensionDemo() {
 
   const s = STEPS[step]!;
   return (
-    <div className="td-wrap">
-      <div className="td-frame" ref={frame} style={{ height: H * scale }}>
-        <div
-          className="td-stage"
-          ref={stage}
-          style={{ transform: `scale(${scale})`, width: W, height: H }}
-        >
-          {/* browser chrome */}
-          <div className="td-tabs">
-            <span className="td-lights">
-              <i />
-              <i />
-              <i />
-            </span>
-            <span className="td-tab">
-              <span className="td-tab-icon" />
-              {CHANNEL} - live
-              {recording && <i className="td-tab-rec" title="mic in use" />}
-              <span className="td-x">×</span>
-            </span>
-            <span className="td-newtab">+</span>
-          </div>
-          <div className="td-bar">
-            <span className="td-nav">
-              <Icon d={I.back} size={16} />
-              <Icon d={I.fwd} size={16} />
-              <Icon d={I.reload} size={15} />
-            </span>
-            <span className="td-url">
-              <Icon d={I.lock} size={12} />
-              twitch.tv/<b>{CHANNEL}</b>
-              <span className="td-url-right">
-                {recording && (
-                  <span className="td-mic-chip">
-                    <Icon d={I.mic} size={11} />
-                  </span>
-                )}
-                <Icon d={I.star} size={14} />
+    <div className="td-wrap td-track" ref={track}>
+      <div className="td-sticky">
+        <div className="td-frame" ref={frame}>
+          <div className="td-stage" ref={stage} style={{ width: W, height: H }}>
+            {/* browser chrome */}
+            <div className="td-tabs">
+              <span className="td-lights">
+                <i />
+                <i />
+                <i />
               </span>
-            </span>
-            <span className="td-ext">
-              <button
-                ref={iconRef}
-                type="button"
-                className={`td-ext-icon ${step === 0 ? 'is-hint' : ''} ${popup ? 'is-open' : ''}`}
-                aria-label="open StreamLaughs"
-                onClick={manual(() => (popup ? setPopup(false) : go(1)))}
-              >
-                <AppIcon size={20} />
-                {recording && <i className="td-ext-rec" />}
-              </button>
-              <Icon d={I.puzzle} size={16} />
-              <span className="td-me">U</span>
-              <Icon d={I.dots} size={16} />
-            </span>
-          </div>
-
-          {/* streaming site */}
-          <div className="td-site">
-            <div className="td-topnav">
-              <span className="td-logo" aria-hidden="true" />
-              <b>Following</b>
-              <b>Browse</b>
-              <Icon d={I.dots} size={16} />
-              <span className="td-search">
-                <span>Search</span>
-                <i>
-                  <Icon d={I.search} size={15} />
-                </i>
+              <span className="td-tab">
+                <span className="td-tab-icon" />
+                {CHANNEL} - live
+                {recording && <i className="td-tab-rec" title="mic in use" />}
+                <span className="td-x">×</span>
               </span>
-              <span className="td-topnav-right">
-                <Icon d={I.inbox} size={18} />
-                <Icon d={I.bell} size={18} />
-                <span className="td-getbits">Get Bits</span>
-                <span className="td-me sm">U</span>
+              <span className="td-newtab">+</span>
+            </div>
+            <div className="td-bar">
+              <span className="td-nav">
+                <Icon d={I.back} size={16} />
+                <Icon d={I.fwd} size={16} />
+                <Icon d={I.reload} size={15} />
+              </span>
+              <span className="td-url">
+                <Icon d={I.lock} size={12} />
+                twitch.tv/<b>{CHANNEL}</b>
+                <span className="td-url-right">
+                  {recording && (
+                    <span className="td-mic-chip">
+                      <Icon d={I.mic} size={11} />
+                    </span>
+                  )}
+                  <Icon d={I.star} size={14} />
+                </span>
+              </span>
+              <span className="td-ext">
+                <button
+                  ref={iconRef}
+                  type="button"
+                  className={`td-ext-icon ${step === 0 ? 'is-hint' : ''} ${popup ? 'is-open' : ''}`}
+                  aria-label="open StreamLaughs"
+                  onClick={manual(() => (popup ? setPopup(false) : go(1)))}
+                >
+                  <AppIcon size={20} />
+                  {recording && <i className="td-ext-rec" />}
+                </button>
+                <Icon d={I.puzzle} size={16} />
+                <span className="td-me">U</span>
+                <Icon d={I.dots} size={16} />
               </span>
             </div>
-            <div className="td-body">
-              <aside className="td-side">
-                <Icon d={I.heart} size={16} />
-                {[
-                  ['P', '#2ee6c5', true],
-                  ['M', '#ff5c5c', true],
-                  ['L', '#ffd23f', true],
-                  ['K', '#7aa7ff', true],
-                  ['D', '#c58bff', false],
-                  ['S', '#ff9e7a', false],
-                ].map(([l, c, live]) => (
-                  <span
-                    key={String(l)}
-                    className={`td-side-item ${live ? '' : 'off'}`}
-                  >
-                    <Avatar letter={String(l)} color={String(c)} size={30} />
-                    {live && <i />}
-                  </span>
-                ))}
-              </aside>
 
-              <main className="td-main">
-                <div className="td-player">
-                  <div className="td-video" />
-                  <span className="td-live">LIVE</span>
-                  {skip && <span className="td-skip">⏩ 1 hour later</span>}
-                  <div className="td-controls">
-                    <Icon d={I.pause} size={16} />
-                    <Icon d={I.volume} size={16} />
-                    <span className="td-controls-right">
-                      <Icon d={I.gear} size={16} />
-                      <Icon d={I.full} size={16} />
-                    </span>
-                  </div>
-
-                  {(recording || sheet) && (
-                    <button
-                      ref={dotRef}
-                      type="button"
-                      className={`td-dot ${bump % 2 ? 'b1' : 'b2'} ${panel ? 'is-open' : ''}`}
-                      aria-label="StreamLaughs dot"
-                      onClick={manual(() =>
-                        step === 2 ? go(3) : setPanel((p) => !p),
-                      )}
+            {/* streaming site */}
+            <div className="td-site">
+              <div className="td-topnav">
+                <span className="td-logo" aria-hidden="true" />
+                <b>Following</b>
+                <b>Browse</b>
+                <Icon d={I.dots} size={16} />
+                <span className="td-search">
+                  <span>Search</span>
+                  <i>
+                    <Icon d={I.search} size={15} />
+                  </i>
+                </span>
+                <span className="td-topnav-right">
+                  <Icon d={I.inbox} size={18} />
+                  <Icon d={I.bell} size={18} />
+                  <span className="td-getbits">Get Bits</span>
+                  <span className="td-me sm">U</span>
+                </span>
+              </div>
+              <div className="td-body">
+                <aside className="td-side">
+                  <Icon d={I.heart} size={16} />
+                  {[
+                    ['P', '#2ee6c5', true],
+                    ['M', '#ff5c5c', true],
+                    ['L', '#ffd23f', true],
+                    ['K', '#7aa7ff', true],
+                    ['D', '#c58bff', false],
+                    ['S', '#ff9e7a', false],
+                  ].map(([l, c, live]) => (
+                    <span
+                      key={String(l)}
+                      className={`td-side-item ${live ? '' : 'off'}`}
                     >
-                      <AppIcon size={18} mono />
-                      {recording && <i className="td-rec" />}
-                    </button>
-                  )}
-                  <div className="td-pops" aria-live="polite">
-                    {pops.map((p) => (
-                      <span key={p.id}>{p.text}</span>
+                      <Avatar letter={String(l)} color={String(c)} size={30} />
+                      {live && <i />}
+                    </span>
+                  ))}
+                </aside>
+
+                <main className="td-main">
+                  <div className="td-player">
+                    <div className="td-video" />
+                    <span className="td-live">LIVE</span>
+                    {skip && <span className="td-skip">⏩ 1 hour later</span>}
+                    <div className="td-controls">
+                      <Icon d={I.pause} size={16} />
+                      <Icon d={I.volume} size={16} />
+                      <span className="td-controls-right">
+                        <Icon d={I.gear} size={16} />
+                        <Icon d={I.full} size={16} />
+                      </span>
+                    </div>
+
+                    {(recording || sheet) && (
+                      <button
+                        ref={dotRef}
+                        type="button"
+                        className={`td-dot ${bump % 2 ? 'b1' : 'b2'} ${panel ? 'is-open' : ''}`}
+                        aria-label="StreamLaughs dot"
+                        onClick={manual(() =>
+                          step === 2 ? go(3) : setPanel((p) => !p),
+                        )}
+                      >
+                        <AppIcon size={18} mono />
+                        {recording && <i className="td-rec" />}
+                      </button>
+                    )}
+                    <div className="td-pops" aria-live="polite">
+                      {pops.map((p) => (
+                        <span key={p.id}>{p.text}</span>
+                      ))}
+                    </div>
+                    {panel && (
+                      <FansPanel
+                        laughs={laughs}
+                        fans={fans}
+                        word={word}
+                        fanWord={fanWord}
+                        last={last}
+                        bump={bump}
+                        stopRef={stopRef}
+                        onStop={manual(() => go(5))}
+                        onClose={manual(() => setPanel(false))}
+                      />
+                    )}
+                    {sheet && (
+                      <StopSheet
+                        recapRef={recapRef}
+                        onRecap={manual(() => go(6))}
+                        onLater={manual(() => setSheet(false))}
+                      />
+                    )}
+                  </div>
+                  <div className="td-info">
+                    <Avatar letter="P" color="#2ee6c5" size={52} live />
+                    <div className="td-info-text">
+                      <b>
+                        {CHANNEL} <span className="td-verified">✓</span>
+                      </b>
+                      <p>one more try. no rage. (this is a lie)</p>
+                      <span className="td-tags">
+                        <span className="td-cat">Neon Runner</span>
+                        <i>English</i>
+                        <i>Platformer</i>
+                        <i>Chill</i>
+                      </span>
+                    </div>
+                    <div className="td-info-right">
+                      <span className="td-follow">
+                        <Icon d={I.heart} size={14} /> Follow
+                      </span>
+                      <span className="td-sub">Subscribe</span>
+                      <p>
+                        <span className="td-viewers">
+                          <Icon d={I.user} size={13} /> 4,812
+                        </span>
+                        <span>2:41:07</span>
+                      </p>
+                    </div>
+                  </div>
+                </main>
+
+                <aside className="td-chat">
+                  <header>
+                    <span />
+                    <b>STREAM CHAT</b>
+                    <Icon d={I.user} size={15} />
+                  </header>
+                  <div className="td-chat-list">
+                    {chat.map((m) => (
+                      <p key={m.id}>
+                        <b style={{ color: m.color }}>{m.name}</b>: {m.text}
+                      </p>
                     ))}
                   </div>
-                  {panel && (
-                    <FansPanel
-                      laughs={laughs}
-                      fans={fans}
-                      word={word}
-                      fanWord={fanWord}
-                      last={last}
-                      bump={bump}
-                      stopRef={stopRef}
-                      onStop={manual(() => go(5))}
-                      onClose={manual(() => setPanel(false))}
-                    />
-                  )}
-                  {sheet && (
-                    <StopSheet
-                      recapRef={recapRef}
-                      onRecap={manual(() => go(6))}
-                      onLater={manual(() => setSheet(false))}
-                    />
-                  )}
-                </div>
-                <div className="td-info">
-                  <Avatar letter="P" color="#2ee6c5" size={52} live />
-                  <div className="td-info-text">
-                    <b>
-                      {CHANNEL} <span className="td-verified">✓</span>
-                    </b>
-                    <p>one more try. no rage. (this is a lie)</p>
-                    <span className="td-tags">
-                      <span className="td-cat">Neon Runner</span>
-                      <i>English</i>
-                      <i>Platformer</i>
-                      <i>Chill</i>
+                  <footer>
+                    <span className="td-chat-input">Send a message</span>
+                    <span className="td-chat-row">
+                      <span className="td-points">◎ 2.4K</span>
+                      <span className="td-chat-btn">Chat</span>
                     </span>
-                  </div>
-                  <div className="td-info-right">
-                    <span className="td-follow">
-                      <Icon d={I.heart} size={14} /> Follow
-                    </span>
-                    <span className="td-sub">Subscribe</span>
-                    <p>
-                      <span className="td-viewers">
-                        <Icon d={I.user} size={13} /> 4,812
-                      </span>
-                      <span>2:41:07</span>
-                    </p>
-                  </div>
-                </div>
-              </main>
+                  </footer>
+                </aside>
+              </div>
+            </div>
 
-              <aside className="td-chat">
-                <header>
-                  <span />
-                  <b>STREAM CHAT</b>
-                  <Icon d={I.user} size={15} />
-                </header>
-                <div className="td-chat-list">
-                  {chat.map((m) => (
-                    <p key={m.id}>
-                      <b style={{ color: m.color }}>{m.name}</b>: {m.text}
-                    </p>
-                  ))}
-                </div>
-                <footer>
-                  <span className="td-chat-input">Send a message</span>
-                  <span className="td-chat-row">
-                    <span className="td-points">◎ 2.4K</span>
-                    <span className="td-chat-btn">Chat</span>
-                  </span>
-                </footer>
-              </aside>
+            {popup && (
+              <Popup
+                startRef={startRef}
+                glow={step === 1}
+                onStart={manual(() => go(2))}
+              />
+            )}
+            {recap && (
+              <Recap
+                story={story}
+                setStory={(n) => {
+                  setAuto(false);
+                  clearTimers();
+                  setStory(n);
+                }}
+                onClose={manual(() => go(7))}
+              />
+            )}
+            {share && (
+              <ShareCard
+                copied={copied}
+                onCopy={() => {
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 1800);
+                }}
+              />
+            )}
+
+            <span
+              className={`td-cursor ${cursor.show ? 'show' : ''}`}
+              style={{ transform: `translate(${cursor.x}px, ${cursor.y}px)` }}
+              aria-hidden="true"
+            >
+              <svg
+                width="22"
+                height="26"
+                viewBox="0 0 22 26"
+                aria-hidden="true"
+              >
+                <path
+                  d="M2 2l17 10.5-7.6 1.4L15.6 23l-3.3 1.5-4.2-9.1L2.6 21z"
+                  fill="#fff"
+                  stroke="#14141a"
+                  strokeWidth="1.6"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <i key={cursor.click} className={cursor.click ? 'ring' : ''} />
+            </span>
+          </div>
+        </div>
+
+        {/* guide */}
+        <div className="td-guide">
+          <div className="td-progress" aria-hidden="true">
+            {STEPS.map((x, i) => (
+              <button
+                key={x.title}
+                type="button"
+                tabIndex={-1}
+                className={i < step ? 'done' : i === step ? 'now' : ''}
+                onClick={manual(() => go(i))}
+              >
+                <i
+                  style={
+                    i === step && auto && visible
+                      ? ({
+                          animationDuration: `${STEPS[step]!.hold + 950}ms`,
+                        } as CSSProperties)
+                      : undefined
+                  }
+                  className={i === step && auto && visible ? 'run' : ''}
+                  key={`${step}-${auto}`}
+                />
+              </button>
+            ))}
+          </div>
+          <div className="td-guide-row">
+            <div className="td-guide-copy" key={step}>
+              <p className="td-guide-step">
+                step {step + 1} of {STEPS.length}
+              </p>
+              <h2>{s.title}</h2>
+              <p>{s.text}</p>
+            </div>
+            <div className="td-guide-actions">
+              {(step === 2 || step === 3) && (
+                <button
+                  ref={laughRef}
+                  type="button"
+                  className="td-g-btn ghost"
+                  onClick={() => {
+                    setAuto(false);
+                    laugh();
+                    if (step === 3) setFans((f) => Math.min(31, f + 2));
+                  }}
+                >
+                  😂 laugh
+                </button>
+              )}
+              <button
+                type="button"
+                className="td-g-btn ghost icon"
+                aria-label="back"
+                onClick={manual(() => go(Math.max(0, step - 1)))}
+                disabled={step === 0}
+              >
+                <Icon d={I.back} />
+              </button>
+              <button
+                ref={mainRef}
+                type="button"
+                className="td-g-btn yellow"
+                onClick={manual(() => act(step))}
+              >
+                {s.action}
+                <Icon d={I.fwd} size={16} />
+              </button>
+              <button
+                type="button"
+                className="td-g-btn ghost icon"
+                aria-label={auto ? 'pause autoplay' : 'play autoplay'}
+                onClick={() => setAuto((a) => !a)}
+              >
+                <Icon d={auto ? I.pause : I.play} size={15} />
+              </button>
             </div>
           </div>
-
-          {popup && (
-            <Popup
-              startRef={startRef}
-              glow={step === 1}
-              onStart={manual(() => go(2))}
-            />
-          )}
-          {recap && (
-            <Recap
-              story={story}
-              setStory={(n) => {
-                setAuto(false);
-                clearTimers();
-                setStory(n);
-              }}
-              onClose={manual(() => go(7))}
-            />
-          )}
-          {share && (
-            <ShareCard
-              copied={copied}
-              onCopy={() => {
-                setCopied(true);
-                setTimeout(() => setCopied(false), 1800);
-              }}
-            />
-          )}
-
-          <span
-            className={`td-cursor ${cursor.show ? 'show' : ''}`}
-            style={{ transform: `translate(${cursor.x}px, ${cursor.y}px)` }}
-            aria-hidden="true"
-          >
-            <svg width="22" height="26" viewBox="0 0 22 26" aria-hidden="true">
-              <path
-                d="M2 2l17 10.5-7.6 1.4L15.6 23l-3.3 1.5-4.2-9.1L2.6 21z"
-                fill="#fff"
-                stroke="#14141a"
-                strokeWidth="1.6"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <i key={cursor.click} className={cursor.click ? 'ring' : ''} />
-          </span>
         </div>
-      </div>
-
-      {/* guide */}
-      <div className="td-guide">
-        <div className="td-progress" aria-hidden="true">
-          {STEPS.map((x, i) => (
-            <button
-              key={x.title}
-              type="button"
-              tabIndex={-1}
-              className={i < step ? 'done' : i === step ? 'now' : ''}
-              onClick={manual(() => go(i))}
-            >
-              <i
-                style={
-                  i === step && auto && visible
-                    ? ({
-                        animationDuration: `${STEPS[step]!.hold + 950}ms`,
-                      } as CSSProperties)
-                    : undefined
-                }
-                className={i === step && auto && visible ? 'run' : ''}
-                key={`${step}-${auto}`}
-              />
-            </button>
-          ))}
-        </div>
-        <div className="td-guide-row">
-          <div className="td-guide-copy" key={step}>
-            <p className="td-guide-step">
-              step {step + 1} of {STEPS.length}
-            </p>
-            <h2>{s.title}</h2>
-            <p>{s.text}</p>
-          </div>
-          <div className="td-guide-actions">
-            {(step === 2 || step === 3) && (
-              <button
-                ref={laughRef}
-                type="button"
-                className="td-g-btn ghost"
-                onClick={() => {
-                  setAuto(false);
-                  laugh();
-                  if (step === 3) setFans((f) => Math.min(31, f + 2));
-                }}
-              >
-                😂 laugh
-              </button>
-            )}
-            <button
-              type="button"
-              className="td-g-btn ghost icon"
-              aria-label="back"
-              onClick={manual(() => go(Math.max(0, step - 1)))}
-              disabled={step === 0}
-            >
-              <Icon d={I.back} />
-            </button>
-            <button
-              ref={mainRef}
-              type="button"
-              className="td-g-btn yellow"
-              onClick={manual(() => act(step))}
-            >
-              {s.action}
-              <Icon d={I.fwd} size={16} />
-            </button>
-            <button
-              type="button"
-              className="td-g-btn ghost icon"
-              aria-label={auto ? 'pause autoplay' : 'play autoplay'}
-              onClick={() => setAuto((a) => !a)}
-            >
-              <Icon d={auto ? I.pause : I.play} size={15} />
-            </button>
-          </div>
-        </div>
-        <p className="td-note">
-          a simulated session. no mic, no install, nothing leaves this page.
-        </p>
       </div>
     </div>
   );

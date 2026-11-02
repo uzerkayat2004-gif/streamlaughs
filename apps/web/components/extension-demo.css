@@ -8,10 +8,24 @@
   width: 100%;
   margin: 0 auto;
 }
+.td-track {
+  position: relative;
+  height: 330vh;
+}
+.td-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .td-frame {
   position: relative;
-  width: 100%;
+  flex-shrink: 0;
   border-radius: 16px;
+  overflow: hidden;
+  will-change: width, height;
   box-shadow:
     0 40px 120px #0009,
     0 0 0 1px #ffffff14;
@@ -48,7 +62,7 @@
   align-items: flex-end;
   gap: 6px;
   padding: 0 12px;
-  border-radius: 16px 16px 0 0;
+  border-radius: var(--td-r, 16px) var(--td-r, 16px) 0 0;
 }
 .td-lights {
   display: flex;
@@ -209,7 +223,7 @@
   height: 642px;
   background: #0e0e10;
   overflow: hidden;
-  border-radius: 0 0 16px 16px;
+  border-radius: 0 0 var(--td-r, 16px) var(--td-r, 16px);
 }
 .td-topnav {
   height: 50px;
@@ -889,7 +903,7 @@
   position: absolute;
   inset: 78px 0 0;
   background: #0b0b0ff2;
-  border-radius: 0 0 16px 16px;
+  border-radius: 0 0 var(--td-r, 16px) var(--td-r, 16px);
   z-index: 12;
   display: flex;
   flex-direction: column;
@@ -1267,21 +1281,34 @@
   animation: td-click 0.5s ease-out;
 }
 
-/* guide below the stage */
+/* floating guide dock */
 .td-guide {
-  max-width: 1000px;
-  margin: 34px auto 0;
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  translate: -50% 0;
+  width: min(860px, calc(100% - 24px));
+  padding: 12px 14px 12px 22px;
+  border-radius: 22px;
+  background: #101016d9;
+  border: 1px solid #ffffff1f;
+  box-shadow: 0 20px 60px #000b;
+  backdrop-filter: blur(16px) saturate(1.4);
+  z-index: 40;
 }
 .td-progress {
   display: flex;
-  gap: 6px;
+  gap: 5px;
+  position: absolute;
+  inset: 0 22px auto;
+  top: 0;
 }
 .td-progress button {
   flex: 1;
-  height: 4px;
+  height: 3px;
   border: 0;
   padding: 0;
-  border-radius: 4px;
+  border-radius: 0 0 3px 3px;
   background: #ffffff1c;
   overflow: hidden;
   cursor: pointer;
@@ -1305,49 +1332,59 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 30px;
-  margin-top: 26px;
+  gap: 20px;
 }
 .td-guide-copy {
   animation: td-in 0.4s ease;
+  min-width: 0;
 }
 .td-guide-step {
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted, #a1a5af);
+  margin: 0;
 }
 .td-guide-copy h2 {
-  font-size: clamp(28px, 3vw, 40px);
-  margin: 6px 0 6px;
+  font-size: 22px;
+  margin: 2px 0;
+  line-height: 1.1;
 }
 .td-guide-copy > p:last-child {
   color: #b2b6bf;
-  font-size: 15px;
-  max-width: 560px;
+  font-size: 13px;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .td-guide-actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
   flex-shrink: 0;
 }
 .td-g-btn {
-  height: 48px;
+  height: 42px;
   border-radius: 99px;
-  padding: 0 22px;
+  padding: 0 18px;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   font-weight: 650;
   font-size: 14px;
   border: 1px solid #ffffff2a;
   background: transparent;
   color: var(--paper, #f4f2ed);
   white-space: nowrap;
+  cursor: pointer;
   transition:
     transform 0.15s,
     background 0.2s;
+}
+.td-g-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 .td-g-btn:hover:not(:disabled) {
   transform: translateY(-1px);
@@ -1361,15 +1398,17 @@
   background: #ffffff0c;
 }
 .td-g-btn.icon {
-  width: 48px;
+  width: 42px;
   padding: 0;
   justify-content: center;
 }
-.td-note {
-  margin-top: 22px;
-  font-size: 12px;
-  color: var(--muted, #a1a5af);
-  text-align: center;
+
+/* full-screen moment: the site header steps aside */
+.site-header {
+  transition: transform 0.45s cubic-bezier(0.3, 0, 0.2, 1);
+}
+html.demo-immersive .site-header {
+  transform: translateY(-105%);
 }
 
 @keyframes td-in {
@@ -1502,8 +1541,25 @@
 }
 
 @media (max-width: 760px) {
-  .td-frame {
-    border-radius: 10px;
+  .td-track {
+    height: auto;
+  }
+  .td-sticky {
+    position: static;
+    height: auto;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .td-guide {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    translate: none;
+    width: 100%;
+    padding-top: 18px;
+  }
+  .td-guide-copy > p:last-child {
+    white-space: normal;
   }
   .td-guide-row {
     flex-direction: column;
