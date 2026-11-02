@@ -157,7 +157,7 @@ export default async function Streamers({
         <p>
           get the dot on your own Twitch tab. free, and it stays on your PC.
         </p>
-        <StoreButtons />
+        <StoreButtons hideNote />
       </section>
     </main>
   );

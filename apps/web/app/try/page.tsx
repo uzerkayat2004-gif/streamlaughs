@@ -25,7 +25,7 @@ export default function Try() {
         <h2>
           your stream. <em>your turn.</em>
         </h2>
-        <StoreButtons />
+        <StoreButtons hideNote />
       </section>
     </main>
   );

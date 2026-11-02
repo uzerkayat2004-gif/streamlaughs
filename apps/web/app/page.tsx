@@ -139,7 +139,7 @@ export default function Home() {
             <br />
             <em>together?</em>
           </h2>
-          <StoreButtons />
+          <StoreButtons hideNote />
           <p className="quiet-caption">Chrome, Edge and Brave · free</p>
         </div>
       </section>

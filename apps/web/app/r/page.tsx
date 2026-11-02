@@ -68,7 +68,7 @@ export default async function SharedRecap({ searchParams }: Props) {
       </article>
       <div className="shared-recap-cta">
         <h2>your next laugh could be a story.</h2>
-        <StoreButtons />
+        <StoreButtons hideNote />
         <p>private, on-device · no account needed</p>
       </div>
     </main>
