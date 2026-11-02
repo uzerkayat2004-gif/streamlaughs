@@ -186,8 +186,8 @@ export default function Privacy() {
           <section id="permissions">
             <h2>permissions, explained.</h2>
             <p>
-              These come from the real extension manifest. Store packages omit
-              the ZIP download permission.
+              These come from the real extension manifest. No downloads or
+              management permission is requested.
             </p>
             <div className="permission-scroll">
               <table>
@@ -225,13 +225,6 @@ export default function Privacy() {
                     <td>
                       Process audio in an extension document while the popup is
                       closed.
-                    </td>
-                  </tr>
-                  <tr>
-                    <th scope="row">downloads · ZIP only</th>
-                    <td>
-                      Save an update ZIP you request. Browser store installs do
-                      not use this permission.
                     </td>
                   </tr>
                   <tr>
@@ -280,10 +273,10 @@ export default function Privacy() {
               retention policies.
             </p>
             <p>
-              ZIP installs fetch public version metadata when the popup opens,
-              with a cache of up to an hour, and may check when the extension
-              wakes. These requests contain no installation identifier. Store
-              installs use their browser store’s update mechanism.
+              The website fetches public version metadata to show whether a
+              store update is in review. It sends no installation identifier.
+              Store installs use their browser’s automatic updates; manual
+              testers download replacements themselves.
             </p>
           </section>
           <section id="services">
@@ -309,7 +302,12 @@ export default function Privacy() {
               Leave sharing off, switch it off at any time, pause listening,
               stop a session, delete local data, or uninstall. To clear saved
               recaps before uninstalling, use “delete my data” in the extension.
-              ZIP and store installs have separate browser storage.
+              ZIP and store installs have separate browser storage. “Save my
+              history” creates a local JSON file of saved sessions and recaps.
+              “Load history” validates and merges that file on your PC without
+              uploading it. The file contains approved reaction labels and
+              timestamps, never audio or raw transcripts. Keep it private; it
+              includes which channels you watched.
             </p>
             <p>
               Streamers can log out here to end the session, and remove

@@ -239,7 +239,10 @@ export function InstallGuide() {
             Click <strong>Load unpacked</strong> and choose the {PRODUCT.name}{' '}
             folder.
           </p>
-          <small>Pick the folder that has the files inside, not the ZIP.</small>
+          <small>
+            Pick the folder holding manifest.json. If there’s another folder
+            inside, open that one first.
+          </small>
         </article>
         <article className="install-step">
           <InstallPicture step={4} address={address} />
@@ -272,9 +275,10 @@ export function InstallGuide() {
           </p>
           <h3>how do I update?</h3>
           <p>
-            Click the {PRODUCT.name} icon → update. Download, replace the files
-            in the same folder, then press finish. Your recaps stay saved. Store
-            installs update through your browser’s store.
+            Download the new ZIP here, unzip it, and replace the files in the
+            same installed folder. Click reload on the extensions page and
+            refresh Twitch. Never Remove the extension: your recaps stay saved.
+            Store installs update automatically.
           </p>
         </div>
       </details>

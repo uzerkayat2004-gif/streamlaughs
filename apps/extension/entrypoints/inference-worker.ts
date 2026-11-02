@@ -70,6 +70,7 @@ export default defineUnlistedScript(() => {
     const diagnostics = {
       ...base,
       tasks: tasks.snapshot(),
+      vadWorkTotalMs: models.times.vad,
       vadCpuMsPerSecond:
         (Math.max(0, models.times.vad - previousVadMs) * 1000) /
         Math.max(1, performance.now() - previousVadAt),
@@ -131,7 +132,10 @@ export default defineUnlistedScript(() => {
     }, 0);
   };
   self.onmessage = async ({ data }) => {
-    if (data.type === 'modes') {
+    if (data.type === 'sensitivity') {
+      if (['strict', 'normal', 'sensitive'].includes(data.value))
+        pipeline?.setSensitivity(data.value);
+    } else if (data.type === 'modes') {
       if (typeof data.laugh === 'boolean' && typeof data.speech === 'boolean')
         pipeline?.setModes(data);
     } else if (data.type === 'init') {
@@ -176,6 +180,8 @@ export default defineUnlistedScript(() => {
         schedule,
       );
       if (data.modes) pipeline.setModes(data.modes);
+      if (['strict', 'normal', 'sensitive'].includes(data.sensitivity))
+        pipeline.setSensitivity(data.sensitivity);
       models.status.vad.phase = 'loading';
       report();
       try {

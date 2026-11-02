@@ -1,16 +1,37 @@
 import { expect, it, vi } from 'vitest';
 import { INFERENCE_CONFIG as C, zeroScores } from './config';
 import { InferencePipeline } from './pipeline';
+import { AcousticFloor } from './accuracy';
+function createPipeline(
+  ...args: ConstructorParameters<typeof InferencePipeline>
+) {
+  const [models, emit, debug, onSpeech, wake] = args;
+  models.lastSpeechConfidence = { avgLogprob: -0.1, noSpeechProbability: 0.01 };
+  const sound = models.sound;
+  const speechFixture = (scores: ReturnType<typeof zeroScores>) => ({
+    ...scores,
+    speech: scores.laugh ? scores.speech : 0.9,
+  });
+  models.sound = (...samples) => {
+    const scores = sound(...samples);
+    return scores instanceof Promise
+      ? scores.then(speechFixture)
+      : speechFixture(scores);
+  };
+  const floor = new AcousticFloor();
+  floor.ingest(new Float32Array(320), -4000);
+  floor.ingest(new Float32Array(320), 0);
+  return new InferencePipeline(models, emit, debug, onSpeech, wake, floor);
+}
 it('live lab gates stop model jobs, suppress disabled speech, and resume the same word rules', async () => {
   const words = vi.fn(async () => 'bro'),
     sound = vi.fn(zeroScores),
     events: { kind: string }[] = [];
-  const pipeline = new InferencePipeline(
-    { vad: async () => 0.9, sound, words },
-    (e) => events.push(e),
+  const pipeline = createPipeline({ vad: async () => 0.9, sound, words }, (e) =>
+    events.push(e),
   );
   const feed = async (base: number) => {
-    for (let i = 0; i < 35; i++) {
+    for (let i = 0; i < 70; i++) {
       pipeline.ingest(
         'mic',
         Float32Array.from({ length: 320 }, (_, j) => Math.sin(j * 0.3) * 0.04),
@@ -36,14 +57,16 @@ it('live lab gates stop model jobs, suppress disabled speech, and resume the sam
 it('flushes an open speech segment only on stop, preserving ordinary segmentation and approved word timestamps', async () => {
   const events: { kind: string }[] = [];
   const words = vi.fn(async () => ({
+    avgLogprob: -0.1,
+    noSpeechProbability: 0.01,
     phrases: [{ text: 'bro', class: 'ok' as const, count: 1 }],
     hype: false,
   }));
-  const pipeline = new InferencePipeline(
+  const pipeline = createPipeline(
     { vad: async () => 0.9, sound: zeroScores, words },
     (e) => events.push(e),
   );
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 60; i++) {
     pipeline.ingest(
       'mic',
       Float32Array.from({ length: 320 }, (_, j) => Math.sin(j * 0.3) * 0.04),
@@ -60,7 +83,7 @@ it('flushes an open speech segment only on stop, preserving ordinary segmentatio
 
 it('reports actual worker arrivals and zero FPS after frames stop even while status polling continues', () => {
   vi.useFakeTimers({ toFake: ['performance'] });
-  const p = new InferencePipeline(
+  const p = createPipeline(
     { vad: async () => 0, sound: zeroScores, words: async () => '' },
     () => {},
   );
@@ -80,7 +103,7 @@ it('dispatches speech while the live VAD queue still has work instead of starvin
   let calls = 0,
     frame = 0;
   const words = vi.fn(async () => 'lets go');
-  const p = new InferencePipeline(
+  const p = createPipeline(
     { vad: async () => (++calls <= 20 ? 0.99 : 0), sound: zeroScores, words },
     () => {},
   );
@@ -102,10 +125,7 @@ it('dispatches speech while the live VAD queue still has work instead of starvin
 it('catches up queued VAD before running another synchronous classifier window', async () => {
   const sound = vi.fn(zeroScores),
     vad = vi.fn(async () => 0);
-  const p = new InferencePipeline(
-    { vad, sound, words: async () => '' },
-    () => {},
-  );
+  const p = createPipeline({ vad, sound, words: async () => '' }, () => {});
   for (let i = 0; i < 60; i++)
     p.ingest('mic', new Float32Array(320), 10000 + i * 20);
   await p.step();
@@ -116,10 +136,10 @@ it('catches up queued VAD before running another synchronous classifier window',
   p.clear();
 });
 
-it('confirms overlapping laugh evidence across the capped half-second sound windows', async () => {
+it('rejects classifier-only laughter evidence without a real mic rhythm', async () => {
   let clock = 0;
   const events: { kind: string }[] = [];
-  const p = new InferencePipeline(
+  const p = createPipeline(
     {
       vad: async () => 0,
       words: async () => '',
@@ -135,13 +155,13 @@ it('confirms overlapping laugh evidence across the capped half-second sound wind
     p.ingest('mic', new Float32Array(320), 10000 + clock);
     while (p.pendingWork) await p.step();
   }
-  expect(events.filter((event) => event.kind === 'laugh')).toHaveLength(1);
+  expect(events.filter((event) => event.kind === 'laugh')).toHaveLength(0);
   p.clear();
 });
 
 it('keeps independent mic speech when speaker audio has the same loud/quiet rhythm', async () => {
   const events: { kind: string }[] = [];
-  const p = new InferencePipeline(
+  const p = createPipeline(
     {
       vad: async () => 0,
       sound: () => ({ ...zeroScores(), laugh: 0.9 }),
@@ -150,7 +170,8 @@ it('keeps independent mic speech when speaker audio has the same loud/quiet rhyt
     (event) => events.push(event),
   );
   for (let i = 0; i < 150; i++) {
-    const amplitude = 0.1 + 0.05 * Math.sin(i * 0.41);
+    const amplitude =
+      0.15 * Math.max(0, Math.sin(i * 0.02 * 2 * Math.PI * 5)) ** 3;
     p.ingest(
       'tab',
       Float32Array.from(
@@ -187,7 +208,7 @@ it('keeps reaction steps responsive while transcription is pending and discards 
       }),
   );
   const events: { kind: string }[] = [];
-  const p = new InferencePipeline(
+  const p = createPipeline(
     {
       vad: async () => (voiced ? 0.99 : 0),
       sound: () => ({ ...zeroScores(), laugh: 0.9 }),
@@ -197,7 +218,18 @@ it('keeps reaction steps responsive while transcription is pending and discards 
   );
   let frameIndex = 0;
   async function frame() {
-    p.ingest('mic', new Float32Array(320).fill(0.1), 10000 + ++frameIndex * 20);
+    const k = ++frameIndex;
+    p.ingest(
+      'mic',
+      Float32Array.from(
+        { length: 320 },
+        (_, n) =>
+          Math.sin(((k * 320 + n) / 16000) * 2 * Math.PI * 180) *
+          0.1 *
+          Math.max(0, Math.sin(((k * 320 + n) / 16000) * 2 * Math.PI * 5)) ** 3,
+      ),
+      10000 + k * 20,
+    );
     while (p.pendingWork) {
       const completed = await Promise.race([
         p.step().then(() => true),
@@ -233,7 +265,7 @@ it('discards an in-flight VAD result when a transport timestamp gap resets its a
     words: async () => '',
     resetVad: vi.fn(),
   };
-  const p = new InferencePipeline(models, () => {});
+  const p = createPipeline(models, () => {});
   p.ingest('mic', new Float32Array(320), 1000);
   p.ingest('mic', new Float32Array(320), 1020);
   const pending = p.step();
@@ -252,11 +284,17 @@ it('requires real classifier hops, produces no transcript without VAD and reject
     words: vi.fn(async () => 'private'),
   };
   const events: unknown[] = [],
-    p = new InferencePipeline(models, (e) => events.push(e));
+    p = createPipeline(models, (e) => events.push(e));
   for (let i = 0; i < 120; i++) {
     p.ingest(
       'mic',
-      new Float32Array(320).fill(0.1 + Math.sin(i * 0.8) * 0.04),
+      Float32Array.from(
+        { length: 320 },
+        (_, n) =>
+          Math.sin(((i * 320 + n) / 16000) * 2 * Math.PI * 180) *
+          0.1 *
+          Math.max(0, Math.sin(((i * 320 + n) / 16000) * 2 * Math.PI * 5)) ** 3,
+      ),
       10000 + i * 20,
     );
     while (p.pendingWork) await p.step();
@@ -265,10 +303,14 @@ it('requires real classifier hops, produces no transcript without VAD and reject
   expect(models.words).not.toHaveBeenCalled();
   p.clear();
   const rejected: unknown[] = [],
-    speakers = new InferencePipeline(models, (e) => rejected.push(e), true);
+    speakers = createPipeline(models, (e) => rejected.push(e), true);
   for (let i = 0; i < 130; i++) {
-    const frame = new Float32Array(320).fill(
-      0.1 + Math.sin(i * 0.8) * 0.04 + Math.cos(i * 0.31) * 0.01,
+    const frame = Float32Array.from(
+      { length: 320 },
+      (_, n) =>
+        Math.sin(((i * 320 + n) / 16000) * 2 * Math.PI * 180) *
+        0.1 *
+        Math.max(0, Math.sin(((i * 320 + n) / 16000) * 2 * Math.PI * 5)) ** 3,
     );
     speakers.ingest('tab', frame, 10000 + i * 20);
     speakers.ingest('mic', frame, 10000 + i * 20);
@@ -276,7 +318,9 @@ it('requires real classifier hops, produces no transcript without VAD and reject
   }
   expect(rejected).toHaveLength(0);
   expect(
-    speakers.debugState().reasons.some((r) => r.reason.includes('playback')),
+    speakers
+      .diagnostics()
+      .accuracyLog.some((r) => r.reason.includes('playback')),
   ).toBe(true);
   speakers.clear();
 });
@@ -287,7 +331,7 @@ it('bounds queues during prolonged overload, clears stale PCM on gaps and clears
     words: async () => '',
     resetVad: vi.fn(),
   };
-  const p = new InferencePipeline(models, () => {});
+  const p = createPipeline(models, () => {});
   for (let i = 0; i < 10000; i++)
     p.ingest('mic', new Float32Array(320), 1000 + i * 20);
   expect(p.pendingWork).toBeLessThanOrEqual(C.maxVadJobs + 1);
@@ -304,7 +348,7 @@ it('bounds queues during prolonged overload, clears stale PCM on gaps and clears
 
 it('caps classifier work to two half-second windows per stream per second while ingesting 50 FPS', async () => {
   const sound = vi.fn(zeroScores),
-    p = new InferencePipeline(
+    p = createPipeline(
       { vad: async () => 0, sound, words: async () => '' },
       () => {},
     );

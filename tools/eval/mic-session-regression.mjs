@@ -13,6 +13,19 @@ const origin = 'chrome-extension://fkocldgggcmhihelohiicoakcfomhepg';
 const reportPath =
   process.env.MIC_SESSION_REPORT ||
   path.join(root, '.test-runtime/mic-session-report.json');
+const duration = process.env.MIC_DURATION_SECONDS
+  ? Number(process.env.MIC_DURATION_SECONDS)
+  : null;
+const expectedLaughs =
+  process.env.MIC_EXPECT_LAUGHS === undefined
+    ? null
+    : Number(process.env.MIC_EXPECT_LAUGHS);
+const expectedWords = process.env.MIC_EXPECT_WORDS
+  ? JSON.parse(process.env.MIC_EXPECT_WORDS)
+  : null;
+const fixture =
+  process.env.MIC_FIXTURE ||
+  path.join(root, 'tests/fixtures/audio/laugh-lets-go.wav');
 const context = await chromium.launchPersistentContext('', {
   channel: 'chromium',
   headless: false,
@@ -22,7 +35,7 @@ const context = await chromium.launchPersistentContext('', {
     `--load-extension=${build}`,
     '--use-fake-ui-for-media-stream',
     '--use-fake-device-for-media-stream',
-    `--use-file-for-fake-audio-capture=${path.join(root, 'tests/fixtures/audio/laugh-lets-go.wav')}`,
+    `--use-file-for-fake-audio-capture=${fixture}`,
   ],
 });
 try {
@@ -82,11 +95,22 @@ try {
   // No tab capture or lab switches: exercise the first, unmodified Start path.
   const started = Date.now();
   let diagnostic;
-  for (let n = 0; n < 90; n++) {
+  let sawCalibration = false;
+  const decisions = new Map();
+  for (let n = 0; n < (duration ?? 90); n++) {
     diagnostic = await popup.evaluate(() =>
       chrome.runtime.sendMessage({ type: 'GET_DIAGNOSTICS' }),
     );
-    if (diagnostic.sessionLaughs > 0 && diagnostic.sessionWords > 0) break;
+    for (const row of diagnostic.inference?.accuracyLog ?? [])
+      decisions.set(`${row.kind}-${row.ts}`, row);
+    if (diagnostic.inference?.health.calibrationRemainingMs > 0)
+      sawCalibration = true;
+    if (
+      !duration &&
+      diagnostic.sessionLaughs > 0 &&
+      diagnostic.sessionWords > 0
+    )
+      break;
     if (n === 10 && !(diagnostic.audio?.metrics.micFrames > 0)) break;
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
@@ -99,6 +123,13 @@ try {
   await reactions.waitFor({ state: 'visible', timeout: 5000 });
   const shownLaughs = Number(await reactions.locator('strong').innerText());
   const wordVisible = await reactions.getByText('your word:').isVisible();
+  const shownWord = wordVisible
+    ? (await reactions.getByText('your word:').innerText())
+        .split(':')
+        .slice(1)
+        .join(':')
+        .trim()
+    : '';
   await stream.keyboard.press('Alt+Shift+D');
   const debug = stream.getByRole('dialog', {
     name: 'local detection debug',
@@ -111,6 +142,15 @@ try {
     /panel updates delivered: (\d+)/.exec(deliveredText)?.[1] ?? 0,
   );
   const ai = diagnostic.inference;
+  const counts = await popup.evaluate(async () => {
+    const s = (await chrome.storage.local.get('laughline:state'))[
+      'laughline:state'
+    ];
+    return {
+      words: s?.session?.topWords ?? [],
+      wordEvents: s?.session?.wordEvents ?? [],
+    };
+  });
   const report = {
     version: diagnostic.version,
     elapsedSeconds: (Date.now() - started) / 1000,
@@ -120,6 +160,10 @@ try {
     lab: diagnostic.lab,
     models: ai?.models,
     stages: ai?.stages,
+    accuracyLog: ai?.accuracyLog,
+    accuracyDecisions: [...decisions.values()],
+    laughDetectors: ai?.laughDetectors,
+    words: counts.words,
     guard: ai?.guard,
     inferenceMicFrames: ai?.micFrames,
     vadProbability: ai?.health.vadProbability,
@@ -127,7 +171,15 @@ try {
     sessionWords: diagnostic.sessionWords,
     panelLaughs: shownLaughs,
     panelWordVisible: wordVisible,
+    panelWord: shownWord,
+    sawCalibration,
     panelUpdatesDelivered: panelUpdates,
+    speechBudget: {
+      work10sMs: ai?.speechWork10sMs,
+      backoffMs: ai?.speechBackoffMs,
+      waitedMs: ai?.speechWaitedMs,
+      allWork10sMs: ai?.modelWork10sMs,
+    },
     speechOverruns: ai?.speechOverruns,
     speechCooldownMs: ai?.speechCooldownMs,
     nativePlayback:
@@ -141,11 +193,91 @@ try {
   if (!report.nativePlayback) throw new Error('Twitch playback was rerouted');
   if (!(report.audioMetrics?.micFrames > 0) || !(report.inferenceMicFrames > 0))
     throw new Error('fresh native session produced zero mic frames');
-  if (!(report.sessionLaughs > 0) || !(report.sessionWords > 0))
+  if (expectedLaughs !== null && report.sessionLaughs !== expectedLaughs)
+    throw new Error(
+      `expected exactly ${expectedLaughs} laughs, got ${report.sessionLaughs}`,
+    );
+  if (
+    expectedWords &&
+    JSON.stringify(
+      Object.fromEntries(report.words.map((w) => [w.word, w.count]).sort()),
+    ) !==
+      JSON.stringify(Object.fromEntries(Object.entries(expectedWords).sort()))
+  )
+    throw new Error('reaction word counts differ from fixture labels');
+  if (expectedWords?.bro === 2 && shownWord !== 'bro')
+    throw new Error('most-used reaction is not bro');
+  if (
+    expectedLaughs === null &&
+    !expectedWords &&
+    (!(report.sessionLaughs > 0) || !(report.sessionWords > 0))
+  )
     throw new Error('fresh native session detected zero laughs or words');
-  if (!(shownLaughs > 0) || !wordVisible || !panelUpdates)
+  if (
+    (expectedLaughs === null
+      ? shownLaughs < report.sessionLaughs
+      : shownLaughs !== report.sessionLaughs) ||
+    (report.sessionWords > 0 && !wordVisible) ||
+    !panelUpdates
+  )
     throw new Error('counts did not reach the visible Twitch panel');
+  if (process.env.MIC_TEST_UNDO === '1') {
+    await stream
+      .getByRole('button', { name: 'close detection debug', exact: true })
+      .click();
+    const read = () =>
+      popup.evaluate(
+        async () =>
+          (await chrome.runtime.sendMessage({ type: 'GET_STATE' })).state
+            .session.laughCount,
+      );
+    await stream
+      .getByRole('button', { name: 'not me · undo last laugh', exact: true })
+      .click();
+    if ((await read()) !== report.sessionLaughs - 1)
+      throw new Error('not me did not remove the laugh');
+    await stream.getByRole('button', { name: 'undo', exact: true }).click();
+    if ((await read()) !== report.sessionLaughs)
+      throw new Error('undo toast did not restore the laugh');
+    await stream
+      .getByRole('button', { name: 'not me · undo last laugh', exact: true })
+      .click();
+    await new Promise((resolve) => setTimeout(resolve, 5200));
+    await popup.evaluate(() =>
+      chrome.runtime.sendMessage({ type: 'RESTORE_LAUGH' }),
+    );
+    if ((await read()) !== report.sessionLaughs - 1)
+      throw new Error('expired undo restored a laugh');
+  }
   await popup.evaluate(() => chrome.runtime.sendMessage({ type: 'STOP' }));
+  if (process.env.MIC_TEST_UNDO === '1') {
+    const recapLaughs = await popup.evaluate(async () => {
+      const state = (await chrome.storage.local.get('laughline:state'))[
+        'laughline:state'
+      ];
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open('laughline');
+        req.onerror = () => reject(req.error);
+        req.onsuccess = () => {
+          const db = req.result,
+            tx = db.transaction('recaps', 'readonly'),
+            r = tx.objectStore('recaps').get(state.lastRecapId);
+          r.onsuccess = () => resolve(r.result?.totalLaughs);
+          r.onerror = () => reject(r.error);
+          tx.oncomplete = () => db.close();
+        };
+      });
+    });
+    if (recapLaughs !== report.sessionLaughs - 1)
+      throw new Error('saved recap did not retain not-me correction');
+    report.undo = {
+      restoredWithinFiveSeconds: true,
+      expiredAfterFiveSeconds: true,
+      savedRecapLaughs: recapLaughs,
+    };
+    fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
+    console.log(JSON.stringify({ undo: report.undo }));
+  }
 } finally {
   await context.close();
 }

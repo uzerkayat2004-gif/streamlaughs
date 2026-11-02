@@ -1,9 +1,9 @@
+import { PRODUCT } from '@laughline/shared';
 import {
   parseRecapShare,
   recapShareParams,
   recapShareUrl,
 } from '@laughline/shared';
-import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, expect, it, vi } from 'vitest';
 import Page from '../app/r/page';
@@ -114,7 +114,7 @@ it('uses configured SITE_URL for canonical/OG links; public stats never authoriz
     recapRule.headers.some((h) => h.key.startsWith('Access-Control')),
   ).toBe(false);
 });
-it('renders /r from stats only and keeps downloads in the setup flow', async () => {
+it('renders /r from stats only and offers the browser store for new installs', async () => {
   const html = renderToStaticMarkup(
     await Page({
       searchParams: Promise.resolve(
@@ -125,7 +125,8 @@ it('renders /r from stats only and keeps downloads in the setup flow', async () 
   expect(html).toContain('16');
   expect(html).toContain('vernofps');
   expect(html).toContain('no way');
-  expect(html).toContain('href="/install?downloaded=1"');
+  expect(html).toContain(PRODUCT.chromeStoreUrl);
+  expect(html).toContain(PRODUCT.edgeStoreUrl);
   expect(html).not.toMatch(/<script|github\.com|iframe/i);
 });
 it('renders a real 1200x630 PNG without a cookie, account lookup or external avatar', async () => {

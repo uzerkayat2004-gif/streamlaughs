@@ -1,40 +1,19 @@
 import { PRODUCT } from '@laughline/shared';
-import { useEffect, useState } from 'react';
-import {
-  copyableReport,
-  type DiagnosticsReport,
-  DiagnosticsSchema,
-} from './diagnostics';
+
+import { useState } from 'react';
+
+import { AccuracyLog, usePipelineReport } from './PipelinePanel';
+
+import { copyableReport } from './diagnostics';
 
 export function Diagnostics() {
-  const [report, setReport] = useState<DiagnosticsReport | null>(null);
+  const { report, phrase } = usePipelineReport(true, true, true);
+
   const [message, setMessage] = useState('');
-  useEffect(() => {
-    let mounted = true,
-      busy = false;
-    const refresh = async () => {
-      if (busy) return;
-      busy = true;
-      try {
-        const value = DiagnosticsSchema.parse(
-          await chrome.runtime.sendMessage({ type: 'GET_DIAGNOSTICS' }),
-        );
-        if (mounted) setReport(value);
-      } catch {
-        if (mounted) setMessage('couldn’t read diagnostics · reopen this page');
-      } finally {
-        busy = false;
-      }
-    };
-    void refresh();
-    const timer = setInterval(() => void refresh(), 500);
-    return () => {
-      mounted = false;
-      clearInterval(timer);
-    };
-  }, []);
+
   const audio = report?.audio,
     ai = report?.inference;
+
   return (
     <main className="diagnostics-page">
       <h1>{PRODUCT.name} · local audio diagnostics</h1>
@@ -45,8 +24,10 @@ export function Diagnostics() {
         disabled={!report}
         onClick={async () => {
           if (!report) return;
+
           try {
             await navigator.clipboard.writeText(copyableReport(report));
+
             setMessage('report copied');
           } catch {
             setMessage('couldn’t copy · try again');
@@ -85,6 +66,7 @@ export function Diagnostics() {
             max="1"
             value={Math.min(
               1,
+
               (audio?.metrics[source === 'mic' ? 'micLevel' : 'tabLevel'] ??
                 0) * 8,
             )}
@@ -156,6 +138,10 @@ export function Diagnostics() {
         ))}
       </ul>
       {!ai?.events.length && <p>none yet</p>}
+      <AccuracyLog inference={ai} />
+      <h2>last 20 speech decisions · this view only</h2>
+      <p>transcripts below are temporary and excluded from copy report.</p>
+      <pre>{phrase || 'say a reaction while this view is open'}</pre>
       <h2>report details</h2>
       <pre>{report ? copyableReport(report) : 'waiting for local state…'}</pre>
     </main>

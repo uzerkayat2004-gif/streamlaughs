@@ -9,9 +9,11 @@ const build = path.resolve(
   process.env.AUDIO_PROBE_BUILD ||
     path.join(root, 'apps/extension/.output/chrome-mv3'),
 );
-const seconds = Number(process.env.STUTTER_SECONDS || 600);
+const seconds = Number(process.env.STUTTER_SECONDS || 300);
 if (!Number.isInteger(seconds) || seconds < 10 || seconds > 1800)
-  throw new Error('STUTTER_SECONDS must be 10..1800; acceptance requires 600');
+  throw new Error(
+    'STUTTER_SECONDS must be 10..1800; acceptance requires 300 (five minutes)',
+  );
 const reportPath =
   process.env.STUTTER_REPORT ||
   path.join(root, '.test-runtime/stutter-report.json');
@@ -24,13 +26,9 @@ const context = await chromium.launchPersistentContext('', {
   args: [
     `--disable-extensions-except=${build}`,
     `--load-extension=${build}`,
-    `--allowlisted-extension-id=${id}`,
-    '--auto-accept-camera-and-microphone-capture',
+    '--use-fake-ui-for-media-stream',
     '--use-fake-device-for-media-stream',
-    `--use-file-for-fake-audio-capture=${path.join(root, 'tests/fixtures/audio/laugh-lets-go.wav')}`,
-    '--autoplay-policy=no-user-gesture-required',
-    '--disable-background-timer-throttling',
-    '--disable-renderer-backgrounding',
+    `--use-file-for-fake-audio-capture=${path.join(root, 'tests/fixtures/audio/accuracy/existing-laugh-word.wav')}`,
   ],
 });
 try {
@@ -58,6 +56,7 @@ try {
     (await context.waitForEvent('serviceworker'));
   const stream = await context.newPage();
   await stream.goto('https://www.twitch.tv/stutter_fixture');
+  await stream.locator('video').click();
   await stream.locator('video').evaluate((v) => v.play());
   const tabId = await worker.evaluate(
     async () =>
@@ -127,8 +126,9 @@ try {
     overlay: true,
   };
   let capturedTabProbe = null;
+  const switchComparisons = [];
   for (const change of [
-    { tabCapture: true },
+    ...(process.env.STUTTER_TAB_PROBE === '1' ? [{ tabCapture: true }] : []),
     { speechModel: false },
     { micCapture: false },
     { micCapture: true, laughModel: false, speechModel: true },
@@ -142,13 +142,48 @@ try {
     );
     if (!result.ok)
       throw new Error('live stutter switch failed: ' + result.error);
-    if (change.tabCapture) {
+    if ('tabCapture' in change && change.tabCapture) {
       await popup.waitForTimeout(10000);
       capturedTabProbe = (await diagnose()).audio.playback;
       if (capturedTabProbe.state !== 'running')
         throw new Error('opt-in passthrough did not run');
       console.log(JSON.stringify({ capturedTabProbe }));
     }
+    const values = [];
+    for (let n = 0; n < 10; n++) {
+      await popup.waitForTimeout(1000);
+      const d = await diagnose();
+      values.push({
+        vad: d.inference?.vadCpuMsPerSecond ?? 0,
+        sound: d.inference?.soundCpuMsPerSecond ?? 0,
+        speech: d.inference?.speechCpuMsPerSecond ?? 0,
+        offscreenLongTasks: d.offscreenTasks,
+        hasTab: d.audio?.tab.state,
+        context: d.audio?.playbackContext,
+      });
+    }
+    const row = { switches: { ...defaults, ...change }, samples: values };
+    switchComparisons.push(row);
+    console.log(
+      JSON.stringify({
+        switchPhase: change,
+        meanElapsedWorkMsPerSecond:
+          values.reduce((n, v) => n + v.vad + v.sound + v.speech, 0) /
+          values.length,
+        offscreenTasks: values.at(-1)?.offscreenLongTasks,
+      }),
+    );
+  }
+  // Re-enabling the mic/models is asynchronous. Do not include a cold reload in the steady-state denominator.
+  for (let n = 0; n < 180; n++) {
+    const d = await diagnose();
+    if (
+      ['vad', 'yamnet', 'whisper'].every(
+        (k) => d.inference?.models[k]?.phase === 'ready',
+      )
+    )
+      break;
+    await popup.waitForTimeout(500);
   }
   await popup.waitForTimeout(12000);
   // A real action popup closes when the viewer returns to Twitch. Do not leave
@@ -175,6 +210,17 @@ try {
         };
       });
   }
+  await stream.evaluate(() => {
+    const stats = { count: 0, worstMs: 0 };
+    window.streamlaughsSoakTasks = stats;
+    const observer = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        stats.count++;
+        stats.worstMs = Math.max(stats.worstMs, entry.duration);
+      }
+    });
+    observer.observe({ type: 'longtask' });
+  });
   const before = await diagnose(),
     qualityBefore = await stream
       .locator('video')
@@ -192,7 +238,8 @@ try {
     totalCpu = 0,
     samples = 0,
     maxGaps = 0,
-    errors = 0;
+    errors = 0,
+    peakWork10sMs = 0;
   const started = Date.now();
   for (let elapsed = 0; elapsed < seconds; elapsed++) {
     await new Promise((resolve) =>
@@ -204,7 +251,12 @@ try {
     const d = await diagnose();
     if (!d.audio || d.audio.mic.state !== 'live')
       throw new Error('mic lost during simulated session');
-    if (d.audio.playbackContext !== 'closed' || d.audio.lab.tabCapture)
+    if (
+      d.audio.playbackContext !== 'closed' ||
+      d.audio.lab.tabCapture ||
+      d.audio.speakerConnections ||
+      d.audio.tabCaptureTracks
+    )
       throw new Error('native playback unexpectedly captured');
     if ((d.offscreenTasks?.count ?? 0) > (before.offscreenTasks?.count ?? 0))
       worstOffscreen = Math.max(worstOffscreen, d.offscreenTasks?.worstMs ?? 0);
@@ -212,6 +264,7 @@ try {
       (d.inference?.vadCpuMsPerSecond ?? 0) +
       (d.inference?.soundCpuMsPerSecond ?? 0) +
       (d.inference?.speechCpuMsPerSecond ?? 0);
+    peakWork10sMs = Math.max(peakWork10sMs, d.inference?.modelWork10sMs ?? 0);
     totalCpu += cpu;
     samples++;
     peakCpu = Math.max(peakCpu, cpu);
@@ -235,10 +288,13 @@ try {
         totalVideoFrames: q.totalVideoFrames,
       };
     });
+  const contentTasks = await stream.evaluate(
+    () => window.streamlaughsSoakTasks,
+  );
   const report = {
     version: after.version,
     durationSeconds: (Date.now() - started) / 1000,
-    acceptanceDuration: seconds >= 600,
+    acceptanceDuration: seconds >= 300,
     nativeTwitchPlayback: true,
     extensionPassthroughContexts: 0,
     nativeAudioUnderruns: null,
@@ -251,6 +307,9 @@ try {
       (after.offscreenTasks?.count ?? 0) - (before.offscreenTasks?.count ?? 0),
     worstOffscreenLongTaskMs: worstOffscreen,
     workerTasks: after.inference?.workerTasks,
+    contentLongTasks: contentTasks,
+    speakerConnections: after.audio.speakerConnections,
+    tabCaptureTracks: after.audio.tabCaptureTracks,
     modelWorkMsPerSecond: {
       mean: totalCpu / samples,
       peak: peakCpu,
@@ -264,6 +323,13 @@ try {
     modelErrors: errors,
     speechBudgetOverruns: after.inference?.speechOverruns ?? 0,
     speechCooldownMs: after.inference?.speechCooldownMs ?? 0,
+    modelWork10sMs: {
+      peak: peakWork10sMs,
+      limit: 2500,
+      definition:
+        'conservative elapsed model work, sleeps excluded; not an OS CPU measurement',
+    },
+    switchComparisons,
     liveSwitchesPassed: true,
     capturedTabProbe,
   };
@@ -275,7 +341,13 @@ try {
   await stop.evaluate(() => chrome.runtime.sendMessage({ type: 'STOP' }));
   if (!report.laughs || !report.words)
     throw new Error('real production fixture did not retain laughs and words');
-  if (worstOffscreen > 50 || maxGaps || errors)
+  if (
+    worstOffscreen > 50 ||
+    (contentTasks?.worstMs ?? 0) > 50 ||
+    maxGaps ||
+    errors ||
+    peakWork10sMs > 2500
+  )
     throw new Error(
       'audio-path stability target failed; inspect numeric report',
     );

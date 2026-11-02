@@ -8,7 +8,9 @@ export function downloadMetadata() {
   return {
     version: PRODUCT.version,
     installUrl: `${siteUrl()}/install`,
-    downloadUrl: `${siteUrl()}/download`,
+    downloadUrl: `${siteUrl()}/download/zip`,
+    chromeStoreVersion: PRODUCT.chromeStoreVersion,
+    edgeStoreVersion: PRODUCT.edgeStoreVersion,
     sha256: matches && /^[a-f0-9]{64}$/.test(sha256 ?? '') ? sha256 : null,
     bytes: matches && Number.isSafeInteger(bytes) && bytes > 0 ? bytes : null,
   };

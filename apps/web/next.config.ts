@@ -22,12 +22,12 @@ const config: NextConfig = {
     EXTENSION_DOWNLOAD_BYTES: String(download?.bytes || ''),
   },
   async rewrites() {
-    return [{ source: '/download', destination: `/downloads/${filename}` }];
+    return [{ source: '/download/zip', destination: `/downloads/${filename}` }];
   },
   async headers() {
     return [
       {
-        source: '/download',
+        source: '/download/zip',
         has: [
           {
             type: 'header',
@@ -41,7 +41,7 @@ const config: NextConfig = {
         ],
       },
       {
-        source: '/download',
+        source: '/download/zip',
         headers: [
           {
             key: 'Content-Disposition',

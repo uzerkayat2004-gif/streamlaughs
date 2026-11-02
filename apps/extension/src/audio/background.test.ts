@@ -126,22 +126,23 @@ async function dispatch(
   offscreen = false,
   updatePage = false,
 ) {
-  return new Promise<{ ok: boolean; state: Snapshot }>((resolve) =>
-    fixture.messages[0]!(
-      message,
-      {
-        id: fixture.extensionId,
-        url: url(
-          offscreen
-            ? '/offscreen.html'
-            : updatePage
-              ? '/update.html?download=1'
-              : '/popup.html',
-        ),
-        documentId: offscreen ? 'owner-document' : 'popup-document',
-      },
-      resolve,
-    ),
+  return new Promise<{ ok: boolean; state: Snapshot; installType?: string }>(
+    (resolve) =>
+      fixture.messages[0]!(
+        message,
+        {
+          id: fixture.extensionId,
+          url: url(
+            offscreen
+              ? '/offscreen.html'
+              : updatePage
+                ? '/update.html?download=1'
+                : '/popup.html',
+          ),
+          documentId: offscreen ? 'owner-document' : 'popup-document',
+        },
+        resolve,
+      ),
   );
 }
 async function loadWorker() {
@@ -168,6 +169,14 @@ describe('background capture integration with browser ports mocked', () => {
     fixture.storage = { [STATE_KEY]: initialSnapshot() };
     vi.stubGlobal('defineBackground', (main: () => void) => main());
     vi.stubGlobal('chrome', {
+      management: {
+        getSelf: async () => ({
+          installType:
+            fixture.extensionId === 'fkocldgggcmhihelohiicoakcfomhepg'
+              ? 'development'
+              : 'normal',
+        }),
+      },
       runtime: {
         get id() {
           return fixture.extensionId;
@@ -217,6 +226,15 @@ describe('background capture integration with browser ports mocked', () => {
     vi.clearAllTimers();
     vi.unstubAllGlobals();
     vi.useRealTimers();
+  });
+  it('returns getSelf install identity to the content script without exposing management there', async () => {
+    expect((await dispatch({ type: 'INSTALL_IDENTITY' })).installType).toBe(
+      'development',
+    );
+    fixture.extensionId = 'lofdkbfimkjjfglhhnpkiljocbikmkej';
+    expect((await dispatch({ type: 'INSTALL_IDENTITY' })).installType).toBe(
+      'normal',
+    );
   });
   it('requests tab capture only for a live lab opt-in, keeping the same session on opt-out', async () => {
     const started = await dispatch({ type: 'START', tabId: 1 });
@@ -479,33 +497,28 @@ describe('background capture integration with browser ports mocked', () => {
     expect(chrome.runtime.reload).not.toHaveBeenCalled();
     expect(fixture.recaps).toHaveLength(0);
   });
-  it('finishing an update requires its extension page, closes audio and saves a recap before reload without clearing settings', async () => {
+  it('replaces manual update commands with a migration guide without reloading or interrupting recording', async () => {
     await dispatch({ type: 'START', tabId: 1 });
-    const settings = structuredClone(
-      (await dispatch({ type: 'GET_STATE' })).state.settings,
-    );
-    fixture.storage['laughline:update-attempt'] = {
-      version: '0.6.2',
-      phase: 'downloaded',
-    };
-    expect((await dispatch({ type: 'FINISH_UPDATE' })).ok).toBe(false);
+    expect((await dispatch({ type: 'OPEN_UPDATE' })).ok).toBe(true);
+    expect(chrome.tabs.create).toHaveBeenCalledWith({
+      url: url('/update.html'),
+    });
     expect(chrome.runtime.reload).not.toHaveBeenCalled();
-    expect((await dispatch({ type: 'FINISH_UPDATE' }, false, true)).ok).toBe(
-      true,
+    expect((await dispatch({ type: 'GET_STATE' })).state.status).toBe(
+      'recording',
     );
-    expect(fixture.closeOwner).toHaveBeenCalled();
-    expect(fixture.recaps).toHaveLength(1);
-    expect(fixture.sessions.at(-1)).toMatchObject({ endedAt: Date.now() });
-    expect(fixture.storage[STATE_KEY]).toMatchObject({
-      status: 'idle',
-      session: null,
-      settings,
-    });
-    expect(fixture.storage['laughline:update-attempt']).toMatchObject({
-      phase: 'reloading',
-      version: '0.6.2',
-    });
-    expect(chrome.runtime.reload).toHaveBeenCalledOnce();
+    expect(fixture.closeOwner).not.toHaveBeenCalled();
+  });
+  it('refuses a manual session when a store peer is already present, before opening another microphone', async () => {
+    vi.mocked(chrome.tabs.sendMessage).mockImplementation(
+      async (_id, message) =>
+        (message as { type?: string }).type === 'INSTALL_GUARD'
+          ? { allowed: false, storePresent: true }
+          : undefined,
+    );
+    expect((await dispatch({ type: 'START', tabId: 1 })).ok).toBe(false);
+    expect(fixture.ensureOwner).not.toHaveBeenCalled();
+    expect((await dispatch({ type: 'GET_STATE' })).state.session).toBeNull();
   });
   it('a missing owner retry opens permission onboarding without an automatic retry loop', async () => {
     await dispatch({ type: 'START', tabId: 1 });

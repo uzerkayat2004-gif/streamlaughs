@@ -8,9 +8,15 @@ const deliveries = new Set<Promise<unknown>>();
 let lab = defaultLab();
 let noticeSent = false;
 const tasks = new TaskProbe();
+let observedTasks = 0;
 const engine = new AudioEngine((message) => {
   if (message.type === 'AUDIO_REPORT') {
     tasks.tick();
+    const currentTasks = tasks.snapshot();
+    if (currentTasks.count > observedTasks) {
+      observedTasks = currentTasks.count;
+      inference?.backoffSpeech();
+    }
     const audio = engine.diagnostics();
     inference?.setLab(lab, audio.playback.speechPaused);
     inference?.sync(message);
@@ -69,10 +75,14 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, reply) => {
           ? inference.speechPreview()
           : inference.preview();
       case 'AUDIO_START':
+        inference.setSensitivity(parsed.data.sensitivity ?? 'normal');
         lab = defaultLab();
         tasks.reset();
         noticeSent = false;
         return engine.start(parsed.data);
+      case 'AUDIO_SENSITIVITY':
+        inference.setSensitivity(parsed.data.value);
+        return null;
       case 'AUDIO_LAB': {
         const previous = lab;
         lab = parsed.data.switches;

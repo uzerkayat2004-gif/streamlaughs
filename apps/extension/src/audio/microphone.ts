@@ -12,6 +12,24 @@ export async function openSelectedMicrophone(
   deviceOverride?: string,
 ) {
   let id = deviceOverride ?? (await selectedMicrophone());
+  const concreteDefault = async () => {
+    const devices =
+      (await navigator.mediaDevices.enumerateDevices?.().catch(() => [])) ?? [];
+    const real = devices.filter(
+      (d) =>
+        d.kind === 'audioinput' &&
+        d.deviceId &&
+        !['default', 'communications'].includes(d.deviceId),
+    );
+    const alias = devices.find((d) => d.deviceId === 'default');
+    const match = real.find(
+      (d) => alias?.groupId && d.groupId === alias.groupId,
+    );
+    // Do not open Windows' communications alias. Pin the resolved physical endpoint.
+    return match?.deviceId ?? real[0]?.deviceId;
+  };
+  if (id === 'default' || id === 'communications')
+    id = (await concreteDefault()) ?? 'default';
   const remember = async () => {
     if (deviceOverride === undefined)
       await chrome.storage.local.set({ [MIC_DEVICE_KEY]: 'default' });
@@ -35,7 +53,14 @@ export async function openSelectedMicrophone(
     )
       throw error;
     await remember();
-    return acquire({ audio: MICROPHONE_CONSTRAINTS, video: false });
+    const fallback = await concreteDefault();
+    return acquire({
+      audio: {
+        ...MICROPHONE_CONSTRAINTS,
+        ...(fallback ? { deviceId: { exact: fallback } } : {}),
+      },
+      video: false,
+    });
   }
 }
 /** Visible extension page only. Release the permission probe BEFORE opening offscreen capture. */

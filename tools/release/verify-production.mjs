@@ -31,7 +31,6 @@ export function verifyProduction(directory, product = readProduct(), origins) {
     'tabs',
     'tabCapture',
     'offscreen',
-    'downloads',
     'scripting',
   ]);
   assert.deepEqual(manifest.host_permissions, [

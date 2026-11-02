@@ -23,7 +23,7 @@ import {
   launcherOpacity,
 } from './overlay-behavior';
 import { FanPanel } from './FanPanel';
-import { PipelineDebug } from './PipelineDebug';
+import { PipelineDebug } from './PipelinePanel';
 import { AppIcon } from './AppIcon';
 import { biggestMinute } from './recap-story';
 import { stopWithPreview, type StopPreview } from './stop-preview';
@@ -40,6 +40,12 @@ export function Overlay({
   getPlayer: () => HTMLElement | null;
 }) {
   const [debugOpen, setDebugOpen] = useState(false);
+  const [laughUndo, setLaughUndo] = useState<number | null>(null);
+  useEffect(() => {
+    if (!laughUndo) return;
+    const t = setTimeout(() => setLaughUndo(null), 5000);
+    return () => clearTimeout(t);
+  }, [laughUndo]);
   const [lab, setLab] = useState(labSurface.get),
     [audioTip, setAudioTip] = useState(false);
   useEffect(() => labSurface.subscribe(() => setLab(labSurface.get())), []);
@@ -540,6 +546,13 @@ export function Overlay({
             </button>
           </div>
           <FanPanel
+            calibrationMs={snapshot.inference.calibrationRemainingMs}
+            bleed={snapshot.inference.bleedLikely}
+            onUndoLaugh={() => {
+              void command({ type: 'UNDO_LAUGH' })
+                .then(() => setLaughUndo(Date.now()))
+                .catch((e) => setError(e.message));
+            }}
             channel={snapshot.session?.displayName || resolvedChannel}
             replay={replayHere}
             elapsed={
@@ -603,6 +616,36 @@ export function Overlay({
           }}
         >
           click the {PRODUCT.name} icon to start
+        </div>
+      )}
+      {sessionHere &&
+        !open &&
+        snapshot.inference.calibrationRemainingMs > 0 && (
+          <div
+            className="x-hint x-glass is-on"
+            role="status"
+            style={{
+              left: rect.left + local.x - 220,
+              top: rect.top + local.y - 44,
+            }}
+          >
+            stay quiet for 3 sec
+          </div>
+        )}
+      {!!laughUndo && (
+        <div className="x-toast x-glass is-on" role="status">
+          not me · laugh removed{' '}
+          <button
+            type="button"
+            className="textbtn"
+            onClick={() => {
+              void command({ type: 'RESTORE_LAUGH' })
+                .then(() => setLaughUndo(null))
+                .catch((e) => setError(e.message));
+            }}
+          >
+            undo
+          </button>
         </div>
       )}
       {toast && (

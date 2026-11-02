@@ -7,7 +7,6 @@ import {
   PersonalEventSchema,
 } from '@laughline/shared';
 import { AUDIO_DEBUG } from '../audio/config';
-import { emptyTasks, TaskStatsSchema, type LabSwitches } from '../stutter';
 import type { AudioFrameHub } from '../audio/ring-buffer';
 import {
   emptyWorkerDiagnostics,
@@ -17,9 +16,30 @@ import {
   safeError,
   WorkerDiagnosticsSchema,
 } from '../diagnostics';
+import { emptyTasks, type LabSwitches, TaskStatsSchema } from '../stutter';
+import type { Sensitivity } from './accuracy';
 import { INFERENCE_CONFIG as C } from './config';
 
 export class InferenceBridge {
+  backoffSpeech() {
+    this.speechWorker?.postMessage({ type: 'backoff' });
+  }
+  private totalSoundWork = 0;
+  private speechBudgetTotal = 0;
+  private speechWorkBeforeWorker = 0;
+  private previousVadWork = 0;
+  private speechBudget = {
+    work10sMs: 0,
+    work1sMs: 0,
+    backoffMs: 0,
+    waitedMs: 0,
+  };
+  private sensitivity: Sensitivity = 'normal';
+  private previewLines: string[] = [];
+  setSensitivity(value: Sensitivity) {
+    this.sensitivity = value;
+    this.worker?.postMessage({ type: 'sensitivity', value });
+  }
   private finishing = false;
   private finished: (() => void) | null = null;
   private worker: Worker | null = null;
@@ -48,10 +68,14 @@ export class InferenceBridge {
   private speechText = '';
   private previewTimer: ReturnType<typeof setTimeout> | undefined;
   speechPreview() {
-    if (this.previewUntil < Date.now()) this.speechText = '';
+    if (this.previewUntil < Date.now()) {
+      this.speechText = '';
+      this.previewLines = [];
+    }
     clearTimeout(this.previewTimer);
     this.previewTimer = setTimeout(() => {
       this.speechText = '';
+      this.previewLines = [];
     }, 1200);
     this.previewUntil = Date.now() + 1200;
     this.speechWorker?.postMessage({
@@ -61,21 +85,27 @@ export class InferenceBridge {
     return this.speechText;
   }
   private costs = {
+    vad: [] as { at: number; ms: number }[],
     sound: [] as { at: number; ms: number }[],
     speech: [] as { at: number; ms: number }[],
   };
-  private recordCost(source: 'sound' | 'speech', ms: unknown) {
+  private recordCost(source: 'vad' | 'sound' | 'speech', ms: unknown) {
     if (typeof ms === 'number' && Number.isFinite(ms) && ms >= 0) {
       const list = this.costs[source];
       list.push({ at: performance.now(), ms });
       while (
-        list.length > 50 ||
-        (list[0]?.at ?? Infinity) < performance.now() - 1000
+        list.length > 150 ||
+        (list[0]?.at ?? Infinity) < performance.now() - 10_000
       )
         list.shift();
     }
   }
-  private cost(source: 'sound' | 'speech') {
+  private recentWork(source: 'vad' | 'sound' | 'speech') {
+    return this.costs[source]
+      .filter((c) => c.at >= performance.now() - 10_000)
+      .reduce((n, c) => n + c.ms, 0);
+  }
+  private cost(source: 'vad' | 'sound' | 'speech') {
     return this.costs[source]
       .filter((c) => c.at >= performance.now() - 1000)
       .reduce((n, c) => n + c.ms, 0);
@@ -90,7 +120,19 @@ export class InferenceBridge {
       ...this.productionDiagnostics,
       workerTasks: { ...this.taskStats },
       soundCpuMsPerSecond: this.cost('sound'),
-      speechCpuMsPerSecond: this.cost('speech'),
+      speechCpuMsPerSecond: this.speechBudget.work1sMs,
+      speechWork10sMs: this.speechBudget.work10sMs,
+      modelWork10sMs:
+        this.recentWork('vad') +
+        this.recentWork('sound') +
+        this.speechBudget.work10sMs,
+      modelWorkTotalMs:
+        this.productionDiagnostics.vadWorkTotalMs +
+        this.totalSoundWork +
+        this.speechWorkBeforeWorker +
+        this.speechBudgetTotal,
+      speechBackoffMs: this.speechBudget.backoffMs,
+      speechWaitedMs: this.speechBudget.waitedMs,
       models: {
         ...this.productionDiagnostics.models,
         whisper: this.speechState,
@@ -135,6 +177,7 @@ export class InferenceBridge {
       this.speechState = modelState();
       this.speechText = '';
       this.lastPhrase = '';
+      this.previewLines = [];
     } else if (this.worker && !this.speechWorker)
       this.startSpeechWorker(this.worker);
     if (!next.laugh) {
@@ -176,6 +219,8 @@ export class InferenceBridge {
       ) {
         this.activeSoundId = null;
         this.recordCost('sound', data.computeMs);
+        if (Number.isFinite(data.computeMs))
+          this.totalSoundWork += Math.max(0, data.computeMs);
         worker.postMessage(data);
       }
     };
@@ -203,11 +248,22 @@ export class InferenceBridge {
     });
   }
   private startSpeechWorker(worker: Worker) {
+    this.speechWorkBeforeWorker += this.speechBudgetTotal;
+    this.speechBudgetTotal = 0;
     const speechWorker = new Worker(chrome.runtime.getURL('/speech-worker.js'));
     this.speechWorker = speechWorker;
     speechWorker.onmessage = ({ data }) => {
       if (speechWorker !== this.speechWorker || worker !== this.worker) return;
       this.readTasks('speech', data.tasks);
+      if (
+        data.budget &&
+        ['work10sMs', 'work1sMs', 'backoffMs', 'waitedMs'].every(
+          (k) => Number.isFinite(data.budget[k]) && data.budget[k] >= 0,
+        )
+      )
+        this.speechBudget = data.budget;
+      if (Number.isFinite(data.totalWorkMs) && data.totalWorkMs >= 0)
+        this.speechBudgetTotal = data.totalWorkMs;
       if (data.type === 'speech_status') {
         const parsed = ModelStateSchema.safeParse(data.model);
         if (parsed.success) this.speechState = parsed.data;
@@ -228,9 +284,11 @@ export class InferenceBridge {
         if (
           this.previewUntil > Date.now() &&
           typeof data.previewText === 'string'
-        )
-          this.speechText = data.previewText.slice(0, 1000);
-        else this.speechText = '';
+        ) {
+          this.previewLines.push(data.previewText.slice(0, 1000));
+          this.previewLines = this.previewLines.slice(-20);
+          this.speechText = this.previewLines.join('\n');
+        } else this.speechText = '';
         if (
           AUDIO_DEBUG &&
           this.debug &&
@@ -376,7 +434,12 @@ export class InferenceBridge {
       else if (data.type === 'status') {
         this.lastWorkerReport = performance.now();
         const diagnostic = WorkerDiagnosticsSchema.safeParse(data.diagnostics);
-        if (diagnostic.success) this.productionDiagnostics = diagnostic.data;
+        if (diagnostic.success) {
+          const work = diagnostic.data.vadWorkTotalMs;
+          this.recordCost('vad', Math.max(0, work - this.previousVadWork));
+          this.previousVadWork = work;
+          this.productionDiagnostics = diagnostic.data;
+        }
         const parsed = InferenceHealthSchema.safeParse(data.health);
         if (!parsed.success) return;
         this.health = parsed.data;
@@ -417,7 +480,15 @@ export class InferenceBridge {
           !Number.isInteger(data.id)
         )
           return;
-        this.pendingSpeech?.samples.fill(0);
+        if (this.activeSpeechId !== null || this.pendingSpeech) {
+          data.samples.fill(0);
+          worker.postMessage({
+            type: 'speech_result',
+            id: data.id,
+            error: 'speech busy; segment dropped',
+          });
+          return;
+        }
         this.pendingSpeech = { id: data.id, samples: data.samples };
         this.forwardSpeech();
       } else if (data.type === 'error')
@@ -435,6 +506,7 @@ export class InferenceBridge {
       type: 'init',
       externalSound: true,
       modes: { ...this.modes },
+      sensitivity: this.sensitivity,
       base: chrome.runtime.getURL('').replace(/\/$/, ''),
     });
   }
@@ -527,6 +599,7 @@ export class InferenceBridge {
     this.lastPhrase = '';
     this.speechText = '';
     this.previewUntil = 0;
+    this.previewLines = [];
     clearTimeout(this.previewTimer);
     this.health = emptyInferenceHealth();
     this.productionDiagnostics = emptyWorkerDiagnostics();

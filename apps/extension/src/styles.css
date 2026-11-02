@@ -2884,3 +2884,12 @@ svg {
   pointer-events: auto;
   font: 13px / 1.5 var(--ui);
 }
+
+.store-switch { padding: 12px 14px; margin: 0 0 14px; border: 1px solid #403e30; border-radius: 14px; font-size: 12px; line-height: 1.5; background: #ffd23f0a; }
+.store-switch p { margin: 0 0 6px; }
+.history-transfer { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0; }
+.history-transfer p { width: 100%; margin: 0; }
+.migration-page { max-width: 650px; margin: 40px auto; padding: 30px; }
+.migration-steps { padding-left: 22px; }
+.migration-steps li { padding: 16px 0; line-height: 1.6; }
+.migration-steps p { font-size: 14px; color: #b8b9c3; }

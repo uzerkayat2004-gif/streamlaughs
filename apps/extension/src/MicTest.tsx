@@ -10,7 +10,7 @@ import {
   micProblem,
   usePipelineReport,
   CopyDiagnostics,
-} from './PipelineDebug';
+} from './PipelinePanel';
 
 export function MicTest() {
   const { report, phrase } = usePipelineReport(true, true);

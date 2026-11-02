@@ -4,6 +4,7 @@ from pathlib import Path
 import hashlib
 import json
 import urllib.request
+from whisper_context import transform_asset
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = ROOT / 'apps/extension/public/models'
@@ -31,15 +32,21 @@ def download(item):
         with urllib.request.urlopen(url, timeout=120) as response, path.with_suffix(path.suffix + '.download').open('wb') as out:
             generation = response.headers.get('x-goog-generation')
             while chunk := response.read(1024 * 1024): out.write(chunk)
-        path.with_suffix(path.suffix + '.download').replace(path)
+        temporary = path.with_suffix(path.suffix + '.download')
+        raw = temporary.read_bytes()
+        expected = EXPECTED.get(name, {})
+        if expected.get('sourceSha256') and hashlib.sha256(raw).hexdigest() != expected['sourceSha256']:
+            raise ValueError(f'Upstream source changed: {name}')
+        temporary.write_bytes(transform_asset(name, raw))
+        temporary.replace(path)
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
     expected = EXPECTED.get(name)
     if expected and (digest != expected['sha256'] or path.stat().st_size != expected['bytes']):
         raise ValueError(f'Asset does not match the pinned receipt: {name}')
     source = expected['url'] if expected else url + ('?generation=' + generation if generation else '')
-    return dict(path=name, url=source, bytes=path.stat().st_size, sha256=digest, license=license_name)
+    return dict(path=name, url=source, bytes=path.stat().st_size, sha256=digest, license=license_name, **({k:expected[k] for k in ['sourceSha256','transform'] if k in expected} if expected else {}))
 
 if __name__ == '__main__':
     with ThreadPoolExecutor(max_workers=4) as pool: receipts = list(pool.map(download, SOURCES))
-    MANIFEST.write_text(json.dumps({'whisperRevision': REVISION, 'files': receipts}, indent=2) + '\n', encoding='utf-8')
+    MANIFEST.write_text(json.dumps({'whisperRevision': REVISION, 'files': receipts}, indent=2) + '\n', encoding='utf-8', newline='\n')
     print(f'Models and notices: {sum(x["bytes"] for x in receipts):,} bytes; SHA-256 manifest written.', flush=True)

@@ -1,9 +1,10 @@
 'use client';
-import { type CrowdState, PRODUCT } from '@laughline/shared';
-import Link from 'next/link';
+
+import type { CrowdState } from '@laughline/shared';
 import { useEffect, useState } from 'react';
 import { RealCrowdSource } from '../../extension/src/real-crowd-source';
 import { CrowdArt } from './crowd-art';
+import { StoreButtons } from './store-buttons';
 export function LiveCrowd({
   api,
   channel,
@@ -172,9 +173,7 @@ export function Dashboard({
       )}
       {demo && (
         <div className="download-invite">
-          <Link className="button yellow" href="/install?downloaded=1">
-            Download {PRODUCT.name} ↗
-          </Link>
+          <StoreButtons />
         </div>
       )}
     </main>

@@ -1,9 +1,21 @@
 import { emptyInferenceHealth, type PersonalEvent } from '@laughline/shared';
-import { DspLaughDetector } from './dsp-laugh';
 import { MicNormalizer } from '../audio/mic-normalizer';
 import { AudioRingBuffer, type AudioSource } from '../audio/ring-buffer';
-import { emptyStages, emptyWorkerDiagnostics } from '../diagnostics';
+import {
+  type AccuracyRecord,
+  emptyStages,
+  emptyWorkerDiagnostics,
+} from '../diagnostics';
+import {
+  ACCURACY,
+  type AcousticEvidence,
+  AcousticFloor,
+  LaughEpisodes,
+  type Sensitivity,
+  speechConfidenceReason,
+} from './accuracy';
 import { INFERENCE_CONFIG as C, type ClassScores, zeroScores } from './config';
+import { DspLaughDetector } from './dsp-laugh';
 import type { ModelRunner } from './models';
 import {
   BoundedQueue,
@@ -18,15 +30,40 @@ import {
 } from './rules';
 
 type VadJob = { samples: Float32Array; start: number; end: number };
-type SoundJob = { samples: Float32Array; ts: number; rms: number };
+type SoundJob = {
+  samples: Float32Array;
+  ts: number;
+  rms: number;
+  acoustic: AcousticEvidence;
+  dsp: { at: number; durationMs: number; score: number };
+};
 type SpeechJob = {
+  start: number;
   samples: Float32Array;
   ts: number;
   duration: number;
   rms: number;
+  acoustic: AcousticEvidence;
 };
 const wipe = (job: { samples: Float32Array }) => job.samples.fill(0);
 export class InferencePipeline {
+  private episodes = new LaughEpisodes();
+  private soundEvidence: { ts: number; speech: number; laugh: number }[] = [];
+  private activeSpeechEvidence: {
+    start: number;
+    end: number;
+    speech: number;
+    laugh: number;
+  } | null = null;
+  private audit: AccuracyRecord[] = [];
+  private detectors = { dsp: 0, yamnet: 0, both: 0 };
+  setSensitivity(value: Sensitivity) {
+    this.acoustics.sensitivity = value;
+  }
+  private log(record: AccuracyRecord) {
+    this.audit.push(record);
+    if (this.audit.length > 20) this.audit.shift();
+  }
   private modes = { laugh: true, speech: true };
   setModes(modes: { laugh: boolean; speech: boolean }) {
     this.modes = { ...modes };
@@ -122,6 +159,8 @@ export class InferencePipeline {
     const cutoff = performance.now() - 1000;
     return {
       ...emptyWorkerDiagnostics(),
+      accuracyLog: [...this.audit],
+      laughDetectors: { ...this.detectors },
       health: { ...this.health },
       micFrames: this.frameCounts.mic,
       tabFrames: this.frameCounts.tab,
@@ -130,7 +169,7 @@ export class InferencePipeline {
       guard: { ...this.guardDecision },
       events: [...this.recentEvents],
       gain: this.normalizer.gain,
-      noiseFloor: this.normalizer.noiseFloor,
+      noiseFloor: this.acoustics.floor,
       topClass: this.topMicClass,
       stages: { ...this.stages, dspHits: this.dsp.hits },
       laughScore: this.scores.mic.laugh,
@@ -144,6 +183,7 @@ export class InferencePipeline {
     private debug = false,
     private onSpeech?: (segment: { start: number; end: number }) => void,
     private wake: () => void = () => {},
+    private acoustics = new AcousticFloor(),
   ) {
     this.health.phase = 'ready';
   }
@@ -193,13 +233,11 @@ export class InferencePipeline {
     if (source === 'mic' && rms > 0) this.stages.nonzeroFrames++;
     if (source === 'mic') {
       this.rawMic.write(frame);
+      this.acoustics.ingest(frame, ts, this.health.vadProbability >= 0.5);
+      this.health.calibrationRemainingMs = this.acoustics.remainingMs();
+      this.health.bleedLikely = this.acoustics.bleed;
       frame = this.normalizer.process(frame, this.health.vadProbability >= 0.5);
-      if (
-        this.modes.laugh &&
-        this.dsp.process(frame, ts) &&
-        !this.dspPlayback(ts)
-      )
-        this.event({ kind: 'laugh', ts, confidence: 0.75, intensity: 1 });
+      if (this.modes.laugh) this.dsp.process(frame, ts);
     }
     this.buffers[source].write(frame);
     const envelope = this.envelopes[source];
@@ -220,6 +258,8 @@ export class InferencePipeline {
         samples: this.buffers[source].read(C.soundWindow),
         ts,
         rms,
+        acoustic: this.acoustics.window(ts - 975, ts),
+        dsp: { ...this.dsp.evidence },
       };
       this.lastHop[source] = ts;
     }
@@ -366,6 +406,17 @@ export class InferencePipeline {
   ) {
     this.scores[source] = scores;
     if (source === 'mic') {
+      this.soundEvidence.push({
+        ts: job.ts,
+        speech: scores.speech,
+        laugh: scores.laugh,
+      });
+      this.soundEvidence = this.soundEvidence.slice(-40);
+      const active = this.activeSpeechEvidence;
+      if (active && job.ts >= active.start && job.ts <= active.end + 975) {
+        active.speech = Math.max(active.speech, scores.speech);
+        active.laugh = Math.max(active.laugh, scores.laugh);
+      }
       this.stages.soundCalls++;
       if (this.models.topClass) this.topMicClass = { ...this.models.topClass };
     }
@@ -374,13 +425,60 @@ export class InferencePipeline {
       if (scores.laugh >= C.thresholds.laugh) this.health.tabLaughTs = job.ts;
     } else
       for (const kind of ['laugh', 'scream', 'gasp'] as const)
-        this.decision(
-          kind,
-          scores[kind],
-          job.rms,
-          job.ts,
-          scores[kind] >= C.thresholds[kind] && this.playback(kind, job.ts),
-        );
+        if (kind === 'laugh') {
+          const a = job.acoustic,
+            profile = ACCURACY[this.acoustics.sensitivity];
+          const rhythm =
+            job.ts - job.dsp.at <= 700 && job.dsp.durationMs >= 600;
+          const reason = !a.calibrated
+            ? 'quiet calibration'
+            : !a.near
+              ? 'below near-voice floor'
+              : scores.laugh < profile.laugh
+                ? 'laughter score too low'
+                : scores.laugh - scores.speech < profile.speechMargin
+                  ? 'speech wins or margin too small'
+                  : !rhythm
+                    ? 'no sustained laugh rhythm'
+                    : this.playback('laugh', job.ts)
+                      ? 'matching playback'
+                      : '';
+          const accepted = this.episodes.consider(!reason, job.ts);
+          if (accepted) {
+            this.detectors.both++;
+            this.event({
+              kind: 'laugh',
+              ts: job.ts,
+              confidence: scores.laugh,
+              intensity: scores.laugh >= 0.8 ? 3 : 1,
+            });
+          }
+          if (rhythm || scores.laugh > 0.1 || accepted)
+            this.log({
+              kind: 'laugh',
+              ts: job.ts,
+              accepted,
+              detector: 'both',
+              reason:
+                reason || (accepted ? 'accepted' : 'same episode / cooldown'),
+              laughter: scores.laugh,
+              speech: scores.speech,
+              dsp: rhythm ? job.dsp.score : 0,
+              durationMs: job.dsp.durationMs,
+              aboveFloorDb: a.aboveFloorDb,
+              rms: a.rms,
+              highFrequencyRatio: a.highFrequencyRatio,
+              avgLogprob: null,
+              noSpeechProbability: null,
+            });
+        } else
+          this.decision(
+            kind,
+            scores[kind],
+            job.rms,
+            job.ts,
+            scores[kind] >= C.thresholds[kind] && this.playback(kind, job.ts),
+          );
   }
   private startSound(source: AudioSource, job: SoundJob) {
     const generation = this.soundGeneration;
@@ -513,15 +611,51 @@ export class InferencePipeline {
   private enqueueSegment(segment: { start: number; end: number }) {
     if (!this.modes.speech) return;
     this.stages.segments++;
+    // Do not queue more utterances behind a slow decoder. Laugh inference remains independent.
+    if (this.speechBusy) {
+      this.stages.wordsRejected++;
+      return;
+    }
     this.onSpeech?.(segment);
     const ageSamples = Math.max(
       0,
-      Math.round((this.lastFrame.mic - segment.end) * 16),
+      Math.round(
+        (this.lastFrame.mic - Math.min(this.lastFrame.mic, segment.end + 120)) *
+          16,
+      ),
     );
-    const length = Math.round((segment.end - segment.start) * 16);
+    // VAD locates voiced vowels, not necessarily the initial/final consonants.
+    // Preserve local pre/post roll so short reactions such as "bro" stay whole.
+    const length = Math.round(
+      (Math.min(this.lastFrame.mic, segment.end + 120) - segment.start + 160) *
+        16,
+    );
     const all = this.buffers.mic.read(length + ageSamples);
     const samples = all.slice(0, Math.max(0, all.length - ageSamples));
     all.fill(0);
+    const acoustic = this.acoustics.window(segment.start, segment.end);
+    if (!acoustic.calibrated || !acoustic.near) {
+      this.log({
+        kind: 'words',
+        ts: segment.end,
+        accepted: false,
+        detector: 'whisper',
+        reason: !acoustic.calibrated
+          ? 'quiet calibration'
+          : 'below near-voice floor',
+        laughter: 0,
+        speech: this.health.vadProbability,
+        dsp: 0,
+        durationMs: segment.end - segment.start,
+        aboveFloorDb: acoustic.aboveFloorDb,
+        rms: acoustic.rms,
+        highFrequencyRatio: acoustic.highFrequencyRatio,
+        avgLogprob: null,
+        noSpeechProbability: null,
+      });
+      samples.fill(0);
+      return;
+    }
     if (samples.length < 4000 || this.playback('speech', segment.end)) {
       samples.fill(0);
       return;
@@ -533,11 +667,29 @@ export class InferencePipeline {
     if (rms >= C.loudSpeechRms && duration <= C.loudSpeechMaximumMs)
       this.decision('hype', 0.7, rms, segment.end, false);
     if (!this.health.lowPower)
-      this.speechQueue.push({ samples, ts: segment.end, rms, duration });
+      this.speechQueue.push({
+        start: segment.start,
+        samples,
+        ts: segment.end,
+        rms,
+        duration,
+        acoustic,
+      });
     else samples.fill(0);
   }
   private startSpeech(speech: SpeechJob) {
     const generation = this.speechGeneration;
+    const matching = this.soundEvidence.filter(
+      (s) => s.ts >= speech.start && s.ts <= speech.ts + 975,
+    );
+    // Retain numeric evidence per job so valid slow results survive history rollover.
+    const classification = {
+      start: speech.start,
+      end: speech.ts,
+      speech: Math.max(0, ...matching.map((s) => s.speech)),
+      laugh: Math.max(0, ...matching.map((s) => s.laugh)),
+    };
+    this.activeSpeechEvidence = classification;
     this.speechBusy = true;
     this.speechTask = (async () => {
       let text = '';
@@ -547,6 +699,45 @@ export class InferencePipeline {
         this.stages.speechResults++;
         if (generation !== this.speechGeneration) return;
         const result = typeof value === 'string' ? extractWords(value) : value;
+        const confidence =
+          typeof value === 'string' ? this.models.lastSpeechConfidence : value;
+        const speechScore = classification.speech,
+          laughScore = classification.laugh;
+        // Explicit lab classifier-off comparisons retain VAD+Whisper isolation.
+        const nonSpeech =
+          this.modes.laugh &&
+          (speechScore < 0.35 || speechScore - laughScore < 0.1);
+        const rejected = nonSpeech
+          ? 'not a speech-class segment'
+          : confidence
+            ? speechConfidenceReason({
+                avgLogprob: confidence.avgLogprob ?? null,
+                noSpeechProbability: confidence.noSpeechProbability ?? null,
+              })
+            : 'confidence unavailable';
+        this.log({
+          kind: 'words',
+          ts: speech.ts,
+          accepted: !rejected && result.phrases.length > 0,
+          detector: 'whisper',
+          reason:
+            rejected ||
+            ('rejection' in result ? result.rejection : '') ||
+            (result.phrases.length ? 'accepted' : 'no approved reaction'),
+          laughter: laughScore,
+          speech: speechScore,
+          dsp: 0,
+          durationMs: speech.duration,
+          aboveFloorDb: speech.acoustic.aboveFloorDb,
+          rms: speech.acoustic.rms,
+          highFrequencyRatio: speech.acoustic.highFrequencyRatio,
+          avgLogprob: confidence?.avgLogprob ?? null,
+          noSpeechProbability: confidence?.noSpeechProbability ?? null,
+        });
+        if (rejected) {
+          this.stages.wordsRejected++;
+          return;
+        }
         if (typeof value === 'string') text = value;
         this.stages.wordsMatched +=
           result.matched ??
@@ -564,6 +755,8 @@ export class InferencePipeline {
         this.speechQueue.clear();
       } finally {
         text = '';
+        if (this.activeSpeechEvidence === classification)
+          this.activeSpeechEvidence = null;
         wipe(speech);
         if (generation === this.speechGeneration) {
           this.speechBusy = false;
@@ -623,6 +816,8 @@ export class InferencePipeline {
     this.sound = {};
     this.pending.fill(0);
     this.lastTranscript = '';
+    this.soundEvidence = [];
+    this.activeSpeechEvidence = null;
     this.envelopes = { mic: [], tab: [] };
     this.reasons.length = 0;
   }

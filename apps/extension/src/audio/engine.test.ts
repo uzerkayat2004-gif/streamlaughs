@@ -19,7 +19,11 @@ function stream() {
   const item = track();
   return { item, getTracks: () => [item], getAudioTracks: () => [item] };
 }
-const connect = () => ({ connect: vi.fn(), disconnect: vi.fn() });
+const connections: unknown[] = [];
+const connect = () => ({
+  connect: vi.fn((target: unknown) => connections.push(target)),
+  disconnect: vi.fn(),
+});
 describe('offscreen audio ownership', () => {
   let contextRequests: AudioContextOptions[] = [];
   let requireActiveCapture = false;
@@ -42,6 +46,7 @@ describe('offscreen audio ownership', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     contextRequests = [];
+    connections.length = 0;
     requireActiveCapture = false;
     mic = stream();
     tab = stream();
@@ -64,7 +69,7 @@ describe('offscreen audio ownership', () => {
       class {
         state = 'running';
         currentTime = 0;
-        destination = {};
+        destination = { speaker: true };
         audioWorklet = { addModule: vi.fn(async () => {}) };
         createMediaStreamSource = vi.fn(connect);
         createGain = vi.fn(() => ({ ...connect(), gain: { value: 1 } }));
@@ -103,6 +108,17 @@ describe('offscreen audio ownership', () => {
     await engine.stop();
     vi.unstubAllGlobals();
     vi.useRealTimers();
+  });
+  it('never connects the mic analysis graph to a speaker output or opens a tab stream in native mode', async () => {
+    await engine.start({ sessionId: 'silent-analysis', nativePlayback: true });
+    expect(
+      connections.some(
+        (target) =>
+          !!target && typeof target === 'object' && 'speaker' in target,
+      ),
+    ).toBe(false);
+    expect(engine.status()?.hasTab).toBe(false);
+    expect(engine.diagnostics().playbackContext).toBe('closed');
   });
   it('records a normal native-playback session without capturing or replaying the Twitch tab', async () => {
     await engine.start({ sessionId: 'native', nativePlayback: true });

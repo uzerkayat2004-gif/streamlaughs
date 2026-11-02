@@ -2,15 +2,15 @@
 
 # StreamLaughs final manual acceptance · one 30-minute pass
 
-For v0.8.5 detection, check [mic frames, laughs and words](detection-v085.md), then follow the [five-minute wired and optional five-minute Bluetooth comparison](audio-stutter-v084.md#owner-check-wired-then-bluetooth). Tab capture is off by default; inspect Alt+Shift+D → stutter lab before opting into the speaker echo reference.
+For store migration, follow [save → add → load → verify → remove old copy](../store-installs.md). Store users update automatically. For v0.8.6 accuracy, first run the [silent speakers, ordinary talking and deliberate laughs check](../accuracy-v086.md#owner-update-and-hardware-check), then follow the [five-minute wired and optional five-minute Bluetooth comparison](../audio-stutter-v086.md#update-and-real-device-check). Tab capture is off by default; inspect Alt+Shift+D → stutter lab before opting into the speaker echo reference.
 
 This is the canonical final checklist. It is a smoke/acceptance pass, not an accuracy benchmark or a two-hour soak. Mark only things you observe. Record date, Chrome/Edge versions, OS, build version, configured origins and result beside each item. No private audio, cookies, tokens or OAuth codes in evidence.
 
 **Prepare before starting the timer:** complete provider/env setup, connected release rehearsal and model download; have headphones, speakers and a working mic; two clean browser profiles A/B; your own live Twitch test stream (or a cooperating streamer who logs into their own dashboard), ideally with an archive already available. Start local/dev Worker + website with real registered Twitch credentials. Build Chrome/Edge with those public URLs. Set ALLOW_TEST_TRAFFIC=true only locally/dev for the floor/word demonstration; production stays false. Have one older eligible aggregate stream if testing existing VOD links. Registration, model downloads, Twitch archive processing and deployment are outside this timed pass.
 
-## 0:00–5:00 · ZIP and first run
+## 0:00–5:00 · store setup and advanced backup
 
-- [ ] Click Download on the homepage: setup opens at /install?downloaded=1, the ZIP starts once, “your download started” and illustrated steps remain visible. Retry starts another attachment. Plain /install waits for its Download click. Switch Chrome/Edge/Brave tabs without another automatic download; check the inner-folder warning.
+- [ ] On Chrome use Add to Chrome; on Edge use Get it for Edge. Unknown browsers offer both. Firefox/mobile show desktop guidance and copy link, with no ZIP. /download shows store buttons; /install has four store steps and automatic-update wording. Expand advanced manual setup only for a tester install. Confirm review notes reflect each approved store version.
 
 - [ ] Compare both ZIP hashes with SHA256SUMS.txt. Extract Chrome into a new permanent folder; it contains manifest.json directly, local models, LICENSE and notices, with no debug page or PEM/env files. Load unpacked in clean profile A; confirm **fkocldgggcmhihelohiicoakcfomhepg**.
 - [ ] Welcome → allow mic → sharing default off → explicitly choose sharing → open Twitch → toolbar start. Once installed, the Welcome-to-ready steps take under one minute without guessing. No simulation/screen switcher/debug controls are visible. A missing/blocked mic offers a friendly retry or “watch without mic”.

@@ -4,6 +4,13 @@ export const OwnerCommandSchema = z.discriminatedUnion('type', [
   z
     .object({
       target: z.literal('offscreen'),
+      type: z.literal('AUDIO_SENSITIVITY'),
+      value: z.enum(['strict', 'normal', 'sensitive']),
+    })
+    .strict(),
+  z
+    .object({
+      target: z.literal('offscreen'),
       type: z.literal('AUDIO_LAB'),
       switches: LabSwitchesSchema,
       streamId: z.string().optional(),
@@ -34,6 +41,7 @@ export const OwnerCommandSchema = z.discriminatedUnion('type', [
       streamId: z.string().optional(),
       micOnly: z.boolean().optional(),
       nativePlayback: z.boolean().optional(),
+      sensitivity: z.enum(['strict', 'normal', 'sensitive']).optional(),
       paused: z.boolean().optional(),
     })
     .strict(),

@@ -1,13 +1,16 @@
 import {
   type AutomaticSpeechRecognitionPipeline,
   env,
+  LogitsProcessorList,
   pipeline,
   StoppingCriteria,
   StoppingCriteriaList,
+  WhisperFeatureExtractor,
 } from '@huggingface/transformers';
 import { AudioClassifier, FilesetResolver } from '@mediapipe/tasks-audio';
 import * as ort from 'onnxruntime-web/webgpu';
 import { modelState, safeError } from '../diagnostics';
+import type { SpeechConfidence } from './accuracy';
 import {
   INFERENCE_CONFIG as C,
   type ClassScores,
@@ -15,12 +18,29 @@ import {
 } from './config';
 import { removeReferenceEcho } from './reference-echo';
 import { mapSoundScores } from './rules';
+import type { SpeechBudget } from './speech-budget';
+import { WhisperConfidence } from './whisper-confidence';
+import { compactWhisperFeatures } from './whisper-features';
 
 const makeWhisper = (device: 'wasm' | 'webgpu') =>
   pipeline<'automatic-speech-recognition'>(
     'automatic-speech-recognition',
     'whisper-tiny.en',
-    { device, dtype: 'q8', local_files_only: true },
+    {
+      device,
+      dtype: 'q8',
+      local_files_only: true,
+      // Fix known encoder dimensions so ONNX can optimize the quantized graph.
+      // Decoder cache/sequence dimensions remain dynamic.
+      session_options: {
+        graphOptimizationLevel: 'all',
+        freeDimensionOverrides: {
+          batch_size: 1,
+          feature_size: 80,
+          encoder_sequence_length: 2000,
+        },
+      },
+    },
   );
 
 export type SpeechResult = {
@@ -31,6 +51,9 @@ export type SpeechResult = {
   hype: boolean;
   matched?: number;
   rejected?: number;
+  avgLogprob?: number | null;
+  noSpeechProbability?: number | null;
+  rejection?: string;
 };
 export interface ModelRunner {
   topClass?: { label: string; score: number };
@@ -42,6 +65,7 @@ export interface ModelRunner {
   ): ClassScores | Promise<ClassScores>;
   words(samples: Float32Array): Promise<string | SpeechResult>;
   resetVad?(): void;
+  lastSpeechConfidence?: SpeechConfidence;
 }
 class Deadline extends StoppingCriteria {
   exceeded = false;
@@ -54,6 +78,16 @@ class Deadline extends StoppingCriteria {
   }
 }
 export class LocalModels implements ModelRunner {
+  private currentSpeechBudget?: SpeechBudget;
+  private compactSpeech() {
+    const extractor = this.whisper.processor.feature_extractor;
+    if (extractor instanceof WhisperFeatureExtractor)
+      compactWhisperFeatures(extractor, () => this.currentSpeechBudget);
+  }
+  lastSpeechConfidence: SpeechConfidence = {
+    avgLogprob: null,
+    noSpeechProbability: null,
+  };
   backend: 'wasm' | 'mixed' = 'wasm';
   loadMs = { vad: 0, yamnet: 0, whisper: 0 };
   times = { vad: 0, yamnet: 0, whisper: 0 };
@@ -151,6 +185,11 @@ export class LocalModels implements ModelRunner {
         this.whisper = await makeWhisper('wasm');
       }
     } else this.whisper = await makeWhisper('wasm');
+    this.compactSpeech();
+    // Warm the WASM encoder/decoder before marking the model ready. Cold kernel
+    // compilation must not consume the first real reaction's rolling work budget.
+    if (this.backend === 'wasm')
+      await this.whisper(new Float32Array(16000), { max_new_tokens: 1 });
     this.loadMs.whisper = performance.now() - start;
     this.status.whisper = {
       phase: 'ready',
@@ -228,14 +267,21 @@ export class LocalModels implements ModelRunner {
     this.calls.yamnet++;
     return scores;
   }
-  async words(samples: Float32Array, enforceBudget = true) {
+  lastWordWorkMs = 0;
+  async words(
+    samples: Float32Array,
+    enforceBudget = true,
+    budget?: SpeechBudget,
+  ) {
     if (this.slowGpu) {
       await this.whisper.dispose().catch(() => {});
       this.whisper = await makeWhisper('wasm');
+      this.compactSpeech();
       this.backend = 'wasm';
       this.slowGpu = false;
     }
-    const start = performance.now();
+    const start = performance.now(),
+      waitedBefore = budget?.waitedMs ?? 0;
     const deadline = new Deadline(
       enforceBudget
         ? start + Math.max(2500, (samples.length / 16) * C.whisperBudgetRtf)
@@ -249,18 +295,59 @@ export class LocalModels implements ModelRunner {
       return_timestamps: false,
       stopping_criteria: stopping,
     };
+    const transcribe = async () => {
+      this.currentSpeechBudget = budget;
+      const confidence = new WhisperConfidence(),
+        processors = new LogitsProcessorList();
+      processors.push(confidence);
+      const model = this.whisper.model,
+        forward = model.forward;
+      const restore: (() => void)[] = [];
+      if (budget)
+        for (const [name, session] of Object.entries(model.sessions)) {
+          const original = session.run;
+          session.run = ((...args: Parameters<typeof original>) =>
+            budget.run(
+              () => original.apply(session, args),
+              `${name}:${Reflect.get(args[0] ?? {}, 'use_cache_branch')?.data?.[0] ? 'cached' : 'initial'}`,
+            )) as typeof original;
+          restore.push(() => {
+            session.run = original;
+          });
+        }
+      model.forward = async function (inputs) {
+        const output = await forward.call(this, inputs);
+        if (output.logits) confidence.capture(output.logits);
+        return output;
+      };
+      const generationOptions = { ...options, logits_processor: processors };
+      try {
+        return await this.whisper(samples, generationOptions);
+      } finally {
+        model.forward = forward;
+        this.currentSpeechBudget = undefined;
+        for (const reset of restore) reset();
+        this.lastSpeechConfidence = confidence.result();
+        confidence.clear();
+      }
+    };
     let result: { text: string } | { text: string }[];
     try {
-      result = await this.whisper(samples, options);
+      result = await transcribe();
     } catch {
       if (this.backend !== 'mixed')
         throw new Error('Local transcription unavailable');
       await this.whisper.dispose().catch(() => {});
       this.whisper = await makeWhisper('wasm');
+      this.compactSpeech();
       this.backend = 'wasm';
-      result = await this.whisper(samples, options);
+      result = await transcribe();
     }
-    this.times.whisper += performance.now() - start;
+    this.lastWordWorkMs = Math.max(
+      0,
+      performance.now() - start - ((budget?.waitedMs ?? 0) - waitedBefore),
+    );
+    this.times.whisper += this.lastWordWorkMs;
     this.calls.whisper++;
     if (deadline.exceeded) {
       this.slowGpu = this.backend === 'mixed';

@@ -1,12 +1,14 @@
 {
   "name": "StreamLaughs",
-  "version": "0.8.5",
+  "version": "0.8.6",
   "pitch": "see who's laughing with you",
   "releaseRepoOwner": "uzerkayat2004-gif",
   "releaseRepoName": "streamlaughs",
   "siteUrl": "https://streamlaughs.vercel.app",
   "edgeStoreExtensionId": "fkdfjgnhifofdjpbenlkhpfhmmhglmkb",
   "chromeStoreExtensionId": "lofdkbfimkjjfglhhnpkiljocbikmkej",
-  "chromeStoreUrl": "",
-  "edgeStoreUrl": ""
+  "chromeStoreUrl": "https://chromewebstore.google.com/detail/lofdkbfimkjjfglhhnpkiljocbikmkej",
+  "edgeStoreUrl": "https://microsoftedge.microsoft.com/addons/detail/fkdfjgnhifofdjpbenlkhpfhmmhglmkb",
+  "chromeStoreVersion": "0.6.4",
+  "edgeStoreVersion": "0.6.4"
 }

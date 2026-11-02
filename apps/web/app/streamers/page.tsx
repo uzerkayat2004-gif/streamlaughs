@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Arrow } from '../../components/brand';
 import { FansPlayground } from '../../components/fans-playground';
+import { StoreButtons } from '../../components/store-buttons';
 import { callbackUrl, dashboardConfigured } from '../../lib/config';
 import { loginErrorMessage } from '../../lib/oauth-errors';
 export default async function Streamers({
@@ -103,6 +104,10 @@ export default async function Streamers({
             to see.
           </p>
         </div>
+      </section>
+      <section className="try-download">
+        <h2>watching too?</h2>
+        <StoreButtons />
       </section>
     </main>
   );

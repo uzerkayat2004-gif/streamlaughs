@@ -120,7 +120,6 @@ export default defineConfig({
       'tabs',
       'tabCapture',
       'offscreen',
-      'downloads',
       'scripting',
     ],
     host_permissions: [

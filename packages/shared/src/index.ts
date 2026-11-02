@@ -16,9 +16,11 @@ export * from './inference';
 export * from './owner-token';
 export * from './privacy';
 export * from './product';
+export * from './stores';
 export * from './recap-share';
 export * from './reaction-words';
 export * from './replay';
+export * from './laugh-undo';
 
 export const WordSchema = z.object({
   word: z.string().max(80),
@@ -58,6 +60,9 @@ export const MySessionSchema = z.object({
     z.object({
       at: z.number(),
       crowd: z.number(),
+      intensity: z.number().optional(),
+      confidence: z.number().optional(),
+      lagMs: z.number().optional(),
       mediaAt: z.number().nonnegative().optional(),
     }),
   ),
@@ -150,6 +155,7 @@ export type Recap = z.infer<typeof RecapSchema>;
 export const SettingsSchema = z.object({
   listen: z.boolean(),
   share: z.boolean(),
+  sensitivity: z.enum(['strict', 'normal', 'sensitive']).optional(),
 });
 export const SnapshotSchema = z.object({
   revision: z.number().int(),
@@ -183,6 +189,8 @@ export const CommandSchema = z.discriminatedUnion('type', [
       .optional(),
   }),
   z.object({ type: z.literal('STOP') }),
+  z.object({ type: z.literal('UNDO_LAUGH') }),
+  z.object({ type: z.literal('RESTORE_LAUGH') }),
   z.object({ type: z.literal('DISCARD_RECAP'), id: z.string() }),
   z.object({ type: z.literal('PAUSE') }),
   z.object({ type: z.literal('RETRY_MIC') }),
@@ -413,6 +421,13 @@ export function applyPersonalEvent(
       {
         at: event.ts,
         crowd,
+        intensity: event.intensity,
+        confidence: event.confidence,
+        ...(tabLaughTs &&
+        event.ts - tabLaughTs >= 0 &&
+        event.ts - tabLaughTs <= 6000
+          ? { lagMs: event.ts - tabLaughTs }
+          : {}),
         ...(session.replay
           ? { mediaAt: replayPosition(session.replay, event.ts) }
           : {}),

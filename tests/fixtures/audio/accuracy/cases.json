@@ -1,0 +1,53 @@
+[
+  {
+    "name": "normal-60s",
+    "seconds": 77,
+    "laughs": 0,
+    "words": {},
+    "sha256": "bb101ec1f522ad821779eca795b932ea3fec0d7fc265c9f54215bc59e1b16adb"
+  },
+  {
+    "name": "room-noises-30s",
+    "seconds": 47,
+    "laughs": 0,
+    "words": {},
+    "sha256": "7a160ba66d83bb8a7a141dbffe8877c7c2c4f60ba908cc49ea94111d553b5938"
+  },
+  {
+    "name": "talk-three-laughs",
+    "seconds": 77,
+    "laughs": 3,
+    "words": {},
+    "sha256": "8c6db7715f7251d3f71e1b2aebb95d151acf9f79ce5e3b28587b05e803647657"
+  },
+  {
+    "name": "bleed-60s",
+    "seconds": 77,
+    "laughs": 0,
+    "words": {},
+    "sha256": "b773946f2389493cc456fcc66a64e89c72b6fabad2e7e84a9e53ca47257342ee"
+  },
+  {
+    "name": "bleed-three-laughs",
+    "seconds": 77,
+    "laughs": 3,
+    "words": {},
+    "sha256": "107f1eeb379fe5ae4f73e1d27ef1422d881097b797b4c3006ae3693838262cd9"
+  },
+  {
+    "name": "reaction-words",
+    "seconds": 47,
+    "laughs": 0,
+    "words": {
+      "bro": 2,
+      "no way": 1
+    },
+    "sha256": "58c4cd7667b429ffb806ab3434f41d274c43553c385bd13bbe229f83a12e3153"
+  },
+  {
+    "name": "existing-laugh-word",
+    "seconds": 47,
+    "sha256": "1e58c5c2e9761fd5a380b6cb44671c991a44965060d067e81f9233266b96ed81",
+    "originalSha256": "07db93dd56f67020abfa7eb2850eb16c1ee364d2bff581402f4d1c414666cd71"
+  }
+]

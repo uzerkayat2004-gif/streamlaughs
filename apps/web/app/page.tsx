@@ -2,6 +2,7 @@ import { PRODUCT } from '@laughline/shared';
 import Link from 'next/link';
 import { Arrow } from '../components/brand';
 import { FansPlayground, HomeMotion } from '../components/fans-playground';
+import { StoreButtons } from '../components/store-buttons';
 
 export default function Home() {
   return (
@@ -22,9 +23,7 @@ export default function Home() {
             Live, right on Twitch.
           </p>
           <div className="hero-actions">
-            <Link className="button yellow" href="/install?downloaded=1">
-              Download {PRODUCT.name} <Arrow />
-            </Link>
+            <StoreButtons />
             <Link className="text-link" href="/try">
               <span className="play-outline">▶</span> watch the demo
             </Link>
@@ -129,9 +128,7 @@ export default function Home() {
             <br />
             <em>together?</em>
           </h2>
-          <Link className="button yellow" href="/install?downloaded=1">
-            Download {PRODUCT.name} <Arrow />
-          </Link>
+          <StoreButtons />
           <p className="quiet-caption">Chrome, Edge and Brave · free</p>
         </div>
         <span className="section-index" aria-hidden="true">

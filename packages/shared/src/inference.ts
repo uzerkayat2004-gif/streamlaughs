@@ -43,6 +43,8 @@ export type ReactionKind = Exclude<PersonalEvent['kind'], 'words'>;
 export const InferenceHealthSchema = z
   .object({
     phase: z.enum(['idle', 'warming', 'ready', 'error']),
+    calibrationRemainingMs: z.number().nonnegative().default(0),
+    bleedLikely: z.boolean().default(false),
     lowPower: z.boolean(),
     backend: z.enum(['wasm', 'webgpu', 'mixed']),
     vadProbability: z.number().min(0).max(1),
@@ -59,6 +61,8 @@ export const InferenceHealthSchema = z
 export type InferenceHealth = z.infer<typeof InferenceHealthSchema>;
 export const emptyInferenceHealth = (): InferenceHealth => ({
   phase: 'idle',
+  calibrationRemainingMs: 0,
+  bleedLikely: false,
   lowPower: false,
   backend: 'wasm',
   vadProbability: 0,

@@ -1,0 +1,39 @@
+{
+  "version": "0.8.6",
+  "results": [
+    {
+      "page": "/install",
+      "browserHints": "chrome",
+      "passed": true
+    },
+    {
+      "page": "/download",
+      "passed": true
+    },
+    {
+      "page": "/version.json",
+      "passed": true
+    },
+    {
+      "page": "/install",
+      "browserHints": "edge",
+      "passed": true
+    },
+    {
+      "page": "/install",
+      "browserHints": "firefox",
+      "passed": true
+    },
+    {
+      "extension": "development",
+      "storeInstallTypeMocked": false,
+      "passed": true
+    },
+    {
+      "extension": "normal",
+      "storeInstallTypeMocked": true,
+      "passed": true
+    }
+  ],
+  "note": "Browser UA/brand fixtures and normal-install UI mock; not a store submission or real store update test."
+}

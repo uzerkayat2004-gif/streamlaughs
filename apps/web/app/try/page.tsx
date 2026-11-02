@@ -1,8 +1,7 @@
 import { PRODUCT } from '@laughline/shared';
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { Arrow } from '../../components/brand';
 import { ExtensionDemo } from '../../components/extension-demo';
+import { StoreButtons } from '../../components/store-buttons';
 export const metadata: Metadata = {
   title: 'take a peek',
   description: `Watch a full ${PRODUCT.name} night on a Twitch stream, or click along. No install, login or microphone needed.`,
@@ -26,9 +25,7 @@ export default function Try() {
         <h2>
           your stream. <em>your turn.</em>
         </h2>
-        <Link className="button yellow" href="/install?downloaded=1">
-          Download {PRODUCT.name} <Arrow />
-        </Link>
+        <StoreButtons />
       </section>
     </main>
   );

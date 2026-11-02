@@ -7,6 +7,7 @@ export async function GET(request: Request) {
   const ids = [
     identity.id,
     PRODUCT.edgeStoreExtensionId,
+    PRODUCT.chromeStoreExtensionId,
     ...(process.env.STORE_EXTENSION_IDS ?? '')
       .split(',')
       .filter((id) => /^[a-p]{32}$/.test(id)),

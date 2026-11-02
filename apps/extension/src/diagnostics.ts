@@ -2,15 +2,15 @@ import {
   AudioMetricsSchema,
   emptyInferenceHealth,
   InferenceHealthSchema,
-  SafePhraseSchema,
   isApprovedPhrase,
+  SafePhraseSchema,
 } from '@laughline/shared';
 import { z } from 'zod';
 import {
+  emptyTasks,
   LabSwitchesSchema,
   PlaybackStatsSchema,
   TaskStatsSchema,
-  emptyTasks,
 } from './stutter';
 export const SpeechResultSchema = z
   .object({
@@ -18,6 +18,9 @@ export const SpeechResultSchema = z
     hype: z.boolean(),
     matched: z.number().nonnegative().default(0),
     rejected: z.number().nonnegative().default(0),
+    avgLogprob: z.number().finite().nullable().optional(),
+    noSpeechProbability: z.number().min(0).max(1).nullable().optional(),
+    rejection: z.string().max(200).optional(),
   })
   .strict();
 export const ClassScoresSchema = z
@@ -49,6 +52,25 @@ const model = z
   })
   .strict();
 export const ModelStateSchema = model;
+export const AccuracyRecordSchema = z
+  .object({
+    kind: z.enum(['laugh', 'words']),
+    ts: z.number(),
+    accepted: z.boolean(),
+    detector: z.enum(['dsp', 'yamnet', 'both', 'whisper']),
+    reason: z.string().max(200),
+    laughter: z.number(),
+    speech: z.number(),
+    dsp: z.number(),
+    durationMs: z.number(),
+    aboveFloorDb: z.number().finite(),
+    rms: z.number(),
+    highFrequencyRatio: z.number(),
+    avgLogprob: z.number().finite().nullable(),
+    noSpeechProbability: z.number().nullable(),
+  })
+  .strict();
+export type AccuracyRecord = z.infer<typeof AccuracyRecordSchema>;
 const track = z
   .object({
     name: z.string().max(256),
@@ -65,6 +87,10 @@ const track = z
   .strict();
 export const WorkerDiagnosticsSchema = z
   .object({
+    accuracyLog: z.array(AccuracyRecordSchema).max(20).default([]),
+    laughDetectors: z
+      .object({ dsp: z.number(), yamnet: z.number(), both: z.number() })
+      .default(() => ({ dsp: 0, yamnet: 0, both: 0 })),
     stages: z
       .object({
         nonzeroFrames: z.number().nonnegative(),
@@ -101,6 +127,12 @@ export const WorkerDiagnosticsSchema = z
         speech: emptyTasks(),
       })),
     speechCpuMsPerSecond: z.number().nonnegative().default(0),
+    modelWork10sMs: z.number().nonnegative().default(0),
+    modelWorkTotalMs: z.number().nonnegative().default(0),
+    vadWorkTotalMs: z.number().nonnegative().default(0),
+    speechWork10sMs: z.number().nonnegative().default(0),
+    speechBackoffMs: z.number().nonnegative().default(0),
+    speechWaitedMs: z.number().nonnegative().default(0),
     echo: EchoStateSchema.default(() => ({
       removed: false,
       inputRms: 0,
@@ -158,6 +190,8 @@ export const emptyStages = () => ({
   acceptedEvents: 0,
 });
 export const emptyWorkerDiagnostics = (): WorkerDiagnostics => ({
+  accuracyLog: [],
+  laughDetectors: { dsp: 0, yamnet: 0, both: 0 },
   speechOverruns: 0,
   speechCooldownMs: 0,
   vadCpuMsPerSecond: 0,
@@ -171,6 +205,12 @@ export const emptyWorkerDiagnostics = (): WorkerDiagnostics => ({
   laughScore: 0,
   soundCpuMsPerSecond: 0,
   speechCpuMsPerSecond: 0,
+  modelWork10sMs: 0,
+  modelWorkTotalMs: 0,
+  vadWorkTotalMs: 0,
+  speechWork10sMs: 0,
+  speechBackoffMs: 0,
+  speechWaitedMs: 0,
   echo: { removed: false, inputRms: 0, outputRms: 0 },
   models: { vad: modelState(), yamnet: modelState(), whisper: modelState() },
   topClass: { label: 'waiting', score: 0 },
@@ -199,6 +239,8 @@ export const AudioDiagnosticsSchema = z
     phase: z.string().max(32),
     context: z.string().max(32),
     playbackContext: z.string().max(32).default('closed'),
+    speakerConnections: z.number().nonnegative().default(0),
+    tabCaptureTracks: z.number().nonnegative().default(0),
     playback: PlaybackStatsSchema.optional(),
     lab: LabSwitchesSchema.optional(),
     bluetooth: z.boolean().default(false),

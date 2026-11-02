@@ -230,8 +230,40 @@ const common = new Set(
     .split(' ')
     .concat(REACTION_WORDS.flatMap((s) => s.split(' '))),
 );
+const standaloneReactions = new Set([
+  'what',
+  'good',
+  'great',
+  'nice',
+  'funny',
+  'amazing',
+  'love',
+  'laugh',
+  'laughs',
+  'yes',
+  'wait',
+]);
 export const maskSwear = (word: string) =>
   word[0] + '*'.repeat(Math.max(2, word.length - 1));
+export function hallucinationReason(text: string) {
+  const clean = text
+    .toLowerCase()
+    .replace(/[^a-z' ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (
+    /[♪♫♬]/.test(text) ||
+    /\b(thank you|thanks for watching|thank you for watching|subtitles|subscribe to)\b/.test(
+      clean,
+    ) ||
+    ['you', 'bye', 'music', 'silence'].includes(clean)
+  )
+    return 'known ASR hallucination';
+  const tokens = clean.split(' ');
+  if (tokens.length >= 4 && new Set(tokens).size === 1)
+    return 'repeated ASR loop';
+  return '';
+}
 export function privacyClass(
   original: string,
   normalized = original.toLowerCase(),
@@ -251,6 +283,8 @@ export function extractWords(text: string): {
   matched: number;
   rejected: number;
 } {
+  if (hallucinationReason(text))
+    return { phrases: [], hype: false, matched: 0, rejected: 1 };
   const raw =
     text
       .replace(/[’‘]/g, "'")
@@ -294,7 +328,8 @@ export function extractWords(text: string): {
         text = group.map((t) => t.word).join(' ');
       if (
         group.every((t) => t.class === 'ok') &&
-        (REACTION_WORDS as readonly string[]).includes(text)
+        (REACTION_WORDS as readonly string[]).includes(text) &&
+        (!standaloneReactions.has(text) || tokens.every((t) => t.word === text))
       ) {
         add(text, 'ok');
         matched++;
@@ -304,21 +339,17 @@ export function extractWords(text: string): {
       }
     }
     if (!found) {
-      if (common.has(token.word) && !stop.has(token.word)) {
-        add(token.word, 'ok');
-        matched++;
-      } else rejected++;
+      rejected++;
     }
   }
-  const normalized = tokens
-    .map((token) => (token.class === 'ok' ? token.word : ''))
-    .join(' ');
   return {
     phrases: [...phrases.values()],
     matched,
     rejected,
-    hype: C.hypePhrases.some((phrase) =>
-      ` ${normalized} `.includes(` ${phrase} `),
+    hype: [...phrases.values()].some(
+      (p) =>
+        p.class === 'ok' &&
+        (C.hypePhrases as readonly string[]).includes(p.text),
     ),
   };
 }

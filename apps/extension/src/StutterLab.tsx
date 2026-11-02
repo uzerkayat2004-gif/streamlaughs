@@ -79,6 +79,10 @@ export function StutterLab({
         {Math.round(playback?.worstGapMs ?? 0)} ms
       </p>
       <p>
+        speaker connections: {r?.audio?.speakerConnections ?? 0} · tab capture
+        tracks: {r?.audio?.tabCaptureTracks ?? 0}
+      </p>
+      <p>
         {switches.tabCapture
           ? 'direct playback context; analysis is separate'
           : 'Twitch plays natively; no extension tab capture/passthrough'}
@@ -103,6 +107,13 @@ export function StutterLab({
         {Math.round(r?.inference?.vadCpuMsPerSecond ?? 0)} · laugh{' '}
         {Math.round(r?.inference?.soundCpuMsPerSecond ?? 0)} · words{' '}
         {Math.round(r?.inference?.speechCpuMsPerSecond ?? 0)}
+      </p>
+      <p>
+        all model work / 10 s: {Math.round(r?.inference?.modelWork10sMs ?? 0)}{' '}
+        ms · speech: {Math.round(r?.inference?.speechWork10sMs ?? 0)} ms ·
+        backoff: {Math.round(r?.inference?.speechBackoffMs ?? 0)} ms. Explicit
+        pacing sleeps are excluded; these are conservative elapsed-work
+        measures, not OS CPU utilization.
       </p>
       {tasks.map(([name, t]) => (
         <p key={name}>

@@ -40,7 +40,7 @@
   "mask_time_min_masks": 2,
   "mask_time_prob": 0.05,
   "max_length": 448,
-  "max_source_positions": 1500,
+  "max_source_positions": 1000,
   "max_target_positions": 448,
   "median_filter_width": 7,
   "model_type": "whisper",

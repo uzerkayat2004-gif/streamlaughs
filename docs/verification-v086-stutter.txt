@@ -1,0 +1,864 @@
+StreamLaughs v0.8.6 final extracted-ZIP soak
+
+
+> laughline-monorepo@0.8.6 test:stutter C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline
+> node tools/eval/stutter-regression.mjs
+
+{"switchPhase":{"speechModel":false},"meanElapsedWorkMsPerSecond":68.18030325663213,"offscreenTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517}}
+{"switchPhase":{"micCapture":false},"meanElapsedWorkMsPerSecond":0,"offscreenTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517}}
+{"switchPhase":{"micCapture":true,"laughModel":false,"speechModel":true},"meanElapsedWorkMsPerSecond":38.68768513690861,"offscreenTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517}}
+{"switchPhase":{"overlay":false},"meanElapsedWorkMsPerSecond":214.27142116141744,"offscreenTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517}}
+{"switchPhase":{},"meanElapsedWorkMsPerSecond":179.44972275952767,"offscreenTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517}}
+{"measurementStart":{"offscreenTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"version":"0.8.6"}}
+{"elapsedSeconds":60,"worstOffscreenLongTaskMs":0,"outputGaps":0,"modelWorkMeanMsPerSecond":104.87856373263246}
+{"elapsedSeconds":120,"worstOffscreenLongTaskMs":0,"outputGaps":0,"modelWorkMeanMsPerSecond":122.65728632629636}
+{"elapsedSeconds":180,"worstOffscreenLongTaskMs":0,"outputGaps":0,"modelWorkMeanMsPerSecond":117.17450964864591}
+{"elapsedSeconds":240,"worstOffscreenLongTaskMs":0,"outputGaps":0,"modelWorkMeanMsPerSecond":115.8024252229136}
+{"elapsedSeconds":300,"worstOffscreenLongTaskMs":0,"outputGaps":0,"modelWorkMeanMsPerSecond":116.81550290048492}
+{"version":"0.8.6","durationSeconds":300.059,"acceptanceDuration":true,"nativeTwitchPlayback":true,"extensionPassthroughContexts":0,"nativeAudioUnderruns":null,"nativeAudioUnderrunsNote":"HTML video exposes no audio underrun counter; no extension passthrough exists","outputClockGaps":0,"setupOffscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"newOffscreenLongTasks":0,"worstOffscreenLongTaskMs":0,"workerTasks":{"realtime":{"supported":false,"count":0,"worstMs":0,"stalls":1,"worstStallMs":126.19999999925494},"sound":{"supported":false,"count":0,"worstMs":0,"stalls":2,"worstStallMs":109.09999999776483},"speech":{"supported":false,"count":0,"worstMs":0,"stalls":17,"worstStallMs":1067.300000000745}},"contentLongTasks":{"count":0,"worstMs":0},"speakerConnections":0,"tabCaptureTracks":0,"modelWorkMsPerSecond":{"mean":116.81550290048492,"peak":1202.9029950341053,"definition":"elapsed inference work, not OS CPU utilization"},"droppedVideoFrames":0,"totalVideoFrames":9026,"mic":{"name":"Fake Audio Input 1","state":"live","muted":false,"enabled":true,"sampleRate":44100,"channelCount":2,"echoCancellation":false,"noiseSuppression":false,"autoGainControl":false,"device":"system default"},"laughs":8,"words":13,"modelErrors":0,"speechBudgetOverruns":0,"speechCooldownMs":0,"modelWork10sMs":{"peak":1917.2999999821186,"limit":2500,"definition":"conservative elapsed model work, sleeps excluded; not an OS CPU measurement"},"switchComparisons":[{"switches":{"tabCapture":false,"micCapture":true,"laughModel":true,"speechModel":false,"overlay":true},"samples":[{"vad":42.629482053903,"sound":21.800000000745058,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":45.94820382695074,"sound":16.800000000745058,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":41.33545310941004,"sound":20.30000000447035,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":33.0151153566876,"sound":17.599999997764826,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":46.49330180057182,"sound":20.599999997764826,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":49.74134499099741,"sound":35.100000001490116,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":27.594247979770103,"sound":35.30000000447035,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":46.634225466060464,"sound":27.300000000745058,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":61.09324758524688,"sound":31.099999997764826,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":38.118410390017736,"sound":23.300000000745058,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"}]},{"switches":{"tabCapture":false,"micCapture":false,"laughModel":true,"speechModel":true,"overlay":true},"samples":[{"vad":0,"sound":0,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":0,"sound":0,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":0,"sound":0,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":0,"sound":0,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":0,"sound":0,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":0,"sound":0,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":0,"sound":0,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":0,"sound":0,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":0,"sound":0,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":0,"sound":0,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"}]},{"switches":{"tabCapture":false,"micCapture":true,"laughModel":false,"speechModel":true,"overlay":true},"samples":[{"vad":123.22580643719242,"sound":0,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":0,"sound":0,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":0,"sound":0,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":42.6854537949161,"sound":0,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":39.532069400492084,"sound":0,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":51.43094151233862,"sound":0,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":36.637099898565346,"sound":0,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":0,"sound":0,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":46.284501055243666,"sound":0,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":47.08097927033789,"sound":0,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"}]},{"switches":{"tabCapture":false,"micCapture":true,"laughModel":true,"speechModel":true,"overlay":false},"samples":[{"vad":47.73869349214781,"sound":34.30000000447035,"speech":1402.7999999970198,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":34.140531948454544,"sound":23.99999999627471,"speech":17.699999999254942,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":63.03837118774164,"sound":33.5,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":49.441786308244865,"sound":19.099999997764826,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":48.88888890996124,"sound":23.600000001490116,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":45.01216542635907,"sound":24.799999997019768,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":39.15171289363494,"sound":25.800000000745058,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":41.86602873771686,"sound":25.800000000745058,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":47.010309256843684,"sound":20.100000001490116,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":47.02572345456035,"sound":27.900000002235174,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"}]},{"switches":{"tabCapture":false,"micCapture":true,"laughModel":true,"speechModel":true,"overlay":true},"samples":[{"vad":43.777867828646514,"sound":22.69999999552965,"speech":998.3999999985099,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":58.87230510625584,"sound":28.800000000745058,"speech":98.20000000298023,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":45.22015074243471,"sound":22.399999998509884,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":44.04761905353221,"sound":23.800000000745058,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":40.766408448915804,"sound":26.800000000745058,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":36.776859497974726,"sound":19.099999997764826,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":51.74441393824112,"sound":31.99999999627471,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":42.817126862921306,"sound":33.30000000074506,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":47.32510289598885,"sound":23,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"},{"vad":32.34937323079619,"sound":22.299999997019768,"speech":0,"offscreenLongTasks":{"supported":true,"count":0,"worstMs":0,"stalls":1,"worstStallMs":130.90000000223517},"hasTab":"none","context":"closed"}]}],"liveSwitchesPassed":true,"capturedTabProbe":null}
+
+
+Validated report:
+{
+  "version": "0.8.6",
+  "durationSeconds": 300.059,
+  "acceptanceDuration": true,
+  "nativeTwitchPlayback": true,
+  "extensionPassthroughContexts": 0,
+  "nativeAudioUnderruns": null,
+  "nativeAudioUnderrunsNote": "HTML video exposes no audio underrun counter; no extension passthrough exists",
+  "outputClockGaps": 0,
+  "setupOffscreenLongTasks": {
+    "supported": true,
+    "count": 0,
+    "worstMs": 0,
+    "stalls": 1,
+    "worstStallMs": 130.90000000223517
+  },
+  "offscreenLongTasks": {
+    "supported": true,
+    "count": 0,
+    "worstMs": 0,
+    "stalls": 1,
+    "worstStallMs": 130.90000000223517
+  },
+  "newOffscreenLongTasks": 0,
+  "worstOffscreenLongTaskMs": 0,
+  "workerTasks": {
+    "realtime": {
+      "supported": false,
+      "count": 0,
+      "worstMs": 0,
+      "stalls": 1,
+      "worstStallMs": 126.19999999925494
+    },
+    "sound": {
+      "supported": false,
+      "count": 0,
+      "worstMs": 0,
+      "stalls": 2,
+      "worstStallMs": 109.09999999776483
+    },
+    "speech": {
+      "supported": false,
+      "count": 0,
+      "worstMs": 0,
+      "stalls": 17,
+      "worstStallMs": 1067.300000000745
+    }
+  },
+  "contentLongTasks": {
+    "count": 0,
+    "worstMs": 0
+  },
+  "speakerConnections": 0,
+  "tabCaptureTracks": 0,
+  "modelWorkMsPerSecond": {
+    "mean": 116.81550290048492,
+    "peak": 1202.9029950341053,
+    "definition": "elapsed inference work, not OS CPU utilization"
+  },
+  "droppedVideoFrames": 0,
+  "totalVideoFrames": 9026,
+  "mic": {
+    "name": "Fake Audio Input 1",
+    "state": "live",
+    "muted": false,
+    "enabled": true,
+    "sampleRate": 44100,
+    "channelCount": 2,
+    "echoCancellation": false,
+    "noiseSuppression": false,
+    "autoGainControl": false,
+    "device": "system default"
+  },
+  "laughs": 8,
+  "words": 13,
+  "modelErrors": 0,
+  "speechBudgetOverruns": 0,
+  "speechCooldownMs": 0,
+  "modelWork10sMs": {
+    "peak": 1917.2999999821186,
+    "limit": 2500,
+    "definition": "conservative elapsed model work, sleeps excluded; not an OS CPU measurement"
+  },
+  "switchComparisons": [
+    {
+      "switches": {
+        "tabCapture": false,
+        "micCapture": true,
+        "laughModel": true,
+        "speechModel": false,
+        "overlay": true
+      },
+      "samples": [
+        {
+          "vad": 42.629482053903,
+          "sound": 21.800000000745058,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 45.94820382695074,
+          "sound": 16.800000000745058,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 41.33545310941004,
+          "sound": 20.30000000447035,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 33.0151153566876,
+          "sound": 17.599999997764826,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 46.49330180057182,
+          "sound": 20.599999997764826,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 49.74134499099741,
+          "sound": 35.100000001490116,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 27.594247979770103,
+          "sound": 35.30000000447035,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 46.634225466060464,
+          "sound": 27.300000000745058,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 61.09324758524688,
+          "sound": 31.099999997764826,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 38.118410390017736,
+          "sound": 23.300000000745058,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        }
+      ]
+    },
+    {
+      "switches": {
+        "tabCapture": false,
+        "micCapture": false,
+        "laughModel": true,
+        "speechModel": true,
+        "overlay": true
+      },
+      "samples": [
+        {
+          "vad": 0,
+          "sound": 0,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 0,
+          "sound": 0,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 0,
+          "sound": 0,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 0,
+          "sound": 0,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 0,
+          "sound": 0,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 0,
+          "sound": 0,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 0,
+          "sound": 0,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 0,
+          "sound": 0,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 0,
+          "sound": 0,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 0,
+          "sound": 0,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        }
+      ]
+    },
+    {
+      "switches": {
+        "tabCapture": false,
+        "micCapture": true,
+        "laughModel": false,
+        "speechModel": true,
+        "overlay": true
+      },
+      "samples": [
+        {
+          "vad": 123.22580643719242,
+          "sound": 0,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 0,
+          "sound": 0,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 0,
+          "sound": 0,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 42.6854537949161,
+          "sound": 0,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 39.532069400492084,
+          "sound": 0,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 51.43094151233862,
+          "sound": 0,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 36.637099898565346,
+          "sound": 0,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 0,
+          "sound": 0,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 46.284501055243666,
+          "sound": 0,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 47.08097927033789,
+          "sound": 0,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        }
+      ]
+    },
+    {
+      "switches": {
+        "tabCapture": false,
+        "micCapture": true,
+        "laughModel": true,
+        "speechModel": true,
+        "overlay": false
+      },
+      "samples": [
+        {
+          "vad": 47.73869349214781,
+          "sound": 34.30000000447035,
+          "speech": 1402.7999999970198,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 34.140531948454544,
+          "sound": 23.99999999627471,
+          "speech": 17.699999999254942,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 63.03837118774164,
+          "sound": 33.5,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 49.441786308244865,
+          "sound": 19.099999997764826,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 48.88888890996124,
+          "sound": 23.600000001490116,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 45.01216542635907,
+          "sound": 24.799999997019768,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 39.15171289363494,
+          "sound": 25.800000000745058,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 41.86602873771686,
+          "sound": 25.800000000745058,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 47.010309256843684,
+          "sound": 20.100000001490116,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 47.02572345456035,
+          "sound": 27.900000002235174,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        }
+      ]
+    },
+    {
+      "switches": {
+        "tabCapture": false,
+        "micCapture": true,
+        "laughModel": true,
+        "speechModel": true,
+        "overlay": true
+      },
+      "samples": [
+        {
+          "vad": 43.777867828646514,
+          "sound": 22.69999999552965,
+          "speech": 998.3999999985099,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 58.87230510625584,
+          "sound": 28.800000000745058,
+          "speech": 98.20000000298023,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 45.22015074243471,
+          "sound": 22.399999998509884,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 44.04761905353221,
+          "sound": 23.800000000745058,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 40.766408448915804,
+          "sound": 26.800000000745058,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 36.776859497974726,
+          "sound": 19.099999997764826,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 51.74441393824112,
+          "sound": 31.99999999627471,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 42.817126862921306,
+          "sound": 33.30000000074506,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 47.32510289598885,
+          "sound": 23,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        },
+        {
+          "vad": 32.34937323079619,
+          "sound": 22.299999997019768,
+          "speech": 0,
+          "offscreenLongTasks": {
+            "supported": true,
+            "count": 0,
+            "worstMs": 0,
+            "stalls": 1,
+            "worstStallMs": 130.90000000223517
+          },
+          "hasTab": "none",
+          "context": "closed"
+        }
+      ]
+    }
+  ],
+  "liveSwitchesPassed": true,
+  "capturedTabProbe": null
+}

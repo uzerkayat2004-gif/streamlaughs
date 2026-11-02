@@ -1,6 +1,7 @@
-import { parseRecapShare, PRODUCT } from '@laughline/shared';
+import { PRODUCT, parseRecapShare } from '@laughline/shared';
 import Link from 'next/link';
 import { LogoMark } from '../../components/brand';
+import { StoreButtons } from '../../components/store-buttons';
 import { recapChips, recapMetadata } from '../../lib/recap-share';
 export const dynamic = 'force-dynamic';
 type Props = {
@@ -67,10 +68,7 @@ export default async function SharedRecap({ searchParams }: Props) {
       </article>
       <div className="shared-recap-cta">
         <h2>your next laugh could be a story.</h2>
-        <Link href="/install">get your own recap ↗</Link>
-        <Link className="primary-button" href="/install?downloaded=1">
-          Download {PRODUCT.name} <span>↗</span>
-        </Link>
+        <StoreButtons />
         <p>private, on-device · no account needed</p>
       </div>
     </main>

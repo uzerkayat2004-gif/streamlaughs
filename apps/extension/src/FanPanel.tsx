@@ -16,6 +16,9 @@ export function FanPanel({
   onPause,
   onStop,
   onMic,
+  onUndoLaugh,
+  calibrationMs = 0,
+  bleed = false,
   channel = 'stream',
   elapsed = 0,
   word,
@@ -32,6 +35,9 @@ export function FanPanel({
   onPause: () => void;
   onStop: () => void;
   onMic: () => void;
+  onUndoLaugh?: () => void;
+  calibrationMs?: number;
+  bleed?: boolean;
   bounce?: number;
   channel?: string;
   elapsed?: number;
@@ -60,8 +66,28 @@ export function FanPanel({
       <section className="reaction-you" aria-label="your reactions">
         <small>YOU</small>
         <p>
-          <strong>{count}</strong> laughs
+          <button
+            type="button"
+            className="textbtn"
+            title="not me · undo last laugh"
+            aria-label="not me · undo last laugh"
+            disabled={!count || !onUndoLaugh}
+            onClick={onUndoLaugh}
+          >
+            <strong>{count}</strong> laughs
+          </button>
         </p>
+        {calibrationMs > 0 && (
+          <small role="status">
+            stay quiet for 3 sec · {Math.ceil(calibrationMs / 1000)}
+          </small>
+        )}
+        {bleed && (
+          <small>
+            Your mic can hear the stream. Earphones make laughs much more
+            accurate.
+          </small>
+        )}
         {word && isApprovedPhrase(word) && (
           <div>
             your word: <b>{word}</b>

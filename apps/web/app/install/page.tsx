@@ -1,51 +1,56 @@
 import { PRODUCT } from '@laughline/shared';
 import type { Metadata } from 'next';
-import { Arrow } from '../../components/brand';
-import { InstallDownload } from '../../components/install-download';
-import { InstallGuide } from '../../components/install-guide';
-export const metadata: Metadata = { title: `add ${PRODUCT.name} in 2 minutes` };
-export default async function Install({
-  searchParams,
-}: {
-  searchParams: Promise<{ downloaded?: string | string[] }>;
-}) {
-  const automatic = (await searchParams).downloaded === '1';
-  const stores = Boolean(PRODUCT.chromeStoreUrl || PRODUCT.edgeStoreUrl);
+import { ManualInstall } from '../../components/manual-install';
+import { StoreButtons } from '../../components/store-buttons';
+export const metadata: Metadata = { title: `add ${PRODUCT.name}` };
+export default function Install() {
   return (
     <main className="standard-page install-page">
       <header className="page-intro">
-        <p className="eyebrow">A LITTLE SETUP. A LOT OF LAUGHS.</p>
+        <p className="eyebrow">A LITTLE CLICK. A LOT OF LAUGHS.</p>
         <h1>
-          add {PRODUCT.name}
+          your stream.
           <br />
-          <em>in 2 minutes.</em>
+          <em>your people.</em>
         </h1>
-        <p>Free. Works in Chrome, Edge and Brave.</p>
-        {stores && (
-          <div className="store-buttons">
-            {PRODUCT.chromeStoreUrl && (
-              <a className="button yellow" href={PRODUCT.chromeStoreUrl}>
-                Add to Chrome <Arrow />
-              </a>
-            )}
-            {PRODUCT.edgeStoreUrl && (
-              <a className="button yellow" href={PRODUCT.edgeStoreUrl}>
-                Add to Edge <Arrow />
-              </a>
-            )}
-          </div>
-        )}
-        {!stores && <InstallDownload automatic={automatic} />}
+        <p>Free. Private. Ready in a minute.</p>
+        <StoreButtons />
       </header>
-      <section className="manual-install" aria-label="manual install">
-        {stores && (
-          <>
-            <h2>manual install</h2>
-            <InstallDownload automatic={automatic} />
-          </>
-        )}
-        <InstallGuide />
+      <section className="store-steps" aria-label="install from the store">
+        {[
+          [
+            '↗',
+            'add from the store.',
+            'Choose Add to Chrome or Get it for Edge above, then confirm in your browser.',
+          ],
+          [
+            '⌖',
+            'pin the smile.',
+            'Open your browser’s extensions menu (the puzzle piece) and pin StreamLaughs.',
+          ],
+          [
+            '▷',
+            'find your stream.',
+            'Open any Twitch stream or replay. Click the smile, then start.',
+          ],
+          [
+            '♪',
+            'allow the mic.',
+            'In Welcome, allow your microphone and try “say something”. Choose whether to share anonymous reactions.',
+          ],
+        ].map(([icon, title, text], i) => (
+          <article className="install-step" key={title}>
+            <span className="store-step-icon" aria-hidden="true">
+              {icon}
+            </span>
+            <p className="eyebrow">0{i + 1}</p>
+            <h2>{title}</h2>
+            <p>{text}</p>
+          </article>
+        ))}
       </section>
+      <p className="store-auto">Updates install automatically.</p>
+      <ManualInstall />
     </main>
   );
 }

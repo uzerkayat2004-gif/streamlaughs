@@ -2,6 +2,7 @@
 export class DspLaughDetector {
   hits = 0;
   lastPitch = 0;
+  evidence = { at: -Infinity, durationMs: 0, score: 0 };
   private previous = new Float32Array(320);
   private levels: number[] = [];
   private pulses: number[] = [];
@@ -58,8 +59,8 @@ export class DspLaughDetector {
       this.active = true;
     }
     this.pulses = this.pulses.filter((p) => ts - p <= 3000);
-    const recent = this.pulses.slice(-4);
-    if (recent.length < 4 || ts - this.lastHit < 2000) return false;
+    const recent = this.pulses.filter((p) => ts - p <= 1400).slice(-8);
+    if (recent.length < 4 || ts - this.lastPulse > 400) return false;
     const intervals = recent.slice(1).map((p, i) => p - recent[i]!);
     const mean = intervals.reduce((a, b) => a + b, 0) / intervals.length;
     const variation =
@@ -67,15 +68,20 @@ export class DspLaughDetector {
         intervals.reduce((n, x) => n + (x - mean) ** 2, 0) / intervals.length,
       ) / mean;
     if (
-      recent[3]! - recent[0]! >= 500 &&
-      mean >= 1000 / 7 &&
+      recent.at(-1)! - recent[0]! >= 600 &&
+      mean >= 1000 / 8 &&
       mean <= 1000 / 3 &&
       intervals.every((i) => i >= 110 && i <= 440) &&
       variation < 0.4
     ) {
+      this.evidence = {
+        at: ts,
+        durationMs: recent.at(-1)! - recent[0]!,
+        score: Math.max(0, 1 - variation),
+      };
+      if (ts - this.lastHit < 2000) return false;
       this.hits++;
       this.lastHit = ts;
-      this.pulses = [];
       return true;
     }
     return false;
@@ -89,5 +95,6 @@ export class DspLaughDetector {
     this.lastHit = -Infinity;
     this.lastPulse = -Infinity;
     this.lastPitch = 0;
+    this.evidence = { at: -Infinity, durationMs: 0, score: 0 };
   }
 }

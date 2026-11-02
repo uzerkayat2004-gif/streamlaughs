@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import Link from 'next/link';
 import { Brand, LogoMark } from '../components/brand';
+import { StoreButtons } from '../components/store-buttons';
 import { siteUrl } from '../lib/config';
 import './globals.css';
 
@@ -56,9 +57,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <Link href="/try">the demo</Link>
             <Link href="/streamers">for streamers</Link>
             <Link href="/privacy">privacy</Link>
-            <Link className="nav-cta" href="/install?downloaded=1">
-              Download <span>↗</span>
-            </Link>
+            <StoreButtons compact />
           </nav>
         </header>
         <div id="content">{children}</div>
@@ -71,6 +70,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <nav aria-label="footer navigation">
             <Link href="/try">demo</Link>
             <Link href="/streamers">for streamers</Link>
+            <StoreButtons compact />
             <Link href="/install">install help</Link>
             <Link href="/privacy">privacy</Link>
             <a href="mailto:kayatuzair525@gmail.com">contact ↗</a>

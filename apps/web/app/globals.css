@@ -1990,3 +1990,106 @@ tbody th {
     font-size: 110px;
   }
 }
+
+/* Store-first actions share the existing Night Crowd buttons and spacing. */
+.store-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 550px;
+}
+.store-buttons {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.store-actions-compact {
+  display: inline-flex;
+  max-width: 100%;
+}
+.store-actions-compact .store-buttons {
+  gap: 8px;
+}
+.store-actions-compact svg {
+  width: 15px;
+  height: 15px;
+}
+.store-support,
+.store-review {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted, #a8acb5);
+}
+.store-review a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.store-alternative {
+  font-size: 13px;
+}
+.store-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 28px;
+  margin: 50px 0 24px;
+}
+.store-step-icon {
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  border: 1px solid #39413e;
+  border-radius: 20px;
+  background: #1c2420;
+  color: #ffd23f;
+  font-size: 36px;
+  margin-bottom: 24px;
+}
+.store-auto {
+  color: #2ee6c5;
+  margin-bottom: 64px;
+}
+.manual-advanced {
+  border-top: 1px solid #353b35;
+  padding-top: 28px;
+}
+.manual-advanced > summary {
+  cursor: pointer;
+  font-size: 18px;
+  padding: 10px 0;
+}
+.manual-advanced > p {
+  margin: 16px 0;
+  color: #bbc0c7;
+}
+.manual-advanced .install-download {
+  margin: 8px 0 30px;
+}
+@media (max-width: 900px) {
+  .store-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .site-header .store-actions-compact .store-buttons {
+    flex-wrap: nowrap;
+  }
+}
+@media (max-width: 560px) {
+  .store-steps {
+    grid-template-columns: 1fr;
+  }
+  .store-actions-compact .nav-cta {
+    font-size: 11px;
+  }
+}
+
+.store-actions-compact {
+  gap: 4px;
+}
+.store-actions-compact .nav-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}

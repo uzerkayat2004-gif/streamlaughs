@@ -7,7 +7,8 @@
     "build": "node ../../tools/build-web.mjs",
     "start": "node ../../tools/next-local.mjs start --hostname 127.0.0.1",
     "typecheck": "node ../../tools/next-local.mjs typegen && tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "biome lint app components lib next.config.ts"
   },
   "dependencies": {
     "@laughline/shared": "workspace:*",
@@ -24,5 +25,5 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0"
   },
-  "version": "0.8.5"
+  "version": "0.8.6"
 }

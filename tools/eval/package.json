@@ -4,6 +4,6 @@
   "type": "module",
   "scripts": {
     "test": "vitest run",
-    "typecheck": "node --check cli.mjs && node --check browser.mjs && node --check wav.mjs && node --check metrics.mjs && node --check reaction-regression.mjs && node --check stutter-regression.mjs && node --check mic-session-regression.mjs"
+    "typecheck": "node --check cli.mjs && node --check browser.mjs && node --check wav.mjs && node --check metrics.mjs && node --check reaction-regression.mjs && node --check stutter-regression.mjs && node --check mic-session-regression.mjs && node --check accuracy-regression.mjs"
   }
 }

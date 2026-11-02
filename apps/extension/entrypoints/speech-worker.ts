@@ -1,14 +1,23 @@
+import { normalizeReaction } from '@laughline/shared';
 import { AUDIO_DEBUG } from '../src/audio/config';
 import { safeError } from '../src/diagnostics';
+import { speechConfidenceReason } from '../src/inference/accuracy';
 import { INFERENCE_CONFIG } from '../src/inference/config';
 import { installLocalAssetPolicy } from '../src/inference/local-assets';
 import { LocalModels } from '../src/inference/models';
-import { extractWords, redactDebugTranscript } from '../src/inference/rules';
+import {
+  extractWords,
+  hallucinationReason,
+  redactDebugTranscript,
+} from '../src/inference/rules';
+import { SpeechBudget } from '../src/inference/speech-budget';
 import { TaskProbe } from '../src/stutter';
 
 // Slow transcription has its own event loop; it cannot hold microphone frame ACKs.
 export default defineUnlistedScript(() => {
   const tasks = new TaskProbe();
+  const budget = new SpeechBudget();
+  let observedStalls = 0;
   const resources = installLocalAssetPolicy(self.location.origin);
   const models = new LocalModels();
   let ready = false,
@@ -21,14 +30,22 @@ export default defineUnlistedScript(() => {
       tasks: tasks.snapshot(),
       model: models.status.whisper,
       backend: models.backend,
+      budget: budget.diagnostics(),
+      totalWorkMs: budget.workMs,
       resources: AUDIO_DEBUG ? [...resources] : undefined,
     });
   const timer = setInterval(() => {
     tasks.tick();
+    const snapshot = tasks.snapshot();
+    if (snapshot.count > observedStalls) {
+      observedStalls = snapshot.count;
+      budget.backoff();
+    }
     status();
   }, 250);
   self.onmessage = async ({ data }) => {
-    if (data.type === 'preview') {
+    if (data.type === 'backoff') budget.backoff();
+    else if (data.type === 'preview') {
       previewUntil = Math.min(Date.now() + 1200, Number(data.until) || 0);
     } else if (data.type === 'init') {
       try {
@@ -51,17 +68,48 @@ export default defineUnlistedScript(() => {
           throw new Error('local speech model unavailable');
         busy = true;
         const includePreview = previewUntil > Date.now();
-        const start = performance.now();
-        text = await models.words(samples);
+        text = await models.words(samples, false, budget);
         models.status.whisper.error = '';
-        const result = extractWords(text);
+        const confidence = models.lastSpeechConfidence;
+        const rejection =
+          speechConfidenceReason(confidence) || hallucinationReason(text);
+        const extracted = extractWords(text);
+        const result = {
+          ...(rejection
+            ? { phrases: [], hype: false, matched: 0, rejected: 1 }
+            : extracted),
+          ...confidence,
+          rejection:
+            rejection ||
+            (extracted.phrases.length ? '' : 'no standalone approved reaction'),
+        };
+        const rms = Math.sqrt(
+          samples.reduce((n, x) => n + x * x, 0) / Math.max(1, samples.length),
+        );
+        const keptTokens = new Set(
+          result.phrases.flatMap((p) => p.text.split(' ')),
+        );
+        const rejectedWords = includePreview
+          ? (text.match(/[A-Za-z]+(?:'[A-Za-z]+)?/g) ?? [])
+              .filter((w) => !keptTokens.has(normalizeReaction(w)))
+              .map(
+                (w) =>
+                  `${w}: ${result.rejection || (normalizeReaction(w) === 'what' ? 'not standalone' : 'not reaction list')}`,
+              )
+              .join('; ')
+              .slice(0, 300)
+          : '';
         if (!stopped)
           self.postMessage({
             type: 'speech_result',
-            computeMs: performance.now() - start,
+            computeMs: models.lastWordWorkMs,
             id: data.id,
             result,
-            ...(includePreview ? { previewText: text.slice(0, 1000) } : {}),
+            ...(includePreview
+              ? {
+                  previewText: `${result.phrases.length ? 'kept' : 'rejected'} · ${result.rejection || 'approved reaction'} · logp ${confidence.avgLogprob?.toFixed(3) ?? 'unavailable'} · no-speech ${confidence.noSpeechProbability?.toFixed(3) ?? 'unavailable'} · segment RMS ${rms.toFixed(4)} · ${text.slice(0, 400)} · rejected words: ${rejectedWords}`,
+                }
+              : {}),
             ...(AUDIO_DEBUG
               ? { debugTranscript: redactDebugTranscript(text) }
               : {}),

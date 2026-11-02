@@ -1,10 +1,11 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import {
+  bluetoothInput,
   MIC_DEVICE_KEY,
   openSelectedMicrophone,
   verifyVisibleMicrophone,
-  bluetoothInput,
 } from './microphone';
+
 afterEach(() => vi.unstubAllGlobals());
 function setup(selected = 'default', present = true) {
   const stop = vi.fn(),
@@ -97,4 +98,43 @@ it('tries the selected input when permission hides enumerated device identities'
   expect(x.getUserMedia.mock.calls[0]![0].audio).toMatchObject({
     deviceId: { exact: 'usb-mic' },
   });
+});
+
+it('resolves the Windows default/communications alias to a physical input without forcing sample rate', async () => {
+  const x = setup('communications');
+  Object.assign(navigator.mediaDevices, {
+    enumerateDevices: async () => [
+      {
+        kind: 'audioinput',
+        deviceId: 'default',
+        groupId: 'laptop',
+        label: 'Default - laptop mic',
+      },
+      {
+        kind: 'audioinput',
+        deviceId: 'communications',
+        groupId: 'bt',
+        label: 'Communications headset',
+      },
+      {
+        kind: 'audioinput',
+        deviceId: 'physical-laptop',
+        groupId: 'laptop',
+        label: 'Laptop mic',
+      },
+      {
+        kind: 'audioinput',
+        deviceId: 'physical-bt',
+        groupId: 'bt',
+        label: 'Bluetooth headset',
+      },
+    ],
+  });
+  await openSelectedMicrophone();
+  expect(x.getUserMedia.mock.calls[0]![0].audio).toMatchObject({
+    deviceId: { exact: 'physical-laptop' },
+  });
+  expect(x.getUserMedia.mock.calls[0]![0].audio).not.toHaveProperty(
+    'sampleRate',
+  );
 });

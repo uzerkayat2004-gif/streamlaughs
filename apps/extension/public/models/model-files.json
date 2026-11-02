@@ -47,8 +47,10 @@
       "path": "whisper-tiny.en/config.json",
       "url": "https://huggingface.co/onnx-community/whisper-tiny.en/resolve/2575352d61be1bf7225cf8f8b268a4678025fc58/config.json",
       "bytes": 2197,
-      "sha256": "251ea843b5901a99efa58c0b99b8052c6019aa3e7d2baf46693a1128ff606233",
-      "license": "Apache-2.0"
+      "sha256": "08cb98dd49e61c5b4a4a8fa79d0d32e5b0ed7af535f3dfaf2607c1bb17900b43",
+      "license": "Apache-2.0",
+      "sourceSha256": "251ea843b5901a99efa58c0b99b8052c6019aa3e7d2baf46693a1128ff606233",
+      "transform": "whisper-20s-v1"
     },
     {
       "path": "whisper-tiny.en/generation_config.json",
@@ -61,8 +63,10 @@
       "path": "whisper-tiny.en/preprocessor_config.json",
       "url": "https://huggingface.co/onnx-community/whisper-tiny.en/resolve/2575352d61be1bf7225cf8f8b268a4678025fc58/preprocessor_config.json",
       "bytes": 339,
-      "sha256": "a6a76d28c93edb273669eb9e0b0636a2bddbb1272c3261e47b7ca6dfdbac1b8d",
-      "license": "Apache-2.0"
+      "sha256": "0b76ab6b960c03fcb87ab7649d07bd04ddcd7c7dea9d4615d6e468f01e6ccf75",
+      "license": "Apache-2.0",
+      "sourceSha256": "a6a76d28c93edb273669eb9e0b0636a2bddbb1272c3261e47b7ca6dfdbac1b8d",
+      "transform": "whisper-20s-v1"
     },
     {
       "path": "whisper-tiny.en/tokenizer.json",
@@ -88,9 +92,11 @@
     {
       "path": "whisper-tiny.en/onnx/encoder_model_quantized.onnx",
       "url": "https://huggingface.co/onnx-community/whisper-tiny.en/resolve/2575352d61be1bf7225cf8f8b268a4678025fc58/onnx/encoder_model_quantized.onnx",
-      "bytes": 10124993,
-      "sha256": "e93ec822f16a8fd264e7de972ad17d615ea7334b75a52d54c50c2e18dd503a25",
-      "license": "Apache-2.0"
+      "bytes": 9356991,
+      "sha256": "99bb3ab49cc61aca983b36dc9417381bb0c8d859f7267687e47502639607c0d0",
+      "license": "Apache-2.0",
+      "sourceSha256": "e93ec822f16a8fd264e7de972ad17d615ea7334b75a52d54c50c2e18dd503a25",
+      "transform": "whisper-20s-v1"
     },
     {
       "path": "whisper-tiny.en/onnx/decoder_model_merged_quantized.onnx",

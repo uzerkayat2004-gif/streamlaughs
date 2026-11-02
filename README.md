@@ -3,7 +3,7 @@
 <img src="docs/assets/banner.png" alt="StreamLaughs: see who's laughing with you" />
 
 A free Chrome and Edge extension that lets Twitch viewers feel the room laugh together.
-Your mic is processed **on your own computer**. Only anonymous counts ever leave it.
+Your mic is processed **on your own computer**. Only optional anonymous counts and approved words leave it.
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-install-FFD23F?style=for-the-badge&logo=googlechrome&logoColor=14141A&labelColor=FFD23F)](https://chromewebstore.google.com/detail/streamlaughs/lofdkbfimkjjfglhhnpkiljocbikmkej)
 [![Edge Add-ons](https://img.shields.io/badge/Edge%20Add--ons-install-2EE6C5?style=for-the-badge&logo=microsoftedge&logoColor=14141A&labelColor=2EE6C5)](https://microsoftedge.microsoft.com/addons/detail/fkdfjgnhifofdjpbenlkhpfhmmhglmkb)
@@ -20,6 +20,8 @@ Built for the **Codex × TwitchCon Hackathon** · made with OpenAI Codex
 </div>
 
 ---
+
+**v0.8.6:** more selective local laugh/word detection, quiet calibration, sensitivity and not-me undo, with native Twitch playback. [Accuracy proof](docs/accuracy-v086.md) · [five-minute performance proof](docs/audio-stutter-v086.md).
 
 ## The idea
 
@@ -69,21 +71,29 @@ No uploads of your voice. No account. No chat spam. Just the feeling of laughing
 
 <p align="center"><img src="docs/assets/stop-sheet.png" width="420" alt="Stream saved sheet with see recap and later buttons" /><br /><sub>Stop a session and it's saved instantly: see the recap now, or later.</sub></p>
 
-## Try it
+## Install from your browser’s store
 
-**Easiest:** install from the [Chrome Web Store](https://chromewebstore.google.com/detail/streamlaughs/lofdkbfimkjjfglhhnpkiljocbikmkej) or [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/fkdfjgnhifofdjpbenlkhpfhmmhglmkb).
+[Add to Chrome](https://chromewebstore.google.com/detail/lofdkbfimkjjfglhhnpkiljocbikmkej) · [Get it for Edge](https://microsoftedge.microsoft.com/addons/detail/fkdfjgnhifofdjpbenlkhpfhmmhglmkb) · [Setup help](https://streamlaughs.vercel.app/install)
 
-> Store reviews take time, so the store copy can be a few versions behind this repository. To test the **latest build**, use the ZIP below.
+1. Add StreamLaughs from the store and pin the smile in your extensions menu.
+2. Open any Twitch stream or replay and press start. In Welcome, allow the mic, try “say something” and choose whether to share anonymous reactions.
+3. Watch together. Updates install automatically. Firefox, Safari and mobile users need desktop Chrome or Edge; the website offers links to open later.
 
-**Latest build (ZIP):**
+Both listing URLs and approved store versions live in product.config.json. Store approvals are initially 0.6.4, independently of the latest manual build. The website shows an in-review note until each approval is updated.
 
-1. Download it from [streamlaughs.vercel.app/install](https://streamlaughs.vercel.app/install) and unzip it into a folder you'll keep.
-2. Open `chrome://extensions` (or `edge://extensions`), turn on **Developer mode**, click **Load unpacked**, and pick the folder that contains `manifest.json`.
-3. Pin the smiley, finish the short welcome (allow the mic), open any Twitch stream and press **start**. Shortcut: **Alt+Shift+L**.
+Moving from a ZIP: gear → save my history → Switch. Add the store copy, open its gear → load history, choose the local JSON and check your recaps before removing the manual copy. Export stops/saves recording first. Imports merge by session ID without overwriting existing history or settings. Nothing is uploaded. Keep the JSON private: it includes watched channels and dates. Different extension IDs have separate storage. [Migration details and older-version limits](docs/store-installs.md).
 
-Use only one copy at a time: turn off the store copy if you load the ZIP.
+<details>
+<summary>Advanced: manual install (development/testers)</summary>
 
-**No mic?** Choose "watch without mic" to see the fans meter without sending anything. **Want to check your mic?** Open the popup and tap **test my mic**.
+[Manual setup](https://streamlaughs.vercel.app/install#manual) · [Direct ZIP](https://streamlaughs.vercel.app/download/zip). Unzip to a permanent folder. Open chrome://extensions (Edge: edge://extensions, Brave: brave://extensions), enable Developer mode, Load unpacked and choose the folder holding manifest.json.
+
+ZIP installs don’t update automatically. Replace all files in the same installed folder, click Reload, then refresh Twitch. Never Remove to update: that deletes local history. The fixed ZIP ID stays fkocldgggcmhihelohiicoakcfomhepg. Each main deployment rebuilds the ZIP. /download remains a store-first landing page for old links and QR codes; /version.json.downloadUrl points to the actual ZIP.
+
+</details>
+
+Twitch playback stays native by default. tabCapture remains used by the optional local speaker-reference stutter lab. offscreen owns local mic processing. No new permissions: getSelf needs no management permission, and the obsolete downloads permission/API is removed. History saves through a local Blob link. [Store packages and owner-only submission checklist](docs/store-listing.md).
+
 
 ## How it works
 
@@ -107,7 +117,7 @@ flowchart LR
 
 - **Audio never leaves your computer.** It is analysed in small RAM buffers inside an offscreen document and local workers. Nothing is recorded or saved. Full transcripts are thrown away; only words on a short reaction allowlist are kept.
 - **All three models ship inside the extension** (Silero VAD, YAMNet, Whisper tiny.en), running on ONNX Runtime Web and MediaPipe with WebGPU or WASM. No model is downloaded at runtime.
-- **Twitch keeps playing natively.** The extension does not capture or re-route the stream's audio.
+- **Twitch keeps playing natively.** The extension does not capture or re-route the stream's audio by default; tabCapture remains available only as an opt-in local troubleshooting reference.
 - **The fans meter is anonymous.** Sharing is off until you turn it on. The Worker only accepts counts and allowlisted words, and only shows a number or word once at least three anonymous contributors sent it.
 - **Streamers sign in with Twitch** (identity only, no extra scopes). The dashboard only reads data for the channel you own, and only aggregate minutes are kept, for 30 days.
 

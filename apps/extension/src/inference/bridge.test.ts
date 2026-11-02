@@ -444,3 +444,37 @@ it('keeps an explicitly requested transcript in expiring RAM only, outside all p
   expect(bridge.speechPreview()).toBe('');
   bridge.close();
 });
+
+it('drops a second speech request instead of queueing it and backoff never disables laughter', () => {
+  vi.stubGlobal('Worker', WorkerFake);
+  vi.stubGlobal('chrome', {
+    runtime: { getURL: (p: string) => `chrome-extension://test${p}` },
+  });
+  const bridge = new InferenceBridge(new AudioFrameHub(), vi.fn());
+  bridge.sync({ ...report(), hasTab: false });
+  const [rt, speech, sound] = WorkerFake.instances;
+  speech!.deliver({
+    type: 'speech_status',
+    model: { phase: 'ready', error: '', ms: 1 },
+  });
+  rt!.deliver({
+    type: 'speech_request',
+    id: 1,
+    samples: new Float32Array(16000),
+  });
+  const second = new Float32Array(16000).fill(0.1);
+  rt!.deliver({ type: 'speech_request', id: 2, samples: second });
+  expect(second.every((x) => x === 0)).toBe(true);
+  expect(
+    speech!.postMessage.mock.calls.filter(([v]) => v.type === 'speech'),
+  ).toHaveLength(1);
+  expect(rt!.postMessage).toHaveBeenCalledWith({
+    type: 'speech_result',
+    id: 2,
+    error: 'speech busy; segment dropped',
+  });
+  bridge.backoffSpeech();
+  expect(speech!.postMessage).toHaveBeenCalledWith({ type: 'backoff' });
+  expect(sound!.terminate).not.toHaveBeenCalled();
+  bridge.close();
+});

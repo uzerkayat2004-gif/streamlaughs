@@ -18,7 +18,8 @@
     "release:preview": "node tools/release/offline-preview.mjs",
     "test:reactions": "node tools/eval/reaction-regression.mjs",
     "test:stutter": "node tools/eval/stutter-regression.mjs",
-    "test:mic-session": "node tools/eval/mic-session-regression.mjs"
+    "test:mic-session": "node tools/eval/mic-session-regression.mjs",
+    "test:accuracy": "node tools/eval/accuracy-regression.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.0",
@@ -27,5 +28,5 @@
     "typescript": "^5.9.3",
     "vitest": "^4.0.0"
   },
-  "version": "0.8.5"
+  "version": "0.8.6"
 }

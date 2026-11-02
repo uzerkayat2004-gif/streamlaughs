@@ -1,0 +1,18 @@
+# StreamLaughs accuracy fixtures (test only)
+
+These are public/licensed recordings and generated test signals, **not captured user audio**. They never enter extension/website ZIPs. Ground-truth text describes source recordings; production transcripts remain confined to the temporary debug preview.
+
+- `normal-human-source.wav`: 60 seconds of recorded, read English speech, assembled/resampled from LibriSpeech dev-clean speaker 1272, chapter 128104, utterances 0000–0007. Vassil Panayotov, Guoguo Chen, Daniel Povey and Sanjeev Khudanpur, **LibriSpeech**, [OpenSLR SLR12](https://www.openslr.org/12/), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The small source subset was obtained from [Hugging Face's internal-testing mirror](https://huggingface.co/datasets/hf-internal-testing/librispeech_asr_dummy). Changes: concatenate, resample to mono 16 kHz, normalize RMS, trim/repeat to 60 s. `speech-transcripts.json` preserves utterance IDs/ground truth. This is one recorded reader, not the owner's voice or a representative accent dataset.
+- `laugh-source.wav`: ezwa, [Laughter.ogg](https://commons.wikimedia.org/wiki/File:Laughter.ogg), worldwide public domain. Three seconds selected from seconds 4–7 and level-normalized. The existing laugh/word regression uses the full recording independently.
+- `cough-source.wav`: ezwa, [Cough 2.ogg](https://commons.wikimedia.org/wiki/File:Cough_2.ogg), worldwide public domain; resampled and normalized.
+- `sneeze-source.wav`: Neo139, [Sneeze.ogg](https://commons.wikimedia.org/wiki/File:Sneeze.ogg), [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/); resampled and normalized.
+- `bro-source.wav`, `no-way-source.wav`: locally generated Windows SAPI utterances of those exact words. They are synthetic positive controls, not claimed human recordings.
+- Keyboard typing, mouse clicks, breathing and chair creak are seeded, generated approximations. The cough and sneeze are actual recordings. No model output is used as an audio fixture.
+
+All montages have an 8-second quiet/calibration prelude and a 12-second tail. Bleed montages instead play the quiet speaker reference throughout the prelude. `normal-60s` and `bleed-60s` have 60 seconds of labelled body audio; `room-noises-30s` has 30 seconds. Positive laugh montages insert exactly three separated, real recorded laugh episodes. Their locations are body seconds 9, 27 and 45 (file seconds 17, 35 and 53). `reaction-words` contains bro at body seconds 3 and 11, and no way at 19.
+
+The bleed transform band-passes speech/laughter at 500–3000 Hz, adds delayed room reflections and lowers RMS to 0.0065. Near laughter is substantially louder. This is a controlled proxy, not proof of physical distance, all speaker placements, real Windows drivers or every microphone. The corrected primary regression is ordinary speech versus laughter.
+
+`cases.json` contains exact expected counts and SHA-256 receipts. Rebuild montages with `python tools/eval/generate-accuracy-fixtures.py` (NumPy/SciPy), then run the targeted fake-microphone fixture against an extracted production ZIP. No downloads or Python audio dependencies are needed for ordinary builds or CI; the fixture WAVs are checked in.
+
+The existing laugh/lets-go recording is also preserved intact inside existing-laugh-word.wav, with eight seconds of leading silence and twelve seconds of trailing silence. The original PCM bytes are unchanged; cases.json records both file hashes. The prelude models the required quiet calibration instead of starting the recording while already laughing. The old unpadded clip calibrated a voiced segment as room noise once the floor stopped decaying; it is retained as source, not silently substituted.

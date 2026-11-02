@@ -3,16 +3,16 @@ import {
   type AudioReport,
   emptyAudioMetrics,
 } from '@laughline/shared';
-import { openSelectedMicrophone } from './microphone';
 import { safeError } from '../diagnostics';
-import { AUDIO_STATUS_MS, MICROPHONE_CONSTRAINTS } from './config';
-import { AudioFrameHub, type AudioSource } from './ring-buffer';
 import {
   bluetoothHint,
   defaultLab,
   type LabSwitches,
   PlaybackWatchdog,
 } from '../stutter';
+import { AUDIO_STATUS_MS, MICROPHONE_CONSTRAINTS } from './config';
+import { openSelectedMicrophone } from './microphone';
+import { AudioFrameHub, type AudioSource } from './ring-buffer';
 
 type SourceStats = {
   rms: number;
@@ -66,7 +66,6 @@ export class AudioEngine {
     {
       source: MediaStreamAudioSourceNode;
       worklet: AudioWorkletNode;
-      sink: GainNode;
     }
   >();
   private stats = { mic: emptyStats(), tab: emptyStats() };
@@ -151,6 +150,10 @@ export class AudioEngine {
       phase: this.phase,
       context: this.context?.state ?? 'closed',
       playbackContext: this.playbackContext?.state ?? 'closed',
+      speakerConnections: this.playbackContext && this.tabPlayback ? 1 : 0,
+      tabCaptureTracks:
+        this.tab?.getAudioTracks().filter((t) => t.readyState === 'live')
+          .length ?? 0,
       inputSampleRate: this.context?.sampleRate ?? 0,
       sampleRate: 16000 as const,
       frameSamples: 320 as const,
@@ -374,14 +377,13 @@ export class AudioEngine {
     const context = this.context!;
     const node = context.createMediaStreamSource(stream);
     const worklet = new AudioWorkletNode(context, 'laughline-frames', {
+      numberOfInputs: 1,
+      numberOfOutputs: 0,
       processorOptions: { epochMs: Date.now() - context.currentTime * 1000 },
     });
-    const sink = context.createGain();
-    sink.gain.value = 0;
+    // A zero-output worklet is an active capture sink. It never opens a speaker route.
     node.connect(worklet);
-    worklet.connect(sink);
-    sink.connect(context.destination);
-    this.nodes.set(source, { source: node, worklet, sink });
+    this.nodes.set(source, { source: node, worklet });
     worklet.onprocessorerror = () => {
       if (generation !== this.generation) return;
       if (source === 'mic') this.loseMic();
@@ -469,7 +471,6 @@ export class AudioEngine {
       graph.worklet.port.close();
       graph.source.disconnect();
       graph.worklet.disconnect();
-      graph.sink.disconnect();
       this.nodes.delete(source);
     }
   }

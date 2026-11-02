@@ -10,23 +10,23 @@ import {
   InferenceReportSchema,
   initialCaptureState,
   initialSnapshot,
+  type MySession,
   MySessionSchema,
   PersonalBatchSchema,
+  type PersonalEvent,
   PRODUCT,
   parseChannel,
-  replayPage,
-  ReplaySchema,
-  type Snapshot,
-  type MySession,
-  type PersonalEvent,
   type Replay,
+  ReplaySchema,
+  replayPage,
+  type Snapshot,
   SnapshotSchema,
   STATE_KEY,
   visibleWords,
+  withLaughs,
 } from '@laughline/shared';
-import { clearToolbar } from '../src/toolbar';
-import { selectedMicrophone } from '../src/audio/microphone';
 import { AUDIO_DEBUG, MIC_CONSENT_KEY } from '../src/audio/config';
+import { selectedMicrophone } from '../src/audio/microphone';
 import {
   audioOwnerError,
   closeAudioOwner,
@@ -37,20 +37,19 @@ import {
 import { TabEndedSchema } from '../src/audio/protocol';
 import { captureTransition } from '../src/audio/state-machine';
 import { type CrowdSource, makeCrowdSource } from '../src/crowd-source';
-import { resolveWatchContext, twitchPage } from '../src/watch-context';
 import { db, deleteSavedStreams } from '../src/db';
-import { SITE_URL, UPDATE_KEY } from '../src/site';
-import {
-  isZipInstall,
-  prepareUpdateReload,
-  UPDATE_ATTEMPT_KEY,
-  UpdateAttemptSchema,
-} from '../src/update-flow';
-import { notifyUpdatedTabs } from '../src/updated-note';
-import { checkVersion } from '../src/version-check';
+import { getInstallKind } from '../src/install-type';
 import { LabSwitchesSchema } from '../src/stutter';
+import { clearToolbar } from '../src/toolbar';
+import { notifyUpdatedTabs } from '../src/updated-note';
+import { resolveWatchContext, twitchPage } from '../src/watch-context';
 
 export default defineBackground(() => {
+  let undoLaugh: {
+    sessionId: string;
+    event: import('@laughline/shared').MySession['laughEvents'][number];
+    until: number;
+  } | null = null;
   let state: Snapshot = initialSnapshot();
   void clearToolbar();
   chrome.runtime.onStartup?.addListener(() => void clearToolbar());
@@ -84,26 +83,37 @@ export default defineBackground(() => {
   let sourceSessionId: string | null = null;
   let saveTimer: ReturnType<typeof setInterval> | undefined;
   let queue = Promise.resolve();
-  let updateCheck: Promise<void> | null = null;
-  const checkUpdate = () => {
-    if (!isZipInstall(chrome.runtime.id) || !SITE_URL || updateCheck)
-      return updateCheck;
-    updateCheck = checkVersion(
-      SITE_URL,
-      chrome.runtime.getManifest().version,
-      async () => (await chrome.storage.local.get(UPDATE_KEY))[UPDATE_KEY],
-      async (value) => {
-        await chrome.storage.local.set({ [UPDATE_KEY]: value });
-      },
-    )
-      .then(() => {})
-      .catch(() => {})
-      .finally(() => {
-        updateCheck = null;
-      });
-    return updateCheck;
-  };
-  checkUpdate();
+  const install = getInstallKind;
+  async function captureAllowed(tabId?: number) {
+    const kind = await install();
+    const tabs = await chrome.tabs.query({
+      url: ['https://*.twitch.tv/*', 'https://twitch.tv/*'],
+    });
+    const checks = await Promise.all(
+      tabs
+        .filter((t) => t.id !== undefined)
+        .map(async (t) => {
+          try {
+            return await chrome.tabs.sendMessage(
+              t.id!,
+              { type: 'INSTALL_GUARD', claim: t.id === tabId },
+              { frameId: 0 },
+            );
+          } catch {
+            return null;
+          }
+        }),
+    );
+    if (
+      checks.some(
+        (c) =>
+          c?.allowed === false || (kind === 'development' && c?.storePresent),
+      )
+    ) {
+      await stop();
+      throw new Error('use the store version · stop this manual copy');
+    }
+  }
   const serialize = <T>(task: () => Promise<T>): Promise<T> => {
     const pending = queue.then(task);
     queue = pending.then(
@@ -404,6 +414,7 @@ export default defineBackground(() => {
     const channel = context.channel || (replay ? manualChannel : undefined);
     if (!channel || tab?.id === undefined)
       throw new Error('open any Twitch stream');
+    await captureAllowed(tab.id);
     if (
       state.session &&
       (state.session.tabId !== tab.id ||
@@ -496,6 +507,7 @@ export default defineBackground(() => {
           micDeviceId: await selectedMicrophone(),
           sessionId: state.session!.id,
           nativePlayback: true,
+          sensitivity: state.settings.sensitivity ?? 'normal',
           paused: state.status === 'paused',
         });
         if (!owner) throw new Error('capture');
@@ -559,6 +571,34 @@ export default defineBackground(() => {
       case 'STOP':
         await stop();
         break;
+      case 'UNDO_LAUGH': {
+        const s = state.session,
+          event = s?.laughEvents.at(-1);
+        if (!s || !event) break;
+        undoLaugh = { sessionId: s.id, event, until: Date.now() + 5000 };
+        state.session = withLaughs(s, s.laughEvents.slice(0, -1));
+        await db.sessions.put(state.session);
+        await publish();
+        break;
+      }
+      case 'RESTORE_LAUGH': {
+        const u = undoLaugh;
+        undoLaugh = null;
+        if (
+          !u ||
+          !state.session ||
+          u.sessionId !== state.session.id ||
+          Date.now() > u.until
+        )
+          break;
+        state.session = withLaughs(
+          state.session,
+          [...state.session.laughEvents, u.event].sort((a, b) => a.at - b.at),
+        );
+        await db.sessions.put(state.session);
+        await publish();
+        break;
+      }
       case 'PAUSE':
         if (
           state.session ||
@@ -584,6 +624,7 @@ export default defineBackground(() => {
         }
         break;
       case 'RETRY_MIC':
+        await captureAllowed(state.session?.tabId);
         if (state.session && state.settings.listen) {
           if (!(await hasAudioOwner())) {
             activeOwnerId = null;
@@ -627,6 +668,12 @@ export default defineBackground(() => {
       case 'SETTINGS': {
         const wasListening = state.settings.listen;
         state.settings = { ...state.settings, ...message.settings };
+        if (message.settings.sensitivity && (await hasAudioOwner()))
+          await ownerCommand({
+            target: 'offscreen',
+            type: 'AUDIO_SENSITIVITY',
+            value: message.settings.sensitivity,
+          });
         if (!state.session?.replay)
           source.setSharing?.(
             state.settings.share && state.status === 'recording',
@@ -688,6 +735,7 @@ export default defineBackground(() => {
         break;
       }
       case 'MIC_TEST_START': {
+        await captureAllowed();
         if (state.session) break;
         if (!(await chrome.storage.local.get(MIC_CONSENT_KEY))[MIC_CONSENT_KEY])
           throw new Error('allow the microphone first');
@@ -722,6 +770,7 @@ export default defineBackground(() => {
         break;
       }
       case 'DEBUG_MIC_START': {
+        await captureAllowed();
         if (!AUDIO_DEBUG || state.session)
           throw new Error(
             'Stop the live session before running a microphone diagnostic.',
@@ -789,65 +838,47 @@ export default defineBackground(() => {
   }
   chrome.runtime.onMessage.addListener((message: unknown, sender, reply) => {
     if (sender.id !== chrome.runtime.id) return;
-    const updateType = (message as { type?: string } | null)?.type;
+    const type = (message as { type?: string } | null)?.type;
+    if (type === 'INSTALL_IDENTITY') {
+      void install().then((kind) => reply({ ok: true, installType: kind }));
+      return true;
+    }
     if (
-      ['UPDATE_CHECK', 'OPEN_UPDATE', 'FINISH_UPDATE'].includes(
-        updateType ?? '',
-      )
+      type === 'INSTALL_SUPERSEDED' &&
+      sender.tab &&
+      /^https:\/\/(?:www\.|m\.|clips\.)?twitch\.tv\//.test(sender.url ?? '')
     ) {
-      const fromPopup = sender.url === chrome.runtime.getURL('/popup.html');
-      const fromUpdate =
-        sender.url?.split('?')[0] === chrome.runtime.getURL('/update.html');
-      if (
-        (!fromPopup && !fromUpdate) ||
-        (updateType === 'FINISH_UPDATE' && !fromUpdate)
-      ) {
-        reply({
-          ok: false,
-          error: 'open the update page from the toolbar icon',
-        });
-        return;
-      }
-      if (!isZipInstall(chrome.runtime.id) && updateType !== 'UPDATE_CHECK') {
-        reply({ ok: false, error: 'updates come from your browser’s store' });
-        return;
-      }
-      // Public metadata latency must never queue ahead of pause/stop commands.
-      if (updateType === 'UPDATE_CHECK') {
-        void Promise.resolve(checkUpdate()).then(() => reply({ ok: true }));
-        return true;
-      }
       void serialize(async () => {
         await ready;
-        if (updateType === 'OPEN_UPDATE') {
-          await chrome.tabs.create({
-            url: chrome.runtime.getURL('/update.html?download=1'),
-          });
-        } else {
-          const attempt = UpdateAttemptSchema.parse(
-            (await chrome.storage.local.get(UPDATE_ATTEMPT_KEY))[
-              UPDATE_ATTEMPT_KEY
-            ],
-          );
-          await prepareUpdateReload(
-            stop,
-            async () => {
-              await chrome.storage.local.set({
-                [UPDATE_ATTEMPT_KEY]: {
-                  ...attempt,
-                  phase: 'reloading',
-                  tabId: sender.tab?.id,
-                },
-              });
-            },
-            () => chrome.runtime.reload(),
-          );
-        }
+        await stop();
       }).then(
         () => reply({ ok: true }),
-        () =>
-          reply({ ok: false, error: 'update could not finish · try again' }),
+        () => reply({ ok: false }),
       );
+      return true;
+    }
+    // Old internal update-page links open the local migration guide, never a ZIP downloader.
+    if (type === 'UPDATE_CHECK') {
+      reply({ ok: true });
+      return;
+    }
+    if (type === 'OPEN_UPDATE' || type === 'FINISH_UPDATE') {
+      if (
+        ![
+          chrome.runtime.getURL('/popup.html'),
+          chrome.runtime.getURL('/update.html'),
+        ].includes(sender.url?.split('?')[0] ?? '')
+      ) {
+        reply({ ok: false });
+        return;
+      }
+      void install().then(async (kind) => {
+        if (kind !== 'development') return reply({ ok: false });
+        await chrome.tabs.create({
+          url: chrome.runtime.getURL('/update.html'),
+        });
+        reply({ ok: true });
+      });
       return true;
     }
     if ((message as { type?: string })?.type === 'REPLAY_POSITION') {
@@ -1140,7 +1171,6 @@ export default defineBackground(() => {
     }
     void serialize(async () => {
       await ready;
-      checkUpdate();
       return handle(parsed.data);
     }).then(
       (snapshot) => reply({ ok: true, state: snapshot }),
@@ -1208,28 +1238,5 @@ export default defineBackground(() => {
       ).catch(() => {});
     if (reason === 'install')
       void chrome.tabs.create({ url: chrome.runtime.getURL('/welcome.html') });
-    if (reason === 'update' && isZipInstall(chrome.runtime.id))
-      void (async () => {
-        const attempt = UpdateAttemptSchema.safeParse(
-          (await chrome.storage.local.get(UPDATE_ATTEMPT_KEY))[
-            UPDATE_ATTEMPT_KEY
-          ],
-        );
-        if (!attempt.success || attempt.data.phase !== 'reloading') return;
-        await chrome.storage.local.set({
-          [UPDATE_ATTEMPT_KEY]: { ...attempt.data, phase: 'result' },
-        });
-        const url = chrome.runtime.getURL('/update.html?result=1');
-        const tab =
-          attempt.data.tabId === undefined
-            ? null
-            : await chrome.tabs.get(attempt.data.tabId).catch(() => null);
-        if (
-          tab?.id !== undefined &&
-          tab.url?.startsWith(chrome.runtime.getURL('/update.html'))
-        )
-          await chrome.tabs.update(tab.id, { url, active: true });
-        else await chrome.tabs.create({ url });
-      })();
   });
 });

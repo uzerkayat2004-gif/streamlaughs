@@ -89,7 +89,6 @@ it('rejects leaked controls/private files and wrong versions in a built release'
         'tabs',
         'tabCapture',
         'offscreen',
-        'downloads',
         'scripting',
       ],
       host_permissions: [

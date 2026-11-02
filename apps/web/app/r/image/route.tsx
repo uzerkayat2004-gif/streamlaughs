@@ -38,7 +38,7 @@ export async function GET(request: Request) {
           }}
         >
           <span>{PRODUCT.wordmark}</span>
-          <svg width="175" height="14" viewBox="0 0 175 14">
+          <svg width="175" height="14" viewBox="0 0 175 14" aria-hidden="true">
             <path
               d="M3 2Q87 23 172 2"
               fill="none"

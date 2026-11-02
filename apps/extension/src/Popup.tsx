@@ -1,74 +1,41 @@
 import {
   type Command,
+  cleanChannel,
   type MySession,
   PRODUCT,
-  cleanChannel,
   replayPage,
 } from '@laughline/shared';
 import { ArrowRight, Pause, Play, Settings } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useStore } from 'zustand';
+import { AppIcon } from './AppIcon';
 import { command, connectSurface, surface } from './bridge';
 import { Backdrop, crowdLabel, Mark, Sheet, Timer, Toggle } from './components';
+import { db } from './db';
+import { HistoryTransfer } from './HistoryTransfer';
+import { StreamerAvatar } from './HistoryView';
+import type { StreamerProfile } from './history';
+import {
+  getInstallKind,
+  type InstallKind,
+  installPresentation,
+} from './install-type';
 import { MicDevicePicker } from './MicDevicePicker';
 import { MicTest } from './MicTest';
-import { AppIcon } from './AppIcon';
-import { stopWithPreview } from './stop-preview';
 import { StopSaved } from './StopSaved';
-import { StreamerAvatar } from './HistoryView';
-import { db } from './db';
-import type { StreamerProfile } from './history';
-import { resolveWatchContext } from './watch-context';
-import { SITE_URL, UPDATE_KEY } from './site';
+import { SITE_URL } from './site';
+import { stopWithPreview } from './stop-preview';
 import { audioNotice, friendlyError } from './ui-status';
-import {
-  isZipInstall,
-  UPDATE_ATTEMPT_KEY,
-  UPDATE_LATER_KEY,
-  UpdateAttemptSchema,
-  updateResult,
-} from './update-flow';
-import { type UpdateStatus, UpdateStatusSchema } from './version-check';
+import { resolveWatchContext } from './watch-context';
 
 export function Popup() {
   const [micTestOpen, setMicTestOpen] = useState(false);
   const { snapshot, ready } = useStore(surface.store);
-  const [update, setUpdate] = useState<UpdateStatus>();
-  const [later, setLater] = useState(false);
-  const [updateToast, setUpdateToast] = useState('');
+  const [install, setInstall] = useState<InstallKind>('other');
   useEffect(() => {
-    if (!isZipInstall(chrome.runtime.id)) return;
-    const accept = (value: unknown) => {
-      const parsed = UpdateStatusSchema.safeParse(value);
-      setUpdate(parsed.success ? parsed.data : undefined);
-    };
-    void chrome.storage.session
-      .get(UPDATE_LATER_KEY)
-      .then((result) => setLater(result[UPDATE_LATER_KEY] === true));
-    void chrome.storage.local.get(UPDATE_ATTEMPT_KEY).then((result) => {
-      const attempt = UpdateAttemptSchema.safeParse(result[UPDATE_ATTEMPT_KEY]);
-      if (attempt.success && attempt.data.phase === 'result')
-        setUpdateToast(
-          updateResult(
-            chrome.runtime.getManifest().version,
-            attempt.data.version,
-          ),
-        );
-    });
-    void chrome.storage.local
-      .get(UPDATE_KEY)
-      .then((result) => accept(result[UPDATE_KEY]));
-    void chrome.runtime.sendMessage({ type: 'UPDATE_CHECK' }).catch(() => {});
-    const changed = (
-      changes: Record<string, chrome.storage.StorageChange>,
-      area: string,
-    ) => {
-      if (area === 'local' && changes[UPDATE_KEY])
-        accept(changes[UPDATE_KEY].newValue);
-    };
-    chrome.storage.onChanged.addListener(changed);
-    return () => chrome.storage.onChanged.removeListener(changed);
+    void getInstallKind().then(setInstall);
   }, []);
+  const manual = installPresentation(install).switchBanner;
   const [replay, setReplay] = useState(false),
     [typedChannel, setTypedChannel] = useState('');
   const [contextLoading, setContextLoading] = useState(true);
@@ -136,19 +103,8 @@ export function Popup() {
   const session = snapshot.session,
     activeChannel = session?.channel ?? channel,
     notice = audioNotice(snapshot);
-  const updateAvailable =
-    isZipInstall(chrome.runtime.id) && !!SITE_URL && update?.available === true;
-  async function openUpdate() {
-    setBusy(true);
-    setError('');
-    try {
-      const result = await chrome.runtime.sendMessage({ type: 'OPEN_UPDATE' });
-      if (!result?.ok) throw new Error('update unavailable · try again');
-    } catch {
-      setError('update unavailable · try again');
-    } finally {
-      setBusy(false);
-    }
+  async function openMigration() {
+    await chrome.tabs.create({ url: chrome.runtime.getURL('/update.html') });
   }
   const [profile, setProfile] = useState<StreamerProfile>();
   useEffect(() => {
@@ -164,8 +120,7 @@ export function Popup() {
         () => setEnded({ ...current, endedAt: Date.now() }),
         () => act({ type: 'STOP' }),
       );
-    } else if (updateAvailable && !later) await openUpdate();
-    else if (channel || (replay && cleanChannel(typedChannel)))
+    } else if (channel || (replay && cleanChannel(typedChannel)))
       await act({
         type: 'START',
         tabId,
@@ -200,13 +155,6 @@ export function Popup() {
             onClick={() => setSettingsOpen(true)}
           >
             <Settings size={17} />
-            {updateAvailable && (
-              <i
-                className="gear-update-dot"
-                role="img"
-                aria-label="new version available"
-              />
-            )}
           </button>
         </header>
         {activeChannel && (
@@ -252,6 +200,7 @@ export function Popup() {
                 </span>
               </button>
               <span
+                role="img"
                 className={`mic-level-dot ${snapshot.capture.metrics.micLevel > 0.005 ? 'heard' : ''}`}
                 aria-label={
                   snapshot.capture.metrics.micLevel > 0.005
@@ -307,18 +256,12 @@ export function Popup() {
               <button
                 type="button"
                 className="smile-trigger"
-                aria-label={
-                  updateAvailable && !later
-                    ? `update to v${update?.latest}`
-                    : channel
-                      ? 'start session'
-                      : 'open Twitch'
-                }
+                aria-label={channel ? 'start session' : 'open Twitch'}
                 disabled={busy || !ready || contextLoading}
                 onClick={() => void primary()}
               >
                 <span className="smile-breath">
-                  <AppIcon size={190} />
+                  <AppIcon size={manual ? 140 : 190} />
                 </span>
               </button>
               <h1>
@@ -342,31 +285,22 @@ export function Popup() {
                   : 'your people are one stream away.'}
               </p>
             </div>
-            {updateAvailable && !later ? (
-              <div className="popup-update">
+            {manual && (
+              <aside className="store-switch" aria-label="switch to the store">
+                <p>
+                  StreamLaughs is now on the Chrome Web Store with automatic
+                  updates.
+                </p>
                 <button
-                  type="button"
-                  className="btn"
-                  disabled={busy || !ready || contextLoading}
-                  onClick={() => void openUpdate()}
-                >
-                  update to v{update.latest} <ArrowRight size={17} />
-                </button>
-                <p className="sub">new version ready</p>
-                <button
-                  type="button"
                   className="textbtn"
-                  onClick={() => {
-                    setLater(true);
-                    void chrome.storage.session.set({
-                      [UPDATE_LATER_KEY]: true,
-                    });
-                  }}
+                  type="button"
+                  onClick={() => void openMigration()}
                 >
-                  later
+                  Switch ↗
                 </button>
-              </div>
-            ) : channel ? (
+              </aside>
+            )}
+            {channel ? (
               <button
                 type="button"
                 className="btn"
@@ -463,21 +397,6 @@ export function Popup() {
           <p className="error" role="alert">
             {error}
           </p>
-        )}
-        {updateToast && !session && (
-          <div className="update-result" role="status">
-            <p>{updateToast}</p>
-            <button
-              type="button"
-              className="textbtn"
-              onClick={() => {
-                setUpdateToast('');
-                void chrome.storage.local.remove(UPDATE_ATTEMPT_KEY);
-              }}
-            >
-              dismiss
-            </button>
-          </div>
         )}
         {notice &&
           (notice.action ? (
@@ -576,6 +495,28 @@ export function Popup() {
                   })
                 }
               />
+              <label className="sub">
+                reaction sensitivity{' '}
+                <select
+                  aria-label="reaction sensitivity"
+                  value={snapshot.settings.sensitivity ?? 'normal'}
+                  onChange={(e) =>
+                    void act({
+                      type: 'SETTINGS',
+                      settings: {
+                        sensitivity: e.target.value as
+                          | 'strict'
+                          | 'normal'
+                          | 'sensitive',
+                      },
+                    })
+                  }
+                >
+                  <option value="strict">strict</option>
+                  <option value="normal">normal</option>
+                  <option value="sensitive">sensitive</option>
+                </select>
+              </label>
               <Toggle
                 title="share with the fans"
                 detail="anonymous"
@@ -603,14 +544,14 @@ export function Popup() {
                   privacy ↗
                 </a>
               )}
-              {updateAvailable && (
+              <HistoryTransfer save={manual} />
+              {manual && (
                 <button
                   type="button"
                   className="textbtn"
-                  disabled={busy}
-                  onClick={() => void openUpdate()}
+                  onClick={() => void openMigration()}
                 >
-                  update to v{update.latest}
+                  Switch to the store ↗
                 </button>
               )}
               <button

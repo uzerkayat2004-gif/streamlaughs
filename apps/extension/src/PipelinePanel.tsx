@@ -37,7 +37,7 @@ export function usePipelineReport(
             speech,
           });
           if (alive && typeof value === 'string')
-            setPhrase(value.slice(0, speech ? 1000 : 80));
+            setPhrase(value.slice(0, speech ? 20000 : 80));
         }
       } catch {
         /* A restarting background is retried on the next poll. */
@@ -178,8 +178,11 @@ export function PipelineDebug({ close }: { close: () => void }) {
         words matched: {ai?.stages.wordsMatched ?? 0} · rejected:{' '}
         {ai?.stages.wordsRejected ?? 0}
         <br />
-        last transcript (visible here only, never saved/copied):{' '}
-        <b>{phrase || 'say a reaction while this panel is open'}</b>
+        last 20 speech decisions (transcripts visible here only, never
+        saved/copied):{' '}
+        <pre style={{ whiteSpace: 'pre-wrap' }}>
+          {phrase || 'say a reaction while this panel is open'}
+        </pre>
       </p>
       <p>
         guard: {ai?.guard.reason ?? 'waiting'} · match{' '}
@@ -201,6 +204,7 @@ export function PipelineDebug({ close }: { close: () => void }) {
         recognized audio frame → panel (not first-sound onset)
       </p>
       <CopyDiagnostics report={r} />
+      <AccuracyLog inference={ai} />
       <StutterLab report={r} />
     </section>
   );
@@ -264,5 +268,27 @@ export function CopyDiagnostics({
     >
       {message}
     </button>
+  );
+}
+
+export function AccuracyLog({
+  inference,
+}: {
+  inference: import('./diagnostics').WorkerDiagnostics | null | undefined;
+}) {
+  return (
+    <details>
+      <summary>last 20 accuracy decisions · numeric only</summary>
+      {inference?.accuracyLog.map((e, i) => (
+        <p key={`${e.ts}-${i}`}>
+          {e.kind} · {e.accepted ? 'counted' : 'rejected'} · {e.detector} ·{' '}
+          {e.reason} · laughter {e.laughter.toFixed(3)} / speech{' '}
+          {e.speech.toFixed(3)} · DSP {e.dsp.toFixed(2)} · +
+          {e.aboveFloorDb.toFixed(1)} dB · {Math.round(e.durationMs)} ms · logp{' '}
+          {e.avgLogprob?.toFixed(3) ?? '—'} · no-speech{' '}
+          {e.noSpeechProbability?.toFixed(3) ?? '—'}
+        </p>
+      ))}
+    </details>
   );
 }

@@ -1,6 +1,6 @@
 # Technical guide · Parts 1–5 foundations
 
-Current audio default: [v0.8.5 independent microphone detection and native Twitch playback](build-history/detection-v085.md). The captured-tab default described in the historical foundations below is now an opt-in speaker echo reference.
+Current audio default: [v0.8.6 local accuracy gates and native Twitch playback](accuracy-v086.md). The captured-tab default described in the historical foundations below is now an opt-in speaker echo reference.
 
 Current release preparation and canonical final acceptance: [Part 6 release guide](build-history/release-part6.md) and [30-minute checklist](build-history/manual-part6.md). The following preserves the implementation and privacy detail from Part 5.
 
