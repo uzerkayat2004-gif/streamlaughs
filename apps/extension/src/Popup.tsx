@@ -24,6 +24,9 @@ import { MicDevicePicker } from './MicDevicePicker';
 import { MicTest } from './MicTest';
 import { StopSaved } from './StopSaved';
 import { SITE_URL } from './site';
+
+const STREAMER_PAGE = `${SITE_URL || PRODUCT.siteUrl}/dashboard?from=extension`;
+
 import { stopWithPreview } from './stop-preview';
 import { audioNotice, friendlyError } from './ui-status';
 import { resolveWatchContext } from './watch-context';
@@ -392,11 +395,15 @@ export function Popup() {
         </nav>
         <a
           className="streamer-link"
-          href={`${SITE_URL || PRODUCT.siteUrl}/dashboard?from=extension`}
+          href={STREAMER_PAGE}
           target="_blank"
           rel="noreferrer"
+          onClick={(e) => {
+            e.preventDefault();
+            void chrome.tabs.create({ url: STREAMER_PAGE });
+          }}
         >
-          <span aria-hidden="true">◡</span> streamer? see your fans ↗
+          <AppIcon size={14} /> streamer? see your fans ↗
         </a>
         <small className="popup-version">
           v{chrome.runtime.getManifest().version}
@@ -545,15 +552,19 @@ export function Popup() {
               <div className="streamer-row">
                 <strong>for streamers</strong>
                 <p className="sub">
-                  see how your fans laughed and rated your streams.
+                  see how your fans laughed and rated your streams
                 </p>
                 <a
                   className="streamer-link"
-                  href={`${SITE_URL || PRODUCT.siteUrl}/dashboard?from=extension`}
+                  href={STREAMER_PAGE}
                   target="_blank"
                   rel="noreferrer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    void chrome.tabs.create({ url: STREAMER_PAGE });
+                  }}
                 >
-                  open my streamer page ↗
+                  <AppIcon size={14} /> streamer? see your fans ↗
                 </a>
               </div>
               {SITE_URL && (
