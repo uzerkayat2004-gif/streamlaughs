@@ -1,0 +1,1065 @@
+StreamLaughs v0.8.4 verification — 2026-11-02
+
+The owner confirmed Bluetooth and requested publication before the physical laptop-mic comparison. Hardware acceptance is pending.
+Only targeted tests, typecheck and builds; no full suite/e2e runner. No Cloudflare deployment, store upload, tag or release.
+
+> Baseline v0.8.3 engine/worklet/real-model fixture: native, tab-only, capture, all models, native mic/models
+[
+  {
+    "phase": "native",
+    "version": "0.8.3",
+    "longtask": {
+      "supported": true,
+      "count": 0,
+      "worstMs": 0
+    },
+    "estimatedOutputGaps": 0,
+    "modelCpuMsPerSecond": {
+      "mean": 0,
+      "peak": 0
+    },
+    "contexts": [],
+    "workers": {},
+    "mic": {
+      "name": "not opened",
+      "state": "none",
+      "muted": false,
+      "enabled": false,
+      "sampleRate": 0
+    },
+    "events": {
+      "laugh": 0,
+      "words": 0
+    },
+    "droppedVideoFrames": 0,
+    "totalVideoFrames": 548
+  },
+  {
+    "phase": "tab_only",
+    "version": "0.8.3",
+    "longtask": {
+      "supported": true,
+      "count": 0,
+      "worstMs": 0
+    },
+    "estimatedOutputGaps": 0,
+    "modelCpuMsPerSecond": {
+      "mean": 0,
+      "peak": 0
+    },
+    "contexts": [
+      {
+        "state": "running",
+        "sampleRate": 48000,
+        "baseLatency": 0.02,
+        "outputLatency": 0.052000000000000005,
+        "playbackStats": {
+          "underrunDuration": 0.0099,
+          "underrunEvents": 1,
+          "totalDuration": 23.2868,
+          "averageLatency": 0.0518,
+          "minimumLatency": 0,
+          "maximumLatency": 0.053200000000000004
+        }
+      },
+      {
+        "state": "running",
+        "sampleRate": 48000,
+        "baseLatency": 0.01,
+        "outputLatency": 0.042,
+        "playbackStats": {
+          "underrunDuration": 0.0099,
+          "underrunEvents": 1,
+          "totalDuration": 23.1375,
+          "averageLatency": 0.0422,
+          "minimumLatency": 0,
+          "maximumLatency": 0.0439
+        }
+      }
+    ],
+    "workers": {},
+    "mic": {
+      "name": "not opened",
+      "state": "none",
+      "muted": false,
+      "enabled": false,
+      "sampleRate": 0
+    },
+    "events": {
+      "laugh": 0,
+      "words": 0
+    },
+    "droppedVideoFrames": 0,
+    "totalVideoFrames": 1128
+  },
+  {
+    "phase": "capture",
+    "version": "0.8.3",
+    "longtask": {
+      "supported": true,
+      "count": 0,
+      "worstMs": 0
+    },
+    "estimatedOutputGaps": 0,
+    "modelCpuMsPerSecond": {
+      "mean": 0,
+      "peak": 0
+    },
+    "contexts": [
+      {
+        "state": "running",
+        "sampleRate": 48000,
+        "baseLatency": 0.02,
+        "outputLatency": 0.052000000000000005,
+        "playbackStats": {
+          "underrunDuration": 0.009800000000000001,
+          "underrunEvents": 1,
+          "totalDuration": 22.2468,
+          "averageLatency": 0.0519,
+          "minimumLatency": 0,
+          "maximumLatency": 0.053200000000000004
+        }
+      },
+      {
+        "state": "running",
+        "sampleRate": 48000,
+        "baseLatency": 0.01,
+        "outputLatency": 0.042,
+        "playbackStats": {
+          "underrunDuration": 0.0099,
+          "underrunEvents": 1,
+          "totalDuration": 22.087,
+          "averageLatency": 0.0424,
+          "minimumLatency": 0,
+          "maximumLatency": 0.0439
+        }
+      }
+    ],
+    "workers": {},
+    "mic": {
+      "name": "Fake Default Audio Input",
+      "state": "live",
+      "muted": false,
+      "enabled": true,
+      "sampleRate": 44100
+    },
+    "events": {
+      "laugh": 0,
+      "words": 0
+    },
+    "droppedVideoFrames": 0,
+    "totalVideoFrames": 1698
+  },
+  {
+    "phase": "all",
+    "version": "0.8.3",
+    "longtask": {
+      "supported": true,
+      "count": 0,
+      "worstMs": 0
+    },
+    "estimatedOutputGaps": 0,
+    "modelCpuMsPerSecond": {
+      "mean": 279.5694421696311,
+      "peak": 1954.3523874335951
+    },
+    "contexts": [
+      {
+        "state": "running",
+        "sampleRate": 48000,
+        "baseLatency": 0.02,
+        "outputLatency": 0.052000000000000005,
+        "playbackStats": {
+          "underrunDuration": 0.009699999999999999,
+          "underrunEvents": 1,
+          "totalDuration": 34.363699999999994,
+          "averageLatency": 0.0522,
+          "minimumLatency": 0,
+          "maximumLatency": 0.053200000000000004
+        }
+      },
+      {
+        "state": "running",
+        "sampleRate": 48000,
+        "baseLatency": 0.01,
+        "outputLatency": 0.042,
+        "playbackStats": {
+          "underrunDuration": 0.009800000000000001,
+          "underrunEvents": 1,
+          "totalDuration": 34.0946,
+          "averageLatency": 0.0425,
+          "minimumLatency": 0,
+          "maximumLatency": 0.0439
+        }
+      }
+    ],
+    "workers": {
+      "inference-worker.js": {
+        "supported": false,
+        "count": 0,
+        "worstMs": 0,
+        "stalls": 2,
+        "worstStallMs": 611.4000000003725
+      },
+      "speech-worker.js": {
+        "supported": false,
+        "count": 0,
+        "worstMs": 0,
+        "stalls": 7,
+        "worstStallMs": 1809.8999999994412
+      },
+      "sound-worker.js": {
+        "supported": false,
+        "count": 0,
+        "worstMs": 0,
+        "stalls": 1,
+        "worstStallMs": 427.5
+      }
+    },
+    "mic": {
+      "name": "Fake Default Audio Input",
+      "state": "live",
+      "muted": false,
+      "enabled": true,
+      "sampleRate": 44100
+    },
+    "events": {
+      "laugh": 6,
+      "words": 4
+    },
+    "droppedVideoFrames": 0,
+    "totalVideoFrames": 2560
+  },
+  {
+    "phase": "mic_models",
+    "version": "0.8.3",
+    "longtask": {
+      "supported": true,
+      "count": 0,
+      "worstMs": 0
+    },
+    "estimatedOutputGaps": 0,
+    "modelCpuMsPerSecond": {
+      "mean": 235.51565344881732,
+      "peak": 1803.2787925469067
+    },
+    "contexts": [
+      {
+        "state": "running",
+        "sampleRate": 48000,
+        "baseLatency": 0.01,
+        "outputLatency": 0.041,
+        "playbackStats": {
+          "underrunDuration": 0.0099,
+          "underrunEvents": 1,
+          "totalDuration": 34.116,
+          "averageLatency": 0.0426,
+          "minimumLatency": 0,
+          "maximumLatency": 0.0439
+        }
+      }
+    ],
+    "workers": {
+      "inference-worker.js": {
+        "supported": false,
+        "count": 0,
+        "worstMs": 0,
+        "stalls": 1,
+        "worstStallMs": 173
+      },
+      "speech-worker.js": {
+        "supported": false,
+        "count": 0,
+        "worstMs": 0,
+        "stalls": 8,
+        "worstStallMs": 1729
+      },
+      "sound-worker.js": {
+        "supported": false,
+        "count": 0,
+        "worstMs": 0,
+        "stalls": 1,
+        "worstStallMs": 141
+      }
+    },
+    "mic": {
+      "name": "Fake Default Audio Input",
+      "state": "live",
+      "muted": false,
+      "enabled": true,
+      "sampleRate": 44100
+    },
+    "events": {
+      "laugh": 11,
+      "words": 10
+    },
+    "droppedVideoFrames": 0,
+    "totalVideoFrames": 3428
+  }
+]
+> Red regression before fix: normal native-playback session rejected as capture
+
+ RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/apps/extension
+
+ ❯ src/audio/engine.test.ts (13 tests | 1 failed | 12 skipped) 22ms
+     × records a normal native-playback session without capturing or replaying the Twitch tab 19ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/audio/engine.test.ts > offscreen audio ownership > records a normal native-playback session without capturing or replaying the Twitch tab
+Error: capture
+ ❯ AudioEngine.start src/audio/engine.ts:254:38
+    252|     await this.stop();
+    253|     // Only the background's explicit mic-check gesture can request mi…
+    254|     if (!streamId && !micOnly) throw new Error('capture');
+       |                                      ^
+    255|     const generation = ++this.generation;
+    256|     this.sessionId = sessionId;
+ ❯ src/audio/engine.test.ts:101:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 skipped (13)
+   Start at  20:42:44
+   Duration  1.10s (transform 288ms, setup 0ms, import 540ms, tests 22ms, environment 0ms)
+
+undefined
+C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline\apps\extension:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run src/audio/engine.test.ts -t normal native-playback
+
+> pnpm --filter extension exec vitest run (changed audio/lab/bridge/pipeline surfaces and directly affected regressions)
+
+ RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/apps/extension
+
+
+ Test Files  12 passed (12)
+      Tests  100 passed (100)
+   Start at  21:21:33
+   Duration  2.42s (transform 3.47s, setup 0ms, import 8.36s, tests 3.03s, environment 3ms)
+
+
+> pnpm --dir tools/release exec vitest run release.test.ts
+
+ RUN  v4.1.12 C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/tools/release
+
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  21:22:00
+   Duration  4.73s (transform 138ms, setup 0ms, import 225ms, tests 3.91s, environment 0ms)
+
+
+> pnpm -r typecheck
+Scope: 7 of 8 workspace projects
+packages/shared typecheck$ tsc --noEmit
+tools/eval typecheck$ node --check cli.mjs && node --check browser.mjs && node --check wav.mjs && node --check metrics.mjs && node --check reaction-regression.mjs && node --check stutter-regression.mjs
+tools/release typecheck$ node --check config.mjs && node --check version.mjs && node --check verify-production.mjs && node --check branding.mjs && node --check offline-preview.mjs && node --check pack.mjs && node --check dependency-notices.mjs && node --check web-download.mjs && node --check ../build-web.mjs && python -m py_compile pack.py verify-store.py
+tools/crowd-sim typecheck$ node --check cli.mjs && node --check record-demo.mjs
+tools/crowd-sim typecheck: Done
+tools/eval typecheck: Done
+tools/release typecheck: Done
+packages/shared typecheck: Done
+apps/extension typecheck$ wxt prepare && tsc --noEmit
+workers/api typecheck$ tsc --noEmit
+apps/web typecheck$ node ../../tools/next-local.mjs typegen && tsc --noEmit
+apps/extension typecheck: WXT 0.21.5
+apps/web typecheck: Generating route types...
+apps/web typecheck: ✓ Types generated successfully
+apps/extension typecheck: i Generating types...
+apps/extension typecheck:  WARN  The following entrypoints have been skipped:
+apps/extension typecheck: - debug
+apps/extension typecheck: √ Finished in 1.173 s
+workers/api typecheck: Done
+apps/web typecheck: Done
+apps/extension typecheck: Done
+
+> pnpm test:reactions — real VAD/YAMNet/Whisper; recorded WAV; no fake ASR
+
+> laughline-monorepo@0.8.4 test:reactions C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline
+> node tools/eval/reaction-regression.mjs
+
+{"version":"0.8.4","frames":1348,"laughs":5,"words":3,"laughDeliveryMs":[3,2,2,8,2],"wordDeliveryMs":[2441,2194,2053],"speechComputeMs":[2096.899999999441,1867.1000000005588,1707.7999999998137],"stages":{"nonzeroFrames":1050,"vadCalls":858,"voicedChunks":50,"segments":3,"soundCalls":54,"dspHits":5,"soundJobsSkipped":0,"speechRequests":3,"speechResults":3,"wordsMatched":3,"wordsRejected":0,"wordEvents":3,"acceptedEvents":11},"errors":[],"latencyDefinition":"recognized audio frame / completed speech segment to local worker receipt; excludes the detector evidence window and speech duration"}
+
+> pnpm test:stutter — TEN-MINUTE CANDIDATE BEFORE LATE IN-FLIGHT DEADLINE; real production offscreen, fake WAV mic, native playback; real tab-capture switch with test-only grant
+
+> laughline-monorepo@0.8.4 test:stutter C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline
+> node tools/eval/stutter-regression.mjs
+
+{"capturedTabProbe":{"state":"running","sampleRate":48000,"baseLatency":0.02,"outputLatency":0.056,"underruns":1,"underrunsPerMinute":5.218798110794915,"underrunDuration":0.009800000000000001,"watchdogGaps":0,"worstGapMs":0,"speechPaused":false}}
+{"measurementStart":{"offscreenTasks":{"supported":true,"count":1,"worstMs":52,"stalls":2,"worstStallMs":511.7999999988824},"version":"0.8.4"}}
+{"elapsedSeconds":60,"worstOffscreenLongTaskMs":57,"outputGaps":0,"modelWorkMeanMsPerSecond":371.81005427765376}
+{"elapsedSeconds":120,"worstOffscreenLongTaskMs":57,"outputGaps":0,"modelWorkMeanMsPerSecond":728.0259564640788}
+{"elapsedSeconds":180,"worstOffscreenLongTaskMs":98,"outputGaps":0,"modelWorkMeanMsPerSecond":657.9524189515562}
+{"elapsedSeconds":240,"worstOffscreenLongTaskMs":98,"outputGaps":0,"modelWorkMeanMsPerSecond":714.6736041132986}
+{"elapsedSeconds":300,"worstOffscreenLongTaskMs":98,"outputGaps":0,"modelWorkMeanMsPerSecond":619.5747193477883}
+{"elapsedSeconds":360,"worstOffscreenLongTaskMs":98,"outputGaps":0,"modelWorkMeanMsPerSecond":632.9648654879486}
+{"elapsedSeconds":420,"worstOffscreenLongTaskMs":98,"outputGaps":0,"modelWorkMeanMsPerSecond":636.0904625382202}
+{"elapsedSeconds":480,"worstOffscreenLongTaskMs":98,"outputGaps":0,"modelWorkMeanMsPerSecond":624.1656339566205}
+{"elapsedSeconds":540,"worstOffscreenLongTaskMs":98,"outputGaps":0,"modelWorkMeanMsPerSecond":611.8760302615333}
+{"elapsedSeconds":600,"worstOffscreenLongTaskMs":98,"outputGaps":0,"modelWorkMeanMsPerSecond":630.153051252259}
+{"version":"0.8.4","durationSeconds":600.783,"acceptanceDuration":true,"nativeTwitchPlayback":true,"extensionPassthroughContexts":0,"nativeAudioUnderruns":null,"nativeAudioUnderrunsNote":"HTML video exposes no audio underrun counter; no extension passthrough exists","outputClockGaps":0,"setupOffscreenLongTasks":{"supported":true,"count":1,"worstMs":52,"stalls":2,"worstStallMs":511.7999999988824},"offscreenLongTasks":{"supported":true,"count":13,"worstMs":98,"stalls":10,"worstStallMs":511.7999999988824},"newOffscreenLongTasks":12,"worstOffscreenLongTaskMs":98,"workerTasks":{"realtime":{"supported":false,"count":0,"worstMs":0,"stalls":254,"worstStallMs":4587},"sound":{"supported":false,"count":0,"worstMs":0,"stalls":167,"worstStallMs":751.7000000011176},"speech":{"supported":false,"count":0,"worstMs":0,"stalls":107,"worstStallMs":44915.40000000037}},"modelWorkMsPerSecond":{"mean":630.153051252259,"peak":39583.33072821754,"definition":"elapsed inference work, not OS CPU utilization"},"droppedVideoFrames":356,"totalVideoFrames":15483,"mic":{"name":"Fake Default Audio Input","state":"live","muted":false,"enabled":true,"sampleRate":44100,"channelCount":2,"echoCancellation":false,"noiseSuppression":false,"autoGainControl":false,"device":"system default"},"laughs":112,"words":18,"modelErrors":0,"liveSwitchesPassed":true,"capturedTabProbe":{"state":"running","sampleRate":48000,"baseLatency":0.02,"outputLatency":0.056,"underruns":1,"underrunsPerMinute":5.218798110794915,"underrunDuration":0.009800000000000001,"watchdogGaps":0,"worstGapMs":0,"speechPaused":false}}
+file:///C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/tools/eval/stutter-regression.mjs:277
+    throw new Error(
+          ^
+
+Error: audio-path stability target failed; inspect numeric report
+    at file:///C:/Users/Asus/Documents/Codex/2026-10-27/files-mentioned-by-the-user-laughline/outputs/laughline/tools/eval/stutter-regression.mjs:277:11
+
+Node.js v24.11.1
+ ELIFECYCLE  Command failed with exit code 1.
+
+> Ten-minute candidate numeric report (retain strict timing-target failures)
+{
+  "version": "0.8.4",
+  "durationSeconds": 600.783,
+  "acceptanceDuration": true,
+  "nativeTwitchPlayback": true,
+  "extensionPassthroughContexts": 0,
+  "nativeAudioUnderruns": null,
+  "nativeAudioUnderrunsNote": "HTML video exposes no audio underrun counter; no extension passthrough exists",
+  "outputClockGaps": 0,
+  "setupOffscreenLongTasks": {
+    "supported": true,
+    "count": 1,
+    "worstMs": 52,
+    "stalls": 2,
+    "worstStallMs": 511.7999999988824
+  },
+  "offscreenLongTasks": {
+    "supported": true,
+    "count": 13,
+    "worstMs": 98,
+    "stalls": 10,
+    "worstStallMs": 511.7999999988824
+  },
+  "newOffscreenLongTasks": 12,
+  "worstOffscreenLongTaskMs": 98,
+  "workerTasks": {
+    "realtime": {
+      "supported": false,
+      "count": 0,
+      "worstMs": 0,
+      "stalls": 254,
+      "worstStallMs": 4587
+    },
+    "sound": {
+      "supported": false,
+      "count": 0,
+      "worstMs": 0,
+      "stalls": 167,
+      "worstStallMs": 751.7000000011176
+    },
+    "speech": {
+      "supported": false,
+      "count": 0,
+      "worstMs": 0,
+      "stalls": 107,
+      "worstStallMs": 44915.40000000037
+    }
+  },
+  "modelWorkMsPerSecond": {
+    "mean": 630.153051252259,
+    "peak": 39583.33072821754,
+    "definition": "elapsed inference work, not OS CPU utilization"
+  },
+  "droppedVideoFrames": 356,
+  "totalVideoFrames": 15483,
+  "mic": {
+    "name": "Fake Default Audio Input",
+    "state": "live",
+    "muted": false,
+    "enabled": true,
+    "sampleRate": 44100,
+    "channelCount": 2,
+    "echoCancellation": false,
+    "noiseSuppression": false,
+    "autoGainControl": false,
+    "device": "system default"
+  },
+  "laughs": 112,
+  "words": 18,
+  "modelErrors": 0,
+  "liveSwitchesPassed": true,
+  "capturedTabProbe": {
+    "state": "running",
+    "sampleRate": 48000,
+    "baseLatency": 0.02,
+    "outputLatency": 0.056,
+    "underruns": 1,
+    "underrunsPerMinute": 5.218798110794915,
+    "underrunDuration": 0.009800000000000001,
+    "watchdogGaps": 0,
+    "worstGapMs": 0,
+    "speechPaused": false
+  }
+}
+> Final extracted universal ZIP: shorter post-deadline-guard production WAV/capture/switch check; NOT a second ten-minute acceptance
+
+> laughline-monorepo@0.8.4 test:stutter C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline
+> node tools/eval/stutter-regression.mjs
+
+{"capturedTabProbe":{"state":"running","sampleRate":48000,"baseLatency":0.02,"outputLatency":0.048,"underruns":1,"underrunsPerMinute":6.039619906588118,"underrunDuration":0.0092,"watchdogGaps":0,"worstGapMs":0,"speechPaused":false}}
+{"measurementStart":{"offscreenTasks":{"supported":true,"count":1,"worstMs":60,"stalls":1,"worstStallMs":339.2000000011176},"version":"0.8.4"}}
+{"version":"0.8.4","durationSeconds":30.142,"acceptanceDuration":false,"nativeTwitchPlayback":true,"extensionPassthroughContexts":0,"nativeAudioUnderruns":null,"nativeAudioUnderrunsNote":"HTML video exposes no audio underrun counter; no extension passthrough exists","outputClockGaps":0,"setupOffscreenLongTasks":{"supported":true,"count":1,"worstMs":60,"stalls":1,"worstStallMs":339.2000000011176},"offscreenLongTasks":{"supported":true,"count":1,"worstMs":60,"stalls":1,"worstStallMs":339.2000000011176},"newOffscreenLongTasks":0,"worstOffscreenLongTaskMs":0,"workerTasks":{"realtime":{"supported":false,"count":0,"worstMs":0,"stalls":1,"worstStallMs":341.40000000037253},"sound":{"supported":false,"count":0,"worstMs":0,"stalls":1,"worstStallMs":198.7000000011176},"speech":{"supported":false,"count":0,"worstMs":0,"stalls":6,"worstStallMs":3821.60000000149}},"modelWorkMsPerSecond":{"mean":239.3816822692426,"peak":3072.1181814707047,"definition":"elapsed inference work, not OS CPU utilization"},"droppedVideoFrames":0,"totalVideoFrames":1462,"mic":{"name":"Fake Default Audio Input","state":"live","muted":false,"enabled":true,"sampleRate":44100,"channelCount":2,"echoCancellation":false,"noiseSuppression":false,"autoGainControl":false,"device":"system default"},"laughs":7,"words":3,"modelErrors":0,"speechBudgetOverruns":0,"speechCooldownMs":0,"liveSwitchesPassed":true,"capturedTabProbe":{"state":"running","sampleRate":48000,"baseLatency":0.02,"outputLatency":0.048,"underruns":1,"underrunsPerMinute":6.039619906588118,"underrunDuration":0.0092,"watchdogGaps":0,"worstGapMs":0,"speechPaused":false}}
+
+> Final extracted ZIP numeric report
+{
+  "version": "0.8.4",
+  "durationSeconds": 30.142,
+  "acceptanceDuration": false,
+  "nativeTwitchPlayback": true,
+  "extensionPassthroughContexts": 0,
+  "nativeAudioUnderruns": null,
+  "nativeAudioUnderrunsNote": "HTML video exposes no audio underrun counter; no extension passthrough exists",
+  "outputClockGaps": 0,
+  "setupOffscreenLongTasks": {
+    "supported": true,
+    "count": 1,
+    "worstMs": 60,
+    "stalls": 1,
+    "worstStallMs": 339.2000000011176
+  },
+  "offscreenLongTasks": {
+    "supported": true,
+    "count": 1,
+    "worstMs": 60,
+    "stalls": 1,
+    "worstStallMs": 339.2000000011176
+  },
+  "newOffscreenLongTasks": 0,
+  "worstOffscreenLongTaskMs": 0,
+  "workerTasks": {
+    "realtime": {
+      "supported": false,
+      "count": 0,
+      "worstMs": 0,
+      "stalls": 1,
+      "worstStallMs": 341.40000000037253
+    },
+    "sound": {
+      "supported": false,
+      "count": 0,
+      "worstMs": 0,
+      "stalls": 1,
+      "worstStallMs": 198.7000000011176
+    },
+    "speech": {
+      "supported": false,
+      "count": 0,
+      "worstMs": 0,
+      "stalls": 6,
+      "worstStallMs": 3821.60000000149
+    }
+  },
+  "modelWorkMsPerSecond": {
+    "mean": 239.3816822692426,
+    "peak": 3072.1181814707047,
+    "definition": "elapsed inference work, not OS CPU utilization"
+  },
+  "droppedVideoFrames": 0,
+  "totalVideoFrames": 1462,
+  "mic": {
+    "name": "Fake Default Audio Input",
+    "state": "live",
+    "muted": false,
+    "enabled": true,
+    "sampleRate": 44100,
+    "channelCount": 2,
+    "echoCancellation": false,
+    "noiseSuppression": false,
+    "autoGainControl": false,
+    "device": "system default"
+  },
+  "laughs": 7,
+  "words": 3,
+  "modelErrors": 0,
+  "speechBudgetOverruns": 0,
+  "speechCooldownMs": 0,
+  "liveSwitchesPassed": true,
+  "capturedTabProbe": {
+    "state": "running",
+    "sampleRate": 48000,
+    "baseLatency": 0.02,
+    "outputLatency": 0.048,
+    "underruns": 1,
+    "underrunsPerMinute": 6.039619906588118,
+    "underrunDuration": 0.0092,
+    "watchdogGaps": 0,
+    "worstGapMs": 0,
+    "speechPaused": false
+  }
+}
+> pnpm build — production site/Worker public origins; Worker dry-run only
+
+> laughline-monorepo@0.8.4 build C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline
+> pnpm --filter api build && pnpm --filter web build
+
+
+> api@ build C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline\workers\api
+> node ../../tools/wrangler-local.mjs deploy --env= --dry-run --outdir .wrangler/build
+
+
+ ⛅️ wrangler 4.153.0
+────────────────────
+Total Upload: 871.78 KiB / gzip: 144.60 KiB
+Your Worker has access to the following bindings:
+Binding                                                                  Resource
+env.CHANNELS (ChannelCrowd)                                              Durable Object
+env.ENVIRONMENT ("production")                                           Environment Variable
+env.CROWD_ENABLED ("true")                                               Environment Variable
+env.ALLOW_TEST_TRAFFIC ("false")                                         Environment Variable
+env.EXTENSION_ORIGINS ("chrome-extension://fkocldgggcmhiheloh...")       Environment Variable
+env.SITE_ORIGINS ("https://streamlaughs.vercel.app")                     Environment Variable
+
+--dry-run: exiting now.
+
+> web@0.8.4 build C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline\apps\web
+> node ../../tools/build-web.mjs
+
+
+> extension@0.8.4 build C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline\apps\extension
+> node ../../tools/prepare-runtime.mjs && node ../../tools/check-assets.mjs && wxt build && node ../../tools/check-extension-identity.mjs .output/chrome-mv3
+
+onnx: 21,640,503 local runtime bytes
+mediapipe: 12,205,698 local runtime bytes
+Verified 14 local model/license assets against SHA-256 receipts.
+
+WXT 0.21.5
+i Building chrome-mv3 for production with Vite 8.3.5
+
+ WARN  The following entrypoints have been skipped:
+- debug
+
+[?25l
+⠋ Preparing...[K
+⠋ [1/7] audio-worklet[K
+⠙ [1/7] audio-worklet[K
+⠙ [2/7] background[K
+⠹ [2/7] background[K
+⠸ [2/7] background[K
+⠸ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠼ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠴ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠦ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠧ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠇ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠏ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠋ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠙ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠹ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠸ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠸ [4/7] inference-worker[K
+⠼ [4/7] inference-worker[K
+⠴ [4/7] inference-worker[K
+⠦ [4/7] inference-worker[K
+⠧ [4/7] inference-worker[K
+⠇ [4/7] inference-worker[K
+⠏ [4/7] inference-worker[K
+⠋ [4/7] inference-worker[K
+⠙ [4/7] inference-worker[K
+⠹ [4/7] inference-worker[K
+⠸ [4/7] inference-worker[K
+⠼ [4/7] inference-worker[K
+⠴ [4/7] inference-worker[K
+⠦ [4/7] inference-worker[K
+⠧ [4/7] inference-worker[K
+⠇ [4/7] inference-worker[K
+⠏ [4/7] inference-worker[K
+[EMPTY_IMPORT_META] `import.meta` may not be a valid syntax with the `iife` output format.
+      ╭─[ ../../node_modules/.pnpm/@huggingface+transformers@3.8.1/node_modules/@huggingface/transformers/dist/transformers.web.js:5101:37 ]
+      │
+ 5101 │     const _import_meta_url = Object(import.meta).url;
+      │                                     ─────┬─────
+      │                                          ╰─────── This `import.meta` will be replaced with an empty object (`{}`) automatically. If this is desired, you can suppress this warning by adding `transform.define: { 'import.meta': {} }`. If `import.meta` needs to be kept as-is, you need to set the output format to `esm`.
+──────╯
+
+⠋ [4/7] inference-worker[K
+⠋ [5/7] sound-worker[K
+⠙ [5/7] sound-worker[K
+⠹ [5/7] sound-worker[K
+⠸ [5/7] sound-worker[K
+⠼ [5/7] sound-worker[K
+⠴ [5/7] sound-worker[K
+⠦ [5/7] sound-worker[K
+⠧ [5/7] sound-worker[K
+⠇ [5/7] sound-worker[K
+⠏ [5/7] sound-worker[K
+⠋ [5/7] sound-worker[K
+⠙ [5/7] sound-worker[K
+⠹ [5/7] sound-worker[K
+⠸ [5/7] sound-worker[K
+⠼ [5/7] sound-worker[K
+⠴ [5/7] sound-worker[K
+⠦ [5/7] sound-worker[K
+⠧ [5/7] sound-worker[K
+[EMPTY_IMPORT_META] `import.meta` may not be a valid syntax with the `iife` output format.
+      ╭─[ ../../node_modules/.pnpm/@huggingface+transformers@3.8.1/node_modules/@huggingface/transformers/dist/transformers.web.js:5101:37 ]
+      │
+ 5101 │     const _import_meta_url = Object(import.meta).url;
+      │                                     ─────┬─────
+      │                                          ╰─────── This `import.meta` will be replaced with an empty object (`{}`) automatically. If this is desired, you can suppress this warning by adding `transform.define: { 'import.meta': {} }`. If `import.meta` needs to be kept as-is, you need to set the output format to `esm`.
+──────╯
+
+⠇ [5/7] sound-worker[K
+⠇ [6/7] speech-worker[K
+⠏ [6/7] speech-worker[K
+⠋ [6/7] speech-worker[K
+⠙ [6/7] speech-worker[K
+⠹ [6/7] speech-worker[K
+⠸ [6/7] speech-worker[K
+⠼ [6/7] speech-worker[K
+⠴ [6/7] speech-worker[K
+⠦ [6/7] speech-worker[K
+⠧ [6/7] speech-worker[K
+⠇ [6/7] speech-worker[K
+⠏ [6/7] speech-worker[K
+⠋ [6/7] speech-worker[K
+⠙ [6/7] speech-worker[K
+[EMPTY_IMPORT_META] `import.meta` may not be a valid syntax with the `iife` output format.
+      ╭─[ ../../node_modules/.pnpm/@huggingface+transformers@3.8.1/node_modules/@huggingface/transformers/dist/transformers.web.js:5101:37 ]
+      │
+ 5101 │     const _import_meta_url = Object(import.meta).url;
+      │                                     ─────┬─────
+      │                                          ╰─────── This `import.meta` will be replaced with an empty object (`{}`) automatically. If this is desired, you can suppress this warning by adding `transform.define: { 'import.meta': {} }`. If `import.meta` needs to be kept as-is, you need to set the output format to `esm`.
+──────╯
+
+⠹ [6/7] speech-worker[K
+⠹ [7/7] twitch[K
+⠸ [7/7] twitch[K
+⠼ [7/7] twitch[K
+⠴ [7/7] twitch[K
+⠦ [7/7] twitch[K
+⠧ [7/7] twitch[K
+⠇ [7/7] twitch[K
+⠏ [7/7] twitch[K
+⠋ [7/7] twitch[K
+⠙ [7/7] twitch[K
+[PLUGIN_TIMINGS] JavaScript callbacks ran for 5.4s of this 6.2s build (88%).
+The slowest callbacks, timed inside each callback (the wait before a callback starts is excluded, the time it awaits is included):
+  - plugin @tailwindcss/vite:generate:build transform (69%, 4.3s, 1 call)
+Additional callback time came from callbacks under 1s.
+See https://rolldown.rs/reference/InputOptions.checks#bundlertimings for more details.
+
+⠹ [7/7] twitch[K
+⠸ [7/7] twitch[K
+⠼ [7/7] twitch[K
+[K[?25h
+[K[?25h√ Built extension in 16.4 s
+  ├─ .output\chrome-mv3\manifest.json                                                    2.00 kB
+  ├─ .output\chrome-mv3\diagnostics.html                                                 613 B
+  ├─ .output\chrome-mv3\mic-test.html                                                    986 B
+  ├─ .output\chrome-mv3\offscreen.html                                                   515 B
+  ├─ .output\chrome-mv3\popup.html                                                       1.28 kB
+  ├─ .output\chrome-mv3\recap.html                                                       743 B
+  ├─ .output\chrome-mv3\update.html                                                      673 B
+  ├─ .output\chrome-mv3\welcome.html                                                     900 B
+  ├─ .output\chrome-mv3\audio-worklet.js                                                 2.98 kB
+  ├─ .output\chrome-mv3\background.js                                                    238.06 kB
+  ├─ .output\chrome-mv3\chunks\bridge-Cb9exiF9.js                                        1.75 kB
+  ├─ .output\chrome-mv3\chunks\components-J8v1Ypt8.js                                    4.63 kB
+  ├─ .output\chrome-mv3\chunks\diagnostics-Ctb39ZJI.js                                   3.77 kB
+  ├─ .output\chrome-mv3\chunks\diagnostics-De37bBaj.js                                   5.16 kB
+  ├─ .output\chrome-mv3\chunks\HistoryView-CB4wj_fW.js                                   112.08 kB
+  ├─ .output\chrome-mv3\chunks\mic-test-DSSze_Se.js                                      320 B
+  ├─ .output\chrome-mv3\chunks\microphone-BykvWkEu.js                                    1.46 kB
+  ├─ .output\chrome-mv3\chunks\MicTest-BuunntDd.js                                       6.69 kB
+  ├─ .output\chrome-mv3\chunks\offscreen-Bo7gkD2A.js                                     27.59 kB
+  ├─ .output\chrome-mv3\chunks\popup-BCVfZ2Bu.js                                         14.08 kB
+  ├─ .output\chrome-mv3\chunks\recap-Sh3Ry_Zy.js                                         40.01 kB
+  ├─ .output\chrome-mv3\chunks\site-BiIQNvGa.js                                          83 B
+  ├─ .output\chrome-mv3\chunks\src-Dku3gCG5.js                                           102.40 kB
+  ├─ .output\chrome-mv3\chunks\stutter-Dc_AdYHT.js                                       2.77 kB
+  ├─ .output\chrome-mv3\chunks\styles-I2mJ7GcP.js                                        219.28 kB
+  ├─ .output\chrome-mv3\chunks\ui-status-UynRFzpd.js                                     1.26 kB
+  ├─ .output\chrome-mv3\chunks\update-DBvnG4J7.js                                        6.60 kB
+  ├─ .output\chrome-mv3\chunks\update-flow-BtVrFbRv.js                                   2.94 kB
+  ├─ .output\chrome-mv3\chunks\welcome-D1smaVpX.js                                       5.31 kB
+  ├─ .output\chrome-mv3\content-scripts\twitch.js                                        431.73 kB
+  ├─ .output\chrome-mv3\inference-worker.js                                              1.34 MB
+  ├─ .output\chrome-mv3\runtime\mediapipe\audio_wasm_internal.js                         161.73 kB
+  ├─ .output\chrome-mv3\runtime\mediapipe\audio_wasm_nosimd_internal.js                  161.59 kB
+  ├─ .output\chrome-mv3\sound-worker.js                                                  1.32 MB
+  ├─ .output\chrome-mv3\speech-worker.js                                                 1.32 MB
+  ├─ .output\chrome-mv3\assets\styles-Ccsi7k03.css                                       70.48 kB
+  ├─ .output\chrome-mv3\brand\app-icon.svg                                               291 B
+  ├─ .output\chrome-mv3\brand\smile-white.svg                                            164 B
+  ├─ .output\chrome-mv3\brand\smile-yellow.svg                                           164 B
+  ├─ .output\chrome-mv3\fonts\bricolage-grotesque-LICENSE.txt                            4.40 kB
+  ├─ .output\chrome-mv3\fonts\bricolage-grotesque.woff2                                  41.34 kB
+  ├─ .output\chrome-mv3\fonts\inter-LICENSE.txt                                          4.48 kB
+  ├─ .output\chrome-mv3\fonts\inter.woff2                                                48.26 kB
+  ├─ .output\chrome-mv3\fonts\jetbrains-mono-LICENSE.txt                                 4.52 kB
+  ├─ .output\chrome-mv3\fonts\jetbrains-mono.woff2                                       40.40 kB
+  ├─ .output\chrome-mv3\icon\128.png                                                     2.51 kB
+  ├─ .output\chrome-mv3\icon\16.png                                                      368 B
+  ├─ .output\chrome-mv3\icon\32.png                                                      609 B
+  ├─ .output\chrome-mv3\icon\48.png                                                      1.01 kB
+  ├─ .output\chrome-mv3\icon\toolbar-16.png                                              455 B
+  ├─ .output\chrome-mv3\icon\toolbar-32.png                                              728 B
+  ├─ .output\chrome-mv3\models\licenses\silero-MIT.txt                                   1.07 kB
+  ├─ .output\chrome-mv3\models\licenses\Transformers-Apache-2.0.txt                      11.36 kB
+  ├─ .output\chrome-mv3\models\licenses\Whisper-MIT.txt                                  1.06 kB
+  ├─ .output\chrome-mv3\models\licenses\Whisper-model-card.md                            14.86 kB
+  ├─ .output\chrome-mv3\models\licenses\YAMNet-Apache-2.0.txt                            11.51 kB
+  ├─ .output\chrome-mv3\models\model-files.json                                          4.69 kB
+  ├─ .output\chrome-mv3\models\silero-v5.onnx                                            2.33 MB
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\config.json                               2.20 kB
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\generation_config.json                    1.65 kB
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\onnx\decoder_model_merged_quantized.onnx  30.72 MB
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\onnx\encoder_model_quantized.onnx         10.12 MB
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\preprocessor_config.json                  339 B
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\special_tokens_map.json                   2.17 kB
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\tokenizer_config.json                     282.66 kB
+  ├─ .output\chrome-mv3\models\whisper-tiny.en\tokenizer.json                            2.41 MB
+  ├─ .output\chrome-mv3\models\yamnet.tflite                                             4.13 MB
+  ├─ .output\chrome-mv3\runtime\mediapipe\audio_wasm_internal.wasm                       6.00 MB
+  ├─ .output\chrome-mv3\runtime\mediapipe\audio_wasm_nosimd_internal.wasm                5.88 MB
+  ├─ .output\chrome-mv3\runtime\mediapipe\LICENSE.txt                                    11.51 kB
+  ├─ .output\chrome-mv3\runtime\onnx\LICENSE.txt                                         1.07 kB
+  ├─ .output\chrome-mv3\runtime\onnx\ort-wasm-simd-threaded.jsep.mjs                     44.48 kB
+  └─ .output\chrome-mv3\runtime\onnx\ort-wasm-simd-threaded.jsep.wasm                    21.60 MB
+Σ Total size: 89.33 MB
+√ Finished in 16.9 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (chrome-mv3)
+
+> extension@0.8.4 build:edge C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline\apps\extension
+> node ../../tools/prepare-runtime.mjs && node ../../tools/check-assets.mjs && wxt build -b edge && node ../../tools/check-extension-identity.mjs .output/edge-mv3
+
+onnx: 21,640,503 local runtime bytes
+mediapipe: 12,205,698 local runtime bytes
+Verified 14 local model/license assets against SHA-256 receipts.
+
+WXT 0.21.5
+i Building edge-mv3 for production with Vite 8.3.5
+
+ WARN  The following entrypoints have been skipped:
+- debug
+
+[?25l
+⠋ Preparing...[K
+⠋ [1/7] audio-worklet[K
+⠙ [1/7] audio-worklet[K
+⠙ [2/7] background[K
+⠹ [2/7] background[K
+⠸ [2/7] background[K
+⠸ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠼ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠴ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠦ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠧ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠇ [3/7] diagnostics, mic-test, offscreen, popup, recap, update, welcome[K
+⠇ [4/7] inference-worker[K
+⠏ [4/7] inference-worker[K
+⠋ [4/7] inference-worker[K
+⠙ [4/7] inference-worker[K
+[EMPTY_IMPORT_META] `import.meta` may not be a valid syntax with the `iife` output format.
+      ╭─[ ../../node_modules/.pnpm/@huggingface+transformers@3.8.1/node_modules/@huggingface/transformers/dist/transformers.web.js:5101:37 ]
+      │
+ 5101 │     const _import_meta_url = Object(import.meta).url;
+      │                                     ─────┬─────
+      │                                          ╰─────── This `import.meta` will be replaced with an empty object (`{}`) automatically. If this is desired, you can suppress this warning by adding `transform.define: { 'import.meta': {} }`. If `import.meta` needs to be kept as-is, you need to set the output format to `esm`.
+──────╯
+
+⠹ [4/7] inference-worker[K
+⠹ [5/7] sound-worker[K
+⠸ [5/7] sound-worker[K
+⠼ [5/7] sound-worker[K
+⠴ [5/7] sound-worker[K
+⠦ [5/7] sound-worker[K
+[EMPTY_IMPORT_META] `import.meta` may not be a valid syntax with the `iife` output format.
+      ╭─[ ../../node_modules/.pnpm/@huggingface+transformers@3.8.1/node_modules/@huggingface/transformers/dist/transformers.web.js:5101:37 ]
+      │
+ 5101 │     const _import_meta_url = Object(import.meta).url;
+      │                                     ─────┬─────
+      │                                          ╰─────── This `import.meta` will be replaced with an empty object (`{}`) automatically. If this is desired, you can suppress this warning by adding `transform.define: { 'import.meta': {} }`. If `import.meta` needs to be kept as-is, you need to set the output format to `esm`.
+──────╯
+
+⠧ [5/7] sound-worker[K
+⠧ [6/7] speech-worker[K
+⠇ [6/7] speech-worker[K
+⠏ [6/7] speech-worker[K
+⠋ [6/7] speech-worker[K
+⠙ [6/7] speech-worker[K
+[EMPTY_IMPORT_META] `import.meta` may not be a valid syntax with the `iife` output format.
+      ╭─[ ../../node_modules/.pnpm/@huggingface+transformers@3.8.1/node_modules/@huggingface/transformers/dist/transformers.web.js:5101:37 ]
+      │
+ 5101 │     const _import_meta_url = Object(import.meta).url;
+      │                                     ─────┬─────
+      │                                          ╰─────── This `import.meta` will be replaced with an empty object (`{}`) automatically. If this is desired, you can suppress this warning by adding `transform.define: { 'import.meta': {} }`. If `import.meta` needs to be kept as-is, you need to set the output format to `esm`.
+──────╯
+
+⠹ [6/7] speech-worker[K
+⠹ [7/7] twitch[K
+⠸ [7/7] twitch[K
+⠼ [7/7] twitch[K
+⠴ [7/7] twitch[K
+⠦ [7/7] twitch[K
+⠧ [7/7] twitch[K
+⠇ [7/7] twitch[K
+[K[?25h
+[K[?25h√ Built extension in 4.474 s
+  ├─ .output\edge-mv3\manifest.json                                                    2.00 kB
+  ├─ .output\edge-mv3\diagnostics.html                                                 613 B
+  ├─ .output\edge-mv3\mic-test.html                                                    986 B
+  ├─ .output\edge-mv3\offscreen.html                                                   515 B
+  ├─ .output\edge-mv3\popup.html                                                       1.28 kB
+  ├─ .output\edge-mv3\recap.html                                                       743 B
+  ├─ .output\edge-mv3\update.html                                                      673 B
+  ├─ .output\edge-mv3\welcome.html                                                     900 B
+  ├─ .output\edge-mv3\audio-worklet.js                                                 2.98 kB
+  ├─ .output\edge-mv3\background.js                                                    238.06 kB
+  ├─ .output\edge-mv3\chunks\bridge-Cb9exiF9.js                                        1.75 kB
+  ├─ .output\edge-mv3\chunks\components-J8v1Ypt8.js                                    4.63 kB
+  ├─ .output\edge-mv3\chunks\diagnostics-Ctb39ZJI.js                                   3.77 kB
+  ├─ .output\edge-mv3\chunks\diagnostics-De37bBaj.js                                   5.16 kB
+  ├─ .output\edge-mv3\chunks\HistoryView-CB4wj_fW.js                                   112.08 kB
+  ├─ .output\edge-mv3\chunks\mic-test-DSSze_Se.js                                      320 B
+  ├─ .output\edge-mv3\chunks\microphone-BykvWkEu.js                                    1.46 kB
+  ├─ .output\edge-mv3\chunks\MicTest-BuunntDd.js                                       6.69 kB
+  ├─ .output\edge-mv3\chunks\offscreen-Bo7gkD2A.js                                     27.59 kB
+  ├─ .output\edge-mv3\chunks\popup-BCVfZ2Bu.js                                         14.08 kB
+  ├─ .output\edge-mv3\chunks\recap-Sh3Ry_Zy.js                                         40.01 kB
+  ├─ .output\edge-mv3\chunks\site-BiIQNvGa.js                                          83 B
+  ├─ .output\edge-mv3\chunks\src-Dku3gCG5.js                                           102.40 kB
+  ├─ .output\edge-mv3\chunks\stutter-Dc_AdYHT.js                                       2.77 kB
+  ├─ .output\edge-mv3\chunks\styles-I2mJ7GcP.js                                        219.28 kB
+  ├─ .output\edge-mv3\chunks\ui-status-UynRFzpd.js                                     1.26 kB
+  ├─ .output\edge-mv3\chunks\update-DBvnG4J7.js                                        6.60 kB
+  ├─ .output\edge-mv3\chunks\update-flow-BtVrFbRv.js                                   2.94 kB
+  ├─ .output\edge-mv3\chunks\welcome-D1smaVpX.js                                       5.31 kB
+  ├─ .output\edge-mv3\content-scripts\twitch.js                                        431.73 kB
+  ├─ .output\edge-mv3\inference-worker.js                                              1.34 MB
+  ├─ .output\edge-mv3\runtime\mediapipe\audio_wasm_internal.js                         161.73 kB
+  ├─ .output\edge-mv3\runtime\mediapipe\audio_wasm_nosimd_internal.js                  161.59 kB
+  ├─ .output\edge-mv3\sound-worker.js                                                  1.32 MB
+  ├─ .output\edge-mv3\speech-worker.js                                                 1.32 MB
+  ├─ .output\edge-mv3\assets\styles-Ccsi7k03.css                                       70.48 kB
+  ├─ .output\edge-mv3\brand\app-icon.svg                                               291 B
+  ├─ .output\edge-mv3\brand\smile-white.svg                                            164 B
+  ├─ .output\edge-mv3\brand\smile-yellow.svg                                           164 B
+  ├─ .output\edge-mv3\fonts\bricolage-grotesque-LICENSE.txt                            4.40 kB
+  ├─ .output\edge-mv3\fonts\bricolage-grotesque.woff2                                  41.34 kB
+  ├─ .output\edge-mv3\fonts\inter-LICENSE.txt                                          4.48 kB
+  ├─ .output\edge-mv3\fonts\inter.woff2                                                48.26 kB
+  ├─ .output\edge-mv3\fonts\jetbrains-mono-LICENSE.txt                                 4.52 kB
+  ├─ .output\edge-mv3\fonts\jetbrains-mono.woff2                                       40.40 kB
+  ├─ .output\edge-mv3\icon\128.png                                                     2.51 kB
+  ├─ .output\edge-mv3\icon\16.png                                                      368 B
+  ├─ .output\edge-mv3\icon\32.png                                                      609 B
+  ├─ .output\edge-mv3\icon\48.png                                                      1.01 kB
+  ├─ .output\edge-mv3\icon\toolbar-16.png                                              455 B
+  ├─ .output\edge-mv3\icon\toolbar-32.png                                              728 B
+  ├─ .output\edge-mv3\models\licenses\silero-MIT.txt                                   1.07 kB
+  ├─ .output\edge-mv3\models\licenses\Transformers-Apache-2.0.txt                      11.36 kB
+  ├─ .output\edge-mv3\models\licenses\Whisper-MIT.txt                                  1.06 kB
+  ├─ .output\edge-mv3\models\licenses\Whisper-model-card.md                            14.86 kB
+  ├─ .output\edge-mv3\models\licenses\YAMNet-Apache-2.0.txt                            11.51 kB
+  ├─ .output\edge-mv3\models\model-files.json                                          4.69 kB
+  ├─ .output\edge-mv3\models\silero-v5.onnx                                            2.33 MB
+  ├─ .output\edge-mv3\models\whisper-tiny.en\config.json                               2.20 kB
+  ├─ .output\edge-mv3\models\whisper-tiny.en\generation_config.json                    1.65 kB
+  ├─ .output\edge-mv3\models\whisper-tiny.en\onnx\decoder_model_merged_quantized.onnx  30.72 MB
+  ├─ .output\edge-mv3\models\whisper-tiny.en\onnx\encoder_model_quantized.onnx         10.12 MB
+  ├─ .output\edge-mv3\models\whisper-tiny.en\preprocessor_config.json                  339 B
+  ├─ .output\edge-mv3\models\whisper-tiny.en\special_tokens_map.json                   2.17 kB
+  ├─ .output\edge-mv3\models\whisper-tiny.en\tokenizer_config.json                     282.66 kB
+  ├─ .output\edge-mv3\models\whisper-tiny.en\tokenizer.json                            2.41 MB
+  ├─ .output\edge-mv3\models\yamnet.tflite                                             4.13 MB
+  ├─ .output\edge-mv3\runtime\mediapipe\audio_wasm_internal.wasm                       6.00 MB
+  ├─ .output\edge-mv3\runtime\mediapipe\audio_wasm_nosimd_internal.wasm                5.88 MB
+  ├─ .output\edge-mv3\runtime\mediapipe\LICENSE.txt                                    11.51 kB
+  ├─ .output\edge-mv3\runtime\onnx\LICENSE.txt                                         1.07 kB
+  ├─ .output\edge-mv3\runtime\onnx\ort-wasm-simd-threaded.jsep.mjs                     44.48 kB
+  └─ .output\edge-mv3\runtime\onnx\ort-wasm-simd-threaded.jsep.wasm                    21.60 MB
+Σ Total size: 89.33 MB
+√ Finished in 4.909 s
+Built manifest identity verified: fkocldgggcmhihelohiicoakcfomhepg (edge-mv3)
+
+> laughline-monorepo@0.8.4 release:zip C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline
+> node tools/release/pack.mjs
+
+Verified flat chrome ZIP: streamlaughs-chrome-v0.8.4.zip
+Verified flat edge ZIP: streamlaughs-edge-v0.8.4.zip
+Prepared production-configured assets in releases/production; no tag, release or deployment created.
+Universal download: 40801774 bytes; SHA-256 993e72c4eb04a57a6643c58a90b0e7677f99acff8f23416f98a2a38c445b1ec8
+▲ Next.js 16.4.3 (webpack)
+✓ Running next.config.ts took 58ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 18.7s
+  Running TypeScript ...
+  Finished TypeScript in 4.4s ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/16) ...
+  Generating static pages using 11 workers (4/16)
+  Generating static pages using 11 workers (8/16)
+  Generating static pages using 11 workers (12/16)
+✓ Generating static pages using 11 workers (16/16) in 7.2s
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/dashboard/[channel]
+├ ƒ /api/extension-profile
+├ ○ /apple-icon
+├ ƒ /auth/callback
+├ ƒ /auth/login
+├ ƒ /auth/logout
+├ ƒ /dashboard
+├ ƒ /dashboard/[channel]
+├ ƒ /demo
+├ ƒ /for-streamers
+├ ○ /icon.svg
+├ ƒ /install
+├ ○ /opengraph-image
+├ ○ /privacy
+├ ƒ /r
+├ ƒ /r/image
+├ ƒ /streamers
+├ ○ /try
+└ ƒ /version.json
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+StreamLaughs source, docs and requested website output branding checks passed.
+
+> pnpm release:edge-store + verify-store.py
+
+> laughline-monorepo@0.8.4 release:edge-store C:\Users\Asus\Documents\Codex\2026-10-27\files-mentioned-by-the-user-laughline\outputs\laughline
+> node tools/release/pack.mjs --edge-store
+
+Verified flat edge ZIP: streamlaughs-edge-store-v0.8.4.zip
+Prepared Edge store CI artifact in releases/edge-store; no publication performed.
+Verified store ZIP: streamlaughs-edge-store-v0.8.4.zip; one manifest, no key, no downloads
+
+Interpretation: the severe continuous physical stutter was not reproduced. Native mode creates zero extension passthrough contexts; native HTML-video audio underruns are UNAVAILABLE, not a measured zero. The strict no-long-task-over-50ms target did not pass under load; see the exact task readings above. Worker timer stalls and model elapsed time are not audio underruns or OS CPU utilization. Startup/switch task readings are retained separately.
+
+Local universal download metadata:
+{
+  "version": "0.8.4",
+  "filename": "streamlaughs.zip",
+  "versionedFilename": "streamlaughs-v0.8.4.zip",
+  "sha256": "993e72c4eb04a57a6643c58a90b0e7677f99acff8f23416f98a2a38c445b1ec8",
+  "bytes": 40801774
+}
+
+Store ZIP: {"bytes": 40801448, "sha256": "1513d5432881dec4b9c4f8493dc79dea37cf878436bb29b1ca955043b8c01dd7", "oneManifest": true, "key": false, "downloadsPermission": false}
+
+Protected v0.8.3 files unchanged byte-for-byte:
+apps/extension/src/inference/config.ts d6f68ed7db9a61ad668ba2b66e1cd715cc452f66b384c7174ee4cb028078d32e
+apps/extension/src/inference/rules.ts 2d64f8d60c59357a4ddd1c6ab0ed4405fc4b4112ff36546613e06663e2347f0a
+apps/extension/src/inference/dsp-laugh.ts b3a400a8d4f49bbf2e804290b42c3b75702324f85f0c29ad51ef881d130f02a7
+packages/shared/src/reaction-words.ts 703217c9374e567e096d860bfcb78dc6d52be202bbf976e42e3bd734489d6c38
+apps/extension/src/audio/config.ts 54ec4bfbbb9b1ea3e071522c1e95e0b3e8ef8ee9773ac6a09e4954aba7aca757
+apps/extension/src/audio/resampler.ts da3bbc81878eefc504fcb4bdc92d74eaaec60a1287b262ffc29dd9965bd000e5
+apps/extension/src/audio/microphone.ts 0abe3b3b5e0d2e51e117291d95797f53740c3e8e84ec409e33dd5cd51982b068
+
+Fixed ZIP ID: fkocldgggcmhihelohiicoakcfomhepg. Live download/version/checksum and CI are checked after the authorized main push.

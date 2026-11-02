@@ -2,6 +2,8 @@
 
 # StreamLaughs final manual acceptance · one 30-minute pass
 
+For v0.8.4 audio, first follow the [five-minute wired and optional five-minute Bluetooth comparison](audio-stutter-v084.md#owner-check-wired-then-bluetooth). Tab capture is off by default; inspect Alt+Shift+D → stutter lab before opting into the speaker echo reference.
+
 This is the canonical final checklist. It is a smoke/acceptance pass, not an accuracy benchmark or a two-hour soak. Mark only things you observe. Record date, Chrome/Edge versions, OS, build version, configured origins and result beside each item. No private audio, cookies, tokens or OAuth codes in evidence.
 
 **Prepare before starting the timer:** complete provider/env setup, connected release rehearsal and model download; have headphones, speakers and a working mic; two clean browser profiles A/B; your own live Twitch test stream (or a cooperating streamer who logs into their own dashboard), ideally with an archive already available. Start local/dev Worker + website with real registered Twitch credentials. Build Chrome/Edge with those public URLs. Set ALLOW_TEST_TRAFFIC=true only locally/dev for the floor/word demonstration; production stays false. Have one older eligible aggregate stream if testing existing VOD links. Registration, model downloads, Twitch archive processing and deployment are outside this timed pass.

@@ -48,6 +48,7 @@ import {
 } from '../src/update-flow';
 import { notifyUpdatedTabs } from '../src/updated-note';
 import { checkVersion } from '../src/version-check';
+import { LabSwitchesSchema } from '../src/stutter';
 
 export default defineBackground(() => {
   let state: Snapshot = initialSnapshot();
@@ -488,16 +489,13 @@ export default defineBackground(() => {
     await publish();
     if (state.settings.listen) {
       try {
-        // Ephemeral ID: obtained only from toolbar/command start, never stored or reported.
-        const streamId = await chrome.tabCapture.getMediaStreamId({
-          targetTabId: tab.id,
-        });
+        // Leave Twitch playback native. Tab capture is an explicit live lab opt-in.
         const owner = await ownerCommand({
           target: 'offscreen',
           type: 'AUDIO_START',
           micDeviceId: await selectedMicrophone(),
           sessionId: state.session!.id,
-          streamId,
+          nativePlayback: true,
           paused: state.status === 'paused',
         });
         if (!owner) throw new Error('capture');
@@ -888,6 +886,64 @@ export default defineBackground(() => {
         (path) => sender.url === chrome.runtime.getURL(path),
       ) ||
       (sender.tab?.id === state.session?.tabId && twitchPage(sender.url ?? ''));
+    if ((message as { type?: string })?.type === 'AUDIO_STUTTER_NOTICE') {
+      const value = message as { ownerId?: string; sessionId?: string };
+      if (
+        sender.url === chrome.runtime.getURL('/offscreen.html') &&
+        value.ownerId === activeOwnerId &&
+        value.sessionId === state.session?.id
+      )
+        void chrome.tabs
+          .sendMessage(state.session!.tabId, { type: 'STUTTER_NOTICE' })
+          .catch(() => {});
+      reply({ ok: true });
+      return;
+    }
+    if (audioUI && (message as { type?: string })?.type === 'STUTTER_LAB') {
+      const switches = LabSwitchesSchema.safeParse(
+        (message as { switches?: unknown }).switches,
+      );
+      if (!switches.success || !state.session || !state.settings.listen) {
+        reply({ ok: false, error: 'start recording before using stutter lab' });
+        return;
+      }
+      void serialize(async () => {
+        await ready;
+        if (!state.session || !state.settings.listen)
+          throw new Error('capture not running');
+        const owner = await ownerCommand({
+          target: 'offscreen',
+          type: 'AUDIO_STATUS',
+        });
+        if (!owner || owner.sessionId !== state.session?.id)
+          throw new Error('capture not running · start again');
+        const streamId =
+          switches.data.tabCapture && !owner.hasTab
+            ? await chrome.tabCapture.getMediaStreamId({
+                targetTabId: state.session!.tabId,
+              })
+            : undefined;
+        const value = await ownerCommand({
+          target: 'offscreen',
+          type: 'AUDIO_LAB',
+          switches: switches.data,
+          streamId,
+        });
+        await chrome.tabs
+          .sendMessage(state.session!.tabId, {
+            type: 'STUTTER_LAB_STATE',
+            switches: value,
+          })
+          .catch(() => {});
+        reply({ ok: true });
+      }).catch(() =>
+        reply({
+          ok: false,
+          error: 'couldn’t change capture · retry from the Twitch tab',
+        }),
+      );
+      return true;
+    }
     if (
       audioUI &&
       (message as { type?: string })?.type === 'GET_AUDIO_PREVIEW'
@@ -913,6 +969,8 @@ export default defineBackground(() => {
               sessionId: string | null;
               audio: unknown;
               inference: unknown;
+              lab?: unknown;
+              offscreenTasks?: unknown;
             }>({
               target: 'offscreen',
               type: 'AUDIO_DIAGNOSTICS',
@@ -931,6 +989,8 @@ export default defineBackground(() => {
           sessionMatches:
             !!owner && owner.sessionId === state.capture.sessionId,
           laughPanelLatencyMs,
+          lab: owner?.lab,
+          offscreenTasks: owner?.offscreenTasks,
           savedLaughs: saved?.laughCount ?? 0,
           savedWords: saved?.topWords.reduce((n, w) => n + w.count, 0) ?? 0,
           sessionLaughs: state.session?.laughCount ?? 0,

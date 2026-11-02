@@ -11,9 +11,13 @@ import { INFERENCE_CONFIG } from '../src/inference/config';
 import { installLocalAssetPolicy } from '../src/inference/local-assets';
 import { LocalModels, type SpeechResult } from '../src/inference/models';
 import { InferencePipeline } from '../src/inference/pipeline';
+import { TaskProbe } from '../src/stutter';
 
 // Classic worker is intentional: MediaPipe's local WASM loader uses importScripts.
 export default defineUnlistedScript(() => {
+  const tasks = new TaskProbe();
+  let previousVadMs = 0,
+    previousVadAt = performance.now();
   const resources = installLocalAssetPolicy(self.location.origin);
   let models: LocalModels | null = null,
     pipeline: InferencePipeline | null = null;
@@ -65,6 +69,10 @@ export default defineUnlistedScript(() => {
     const base = pipeline?.diagnostics() ?? emptyWorkerDiagnostics();
     const diagnostics = {
       ...base,
+      tasks: tasks.snapshot(),
+      vadCpuMsPerSecond:
+        (Math.max(0, models.times.vad - previousVadMs) * 1000) /
+        Math.max(1, performance.now() - previousVadAt),
       models: models.status,
       error: failure || base.error,
     };
@@ -92,9 +100,14 @@ export default defineUnlistedScript(() => {
           : undefined,
     });
     events = [];
+    previousVadMs = models.times.vad;
+    previousVadAt = performance.now();
     lastReport = performance.now();
   };
-  const statusTimer = setInterval(report, 250);
+  const statusTimer = setInterval(() => {
+    tasks.tick();
+    report();
+  }, 250);
   const schedule = () => {
     if (scheduled || running || stopped || finishing || !pipeline?.pendingWork)
       return;
@@ -118,7 +131,10 @@ export default defineUnlistedScript(() => {
     }, 0);
   };
   self.onmessage = async ({ data }) => {
-    if (data.type === 'init') {
+    if (data.type === 'modes') {
+      if (typeof data.laugh === 'boolean' && typeof data.speech === 'boolean')
+        pipeline?.setModes(data);
+    } else if (data.type === 'init') {
       if (models) return;
       models = new LocalModels();
       const evaluation = AUDIO_DEBUG && data.evaluation === true;
@@ -159,6 +175,7 @@ export default defineUnlistedScript(() => {
         undefined,
         schedule,
       );
+      if (data.modes) pipeline.setModes(data.modes);
       models.status.vad.phase = 'loading';
       report();
       try {

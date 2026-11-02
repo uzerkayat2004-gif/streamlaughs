@@ -1,17 +1,24 @@
 import { modelState, safeError } from '../src/diagnostics';
 import { installLocalAssetPolicy } from '../src/inference/local-assets';
 import { LocalModels } from '../src/inference/models';
+import { TaskProbe } from '../src/stutter';
 
 // MediaPipe classification is synchronous; keep it off the realtime/VAD event loop.
 export default defineUnlistedScript(() => {
+  const tasks = new TaskProbe();
   installLocalAssetPolicy(self.location.origin);
   const models = new LocalModels();
   let ready = false;
   const status = () =>
     self.postMessage({
       type: 'sound_status',
+      tasks: tasks.snapshot(),
       model: models.status.yamnet ?? modelState(),
     });
+  setInterval(() => {
+    tasks.tick();
+    status();
+  }, 250);
   self.onmessage = async ({ data }) => {
     if (data.type === 'init') {
       try {

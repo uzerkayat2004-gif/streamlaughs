@@ -97,6 +97,51 @@ describe('offscreen audio ownership', () => {
     vi.unstubAllGlobals();
     vi.useRealTimers();
   });
+  it('records a normal native-playback session without capturing or replaying the Twitch tab', async () => {
+    await engine.start({ sessionId: 'native', nativePlayback: true });
+    expect(engine.status()).toMatchObject({
+      phase: 'active',
+      hasMic: true,
+      hasTab: false,
+    });
+    expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledOnce();
+    expect(engine.diagnostics().playbackContext).toBe('closed');
+    expect(nodes).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(120001);
+    expect(engine.status()?.phase).toBe('active');
+  });
+  it('switches tab and mic capture live without ending or replacing the saved session', async () => {
+    await engine.start({ sessionId: 'live-switch', nativePlayback: true });
+    const defaults = {
+      tabCapture: false,
+      micCapture: true,
+      laughModel: true,
+      speechModel: true,
+      overlay: true,
+    };
+    await engine.setLab({ ...defaults, tabCapture: true }, 'gesture-stream-id');
+    expect(engine.status()).toMatchObject({
+      sessionId: 'live-switch',
+      hasTab: true,
+      hasMic: true,
+    });
+    await engine.setLab({ ...defaults, micCapture: false });
+    expect(tab.item.stop).toHaveBeenCalledOnce();
+    expect(mic.item.stop).toHaveBeenCalledOnce();
+    expect(engine.status()).toMatchObject({
+      phase: 'active',
+      hasTab: false,
+      hasMic: false,
+      micLost: false,
+    });
+    mic = stream();
+    await engine.setLab(defaults);
+    expect(engine.status()).toMatchObject({
+      sessionId: 'live-switch',
+      hasMic: true,
+      hasTab: false,
+    });
+  });
   it('keeps both tracks and replay open during pause, then releases every resource on stop', async () => {
     await engine.start({ sessionId: 'one', streamId: 'opaque' });
     expect(engine.status()?.phase).toBe('active');

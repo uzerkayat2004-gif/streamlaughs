@@ -6,6 +6,12 @@ import {
   isApprovedPhrase,
 } from '@laughline/shared';
 import { z } from 'zod';
+import {
+  LabSwitchesSchema,
+  PlaybackStatsSchema,
+  TaskStatsSchema,
+  emptyTasks,
+} from './stutter';
 export const SpeechResultSchema = z
   .object({
     phrases: z.array(SafePhraseSchema).max(64),
@@ -50,6 +56,11 @@ const track = z
     muted: z.boolean(),
     enabled: z.boolean(),
     sampleRate: z.number().nonnegative(),
+    channelCount: z.number().nonnegative().default(0),
+    echoCancellation: z.boolean().default(false),
+    noiseSuppression: z.boolean().default(false),
+    autoGainControl: z.boolean().default(false),
+    device: z.string().max(32).default('system default'),
   })
   .strict();
 export const WorkerDiagnosticsSchema = z
@@ -74,6 +85,21 @@ export const WorkerDiagnosticsSchema = z
       .default(() => emptyStages()),
     laughScore: z.number().min(0).max(1).default(0),
     soundCpuMsPerSecond: z.number().nonnegative().default(0),
+    speechOverruns: z.number().nonnegative().default(0),
+    speechCooldownMs: z.number().nonnegative().default(0),
+    vadCpuMsPerSecond: z.number().nonnegative().default(0),
+    tasks: TaskStatsSchema.default(emptyTasks),
+    workerTasks: z
+      .object({
+        realtime: TaskStatsSchema,
+        sound: TaskStatsSchema,
+        speech: TaskStatsSchema,
+      })
+      .default(() => ({
+        realtime: emptyTasks(),
+        sound: emptyTasks(),
+        speech: emptyTasks(),
+      })),
     speechCpuMsPerSecond: z.number().nonnegative().default(0),
     echo: EchoStateSchema.default(() => ({
       removed: false,
@@ -132,6 +158,15 @@ export const emptyStages = () => ({
   acceptedEvents: 0,
 });
 export const emptyWorkerDiagnostics = (): WorkerDiagnostics => ({
+  speechOverruns: 0,
+  speechCooldownMs: 0,
+  vadCpuMsPerSecond: 0,
+  tasks: emptyTasks(),
+  workerTasks: {
+    realtime: emptyTasks(),
+    sound: emptyTasks(),
+    speech: emptyTasks(),
+  },
   stages: emptyStages(),
   laughScore: 0,
   soundCpuMsPerSecond: 0,
@@ -164,6 +199,9 @@ export const AudioDiagnosticsSchema = z
     phase: z.string().max(32),
     context: z.string().max(32),
     playbackContext: z.string().max(32).default('closed'),
+    playback: PlaybackStatsSchema.optional(),
+    lab: LabSwitchesSchema.optional(),
+    bluetooth: z.boolean().default(false),
     inputSampleRate: z.number().nonnegative(),
     sampleRate: z.literal(16000),
     frameSamples: z.literal(320),
@@ -184,6 +222,8 @@ export const DiagnosticsSchema = z
     sessionLaughs: z.number().nonnegative().default(0),
     sessionWords: z.number().nonnegative().default(0),
     laughPanelLatencyMs: z.number().nonnegative().default(0),
+    lab: LabSwitchesSchema.optional(),
+    offscreenTasks: TaskStatsSchema.optional(),
     version: z.string().max(30),
     listening: z.boolean(),
     captureState: z.string().max(32),

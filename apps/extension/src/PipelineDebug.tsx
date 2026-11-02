@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { selectedMicrophone } from './audio/microphone';
+import { StutterLab } from './StutterLab';
+import { labSurface } from './stutter-surface';
 import {
   copyableReport,
   type DiagnosticsReport,
@@ -24,7 +26,10 @@ export function usePipelineReport(
         const next = DiagnosticsSchema.parse(
           await chrome.runtime.sendMessage({ type: 'GET_DIAGNOSTICS' }),
         );
-        if (alive) setReport(next);
+        if (alive) {
+          setReport(next);
+          if (next.lab) labSurface.accept(next.lab);
+        }
         if (preview) {
           const value = await chrome.runtime.sendMessage({
             type: 'GET_AUDIO_PREVIEW',
@@ -51,13 +56,24 @@ export function usePipelineReport(
 }
 export function micProblem(report: DiagnosticsReport | null) {
   if (!report) return 'connecting to the local audio owner…';
+  if (report.lab?.micCapture === false)
+    return 'microphone paused in stutter lab';
+  if (report.lab?.laughModel === false && report.lab?.speechModel === false)
+    return 'models paused in stutter lab';
+  const wanted = (name: string) =>
+    name === 'vad' ||
+    (name === 'yamnet'
+      ? report.lab?.laughModel !== false
+      : report.lab?.speechModel !== false &&
+        !report.inference?.speechCooldownMs &&
+        !report.audio?.playback?.speechPaused);
   if (!report.offscreenAlive)
     return report.error
       ? `no microphone capture · ${report.error}`
       : 'microphone is not running · start a mic check';
   if (report.audio?.error) return report.audio.error;
   const failed = Object.entries(report.inference?.models ?? {}).find(
-    ([, model]) => model.phase === 'error' || model.error,
+    ([name, model]) => wanted(name) && (model.phase === 'error' || model.error),
   );
   if (failed)
     return `${failed[0]} model failed to load or run · ${failed[1].error}`;
@@ -77,8 +93,8 @@ export function micProblem(report: DiagnosticsReport | null) {
   if (report.inference?.health.phase !== 'ready')
     return 'loading the local models…';
   if (
-    Object.values(report.inference.models).some(
-      (model) => model.phase !== 'ready',
+    Object.entries(report.inference.models).some(
+      ([name, model]) => wanted(name) && model.phase !== 'ready',
     )
   )
     return 'loading the local models…';
@@ -171,6 +187,7 @@ export function PipelineDebug({ close }: { close: () => void }) {
         recognized audio frame → panel (not first-sound onset)
       </p>
       <CopyDiagnostics report={r} />
+      <StutterLab report={r} />
     </section>
   );
 }

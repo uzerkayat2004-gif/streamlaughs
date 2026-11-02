@@ -1,6 +1,38 @@
 import { expect, it, vi } from 'vitest';
 import { INFERENCE_CONFIG as C, zeroScores } from './config';
 import { InferencePipeline } from './pipeline';
+it('live lab gates stop model jobs, suppress disabled speech, and resume the same word rules', async () => {
+  const words = vi.fn(async () => 'bro'),
+    sound = vi.fn(zeroScores),
+    events: { kind: string }[] = [];
+  const pipeline = new InferencePipeline(
+    { vad: async () => 0.9, sound, words },
+    (e) => events.push(e),
+  );
+  const feed = async (base: number) => {
+    for (let i = 0; i < 35; i++) {
+      pipeline.ingest(
+        'mic',
+        Float32Array.from({ length: 320 }, (_, j) => Math.sin(j * 0.3) * 0.04),
+        base + i * 20,
+      );
+      while (pipeline.pendingWork) await pipeline.step();
+    }
+    await pipeline.finish();
+  };
+  pipeline.setModes({ laugh: false, speech: false });
+  await feed(100000);
+  expect(words).not.toHaveBeenCalled();
+  expect(sound).not.toHaveBeenCalled();
+  pipeline.setModes({ laugh: true, speech: false });
+  await feed(200000);
+  expect(words).not.toHaveBeenCalled();
+  pipeline.setModes({ laugh: true, speech: true });
+  await feed(300000);
+  expect(words).toHaveBeenCalled();
+  expect(events.some((e) => e.kind === 'words')).toBe(true);
+  pipeline.clear();
+});
 it('flushes an open speech segment only on stop, preserving ordinary segmentation and approved word timestamps', async () => {
   const events: { kind: string }[] = [];
   const words = vi.fn(async () => ({

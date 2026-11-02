@@ -27,6 +27,24 @@ type SpeechJob = {
 };
 const wipe = (job: { samples: Float32Array }) => job.samples.fill(0);
 export class InferencePipeline {
+  private modes = { laugh: true, speech: true };
+  setModes(modes: { laugh: boolean; speech: boolean }) {
+    this.modes = { ...modes };
+    if (!modes.laugh) {
+      for (const job of Object.values(this.sound)) if (job) wipe(job);
+      this.sound = {};
+      this.soundGeneration++;
+      this.soundBusy = false;
+    }
+    if (!modes.speech) {
+      this.speechGeneration++;
+      this.speechQueue.clear();
+      this.segmenter.reset();
+      this.speechBusy = false;
+      this.speechTask = null;
+    }
+    if (!modes.laugh && !modes.speech) this.vadQueue.clear();
+  }
   readonly health = emptyInferenceHealth();
   readonly scores = { mic: zeroScores(), tab: zeroScores() };
   readonly reasons: { kind: string; ts: number; reason: string }[] = [];
@@ -78,6 +96,8 @@ export class InferencePipeline {
     [];
   private topMicClass = { label: 'waiting', score: 0 };
   private event(event: PersonalEvent) {
+    if (event.kind === 'words' ? !this.modes.speech : !this.modes.laugh)
+      return false;
     if (event.kind === 'laugh') {
       if (event.ts - this.lastLaugh < 2000) return false;
       this.lastLaugh = event.ts;
@@ -133,6 +153,7 @@ export class InferencePipeline {
   private nextSound: AudioSource = 'tab';
   private soundError = '';
   ingest(source: AudioSource, frame: Float32Array, ts: number) {
+    if (!this.modes.laugh && !this.modes.speech) return;
     const ingestStart = performance.now();
     this.frameCounts[source]++;
     const received = performance.now();
@@ -173,7 +194,11 @@ export class InferencePipeline {
     if (source === 'mic') {
       this.rawMic.write(frame);
       frame = this.normalizer.process(frame, this.health.vadProbability >= 0.5);
-      if (this.dsp.process(frame, ts) && !this.dspPlayback(ts))
+      if (
+        this.modes.laugh &&
+        this.dsp.process(frame, ts) &&
+        !this.dspPlayback(ts)
+      )
         this.event({ kind: 'laugh', ts, confidence: 0.75, intensity: 1 });
     }
     this.buffers[source].write(frame);
@@ -182,6 +207,7 @@ export class InferencePipeline {
     while (envelope.length > 96 || envelope[0]!.ts < ts - 1900)
       envelope.shift();
     if (
+      this.modes.laugh &&
       this.buffers[source].length >= C.soundWindow &&
       ts - this.lastHop[source] >= C.soundHopMs
     ) {
@@ -485,6 +511,7 @@ export class InferencePipeline {
     }
   }
   private enqueueSegment(segment: { start: number; end: number }) {
+    if (!this.modes.speech) return;
     this.stages.segments++;
     this.onSpeech?.(segment);
     const ageSamples = Math.max(

@@ -30,6 +30,8 @@ import { stopWithPreview, type StopPreview } from './stop-preview';
 import { StopSaved } from './StopSaved';
 import { pageWatchContext } from './watch-context';
 import { audioNotice, friendlyError } from './ui-status';
+import { AUDIO_TIP, AUDIO_TIP_KEY } from './stutter';
+import { labSurface, contentStutterMetrics } from './stutter-surface';
 
 const ANCHOR_KEY = 'streamlaughs:overlay-anchor';
 export function Overlay({
@@ -38,6 +40,20 @@ export function Overlay({
   getPlayer: () => HTMLElement | null;
 }) {
   const [debugOpen, setDebugOpen] = useState(false);
+  const [lab, setLab] = useState(labSurface.get),
+    [audioTip, setAudioTip] = useState(false);
+  useEffect(() => labSurface.subscribe(() => setLab(labSurface.get())), []);
+  useEffect(() => {
+    contentStutterMetrics();
+    const notice = (message: { type?: string }) => {
+      if (message.type === 'STUTTER_NOTICE')
+        void chrome.storage.local.get(AUDIO_TIP_KEY).then((v) => {
+          if (!v[AUDIO_TIP_KEY]) setAudioTip(true);
+        });
+    };
+    chrome.runtime.onMessage.addListener(notice);
+    return () => chrome.runtime.onMessage.removeListener(notice);
+  }, []);
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (event.altKey && event.shiftKey && event.code === 'KeyD') {
@@ -83,7 +99,7 @@ export function Overlay({
   const notice = sessionHere ? audioNotice(snapshot) : null,
     count = sessionHere ? (snapshot.session?.laughCount ?? 0) : 0;
   useEffect(() => {
-    const disconnect = connectSurface();
+    const disconnect = connectSurface(250);
     void chrome.storage.local
       .get(['laughline:dock', ANCHOR_KEY])
       .then((data) => {
@@ -101,7 +117,19 @@ export function Overlay({
   useEffect(() => {
     let player: HTMLElement | null = null;
     const observer = new ResizeObserver(() => update());
+    let lastRead = 0,
+      scheduled: ReturnType<typeof setTimeout> | undefined;
     const update = () => {
+      if (!labSurface.get().overlay) return;
+      const remaining = 250 - (performance.now() - lastRead);
+      if (remaining > 0) {
+        scheduled ??= setTimeout(() => {
+          scheduled = undefined;
+          update();
+        }, remaining);
+        return;
+      }
+      lastRead = performance.now();
       const next = getPlayer();
       if (next !== player) {
         observer.disconnect();
@@ -149,6 +177,7 @@ export function Overlay({
     window.addEventListener('popstate', update);
     return () => {
       clearInterval(timer);
+      clearTimeout(scheduled);
       observer.disconnect();
       window.removeEventListener('resize', update);
       window.removeEventListener('scroll', update, true);
@@ -261,10 +290,10 @@ export function Overlay({
     }
   }
   useEffect(() => {
-    if (!sessionHere || !open) return;
+    if (!sessionHere || !open || !lab.overlay) return;
     const timer = setInterval(() => setClock(Date.now()), 1000);
     return () => clearInterval(timer);
-  }, [sessionHere, open]);
+  }, [sessionHere, open, lab.overlay]);
   function stopNow() {
     if (!snapshot.session) return;
     void stopWithPreview(
@@ -373,8 +402,23 @@ export function Overlay({
   }
   const opacity = overlayOpacity(hovered, activeAt, clock);
   return (
-    <div className="overlay-shell">
+    <div className={`overlay-shell ${lab.overlay ? '' : 'overlay-quiet'}`}>
       {debugOpen && <PipelineDebug close={() => setDebugOpen(false)} />}
+      {audioTip && (
+        <aside className="audio-smooth-tip" role="status">
+          <p>{AUDIO_TIP}</p>
+          <p>Windows: Sound settings &gt; Communications &gt; “Do nothing”.</p>
+          <button
+            type="button"
+            onClick={() => {
+              setAudioTip(false);
+              void chrome.storage.local.set({ [AUDIO_TIP_KEY]: true });
+            }}
+          >
+            got it
+          </button>
+        </aside>
+      )}
       {notice &&
         (notice.action && notice.action !== 'startAudio' ? (
           <button

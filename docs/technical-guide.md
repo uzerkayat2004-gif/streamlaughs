@@ -1,5 +1,7 @@
 # Technical guide · Parts 1–5 foundations
 
+Current audio default: [v0.8.4 native Twitch playback and stutter lab](audio-stutter-v084.md). The captured-tab default described in the historical foundations below is now an opt-in speaker echo reference.
+
 Current release preparation and canonical final acceptance: [Part 6 release guide](release-part6.md) and [30-minute checklist](manual-part6.md). The following preserves the implementation and privacy detail from Part 5.
 
 # streamlaughs · Part 5

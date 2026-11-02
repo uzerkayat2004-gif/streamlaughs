@@ -2417,19 +2417,15 @@ svg {
   from {
     transform: scale(1);
     opacity: 1;
-    box-shadow: 0 0 8px #ffd23faa;
   }
   to {
     transform: scale(2.8);
     opacity: 0;
-    box-shadow: 0 0 16px #ffd23f00;
   }
 }
 @keyframes launcher-breath {
   50% {
-    box-shadow:
-      inset 0 1px 2px #ffffff26,
-      0 2px 11px #ff5c5c50;
+    opacity: 0.65;
   }
 }
 .overlay-shell .fan-panel-content {
@@ -2846,4 +2842,45 @@ svg {
 .streamer-card:focus-visible {
   outline: 2px solid #fff;
   outline-offset: 4px;
+}
+.overlay-quiet *,
+.overlay-quiet *::before,
+.overlay-quiet *::after {
+  animation: none !important;
+  transition: none !important;
+}
+.stutter-lab {
+  border-top: 1px solid #ffffff30;
+  margin-top: 12px;
+  padding-top: 12px;
+}
+.stutter-lab summary {
+  cursor: pointer;
+  color: #ffd23f;
+}
+.stutter-lab fieldset {
+  display: grid;
+  gap: 9px;
+  border: 1px solid #ffffff30;
+}
+.stutter-lab label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.stutter-lab input {
+  accent-color: #ffd23f;
+}
+.audio-smooth-tip {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  max-width: 340px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #14141a;
+  color: white;
+  border: 1px solid #ffd23f;
+  pointer-events: auto;
+  font: 13px / 1.5 var(--ui);
 }

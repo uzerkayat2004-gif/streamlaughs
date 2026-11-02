@@ -103,9 +103,13 @@ vi.mock('./offscreen-client', () => ({
         phase: message.paused ? 'paused' : 'active',
         micLost: false,
         hasMic: true,
-        hasTab: true,
+        hasTab: !!message.streamId,
         metrics: emptyAudioMetrics(),
       };
+    if (message.type === 'AUDIO_LAB') {
+      if (fixture.owner) fixture.owner.hasTab = message.switches.tabCapture;
+      return message.switches;
+    }
     if (message.type === 'AUDIO_PAUSE' && fixture.owner)
       fixture.owner.phase = message.paused ? 'paused' : 'active';
     return fixture.owner;
@@ -213,6 +217,34 @@ describe('background capture integration with browser ports mocked', () => {
     vi.clearAllTimers();
     vi.unstubAllGlobals();
     vi.useRealTimers();
+  });
+  it('requests tab capture only for a live lab opt-in, keeping the same session on opt-out', async () => {
+    const started = await dispatch({ type: 'START', tabId: 1 });
+    expect(fixture.getStreamId).not.toHaveBeenCalled();
+    const switches = {
+      tabCapture: true,
+      micCapture: true,
+      laughModel: true,
+      speechModel: true,
+      overlay: true,
+    };
+    expect((await dispatch({ type: 'STUTTER_LAB', switches })).ok).toBe(true);
+    expect(fixture.getStreamId).toHaveBeenCalledExactlyOnceWith({
+      targetTabId: 1,
+    });
+    expect(
+      (
+        await dispatch({
+          type: 'STUTTER_LAB',
+          switches: { ...switches, tabCapture: false },
+        })
+      ).ok,
+    ).toBe(true);
+    expect(fixture.getStreamId).toHaveBeenCalledOnce();
+    expect((await dispatch({ type: 'GET_STATE' })).state.session?.id).toBe(
+      started.state.session?.id,
+    );
+    expect(fixture.recaps).toHaveLength(0);
   });
   it('publishes stop summary before a pending drain; opens recap and accepts final words without queue deadlock, then saves before teardown', async () => {
     const started = await dispatch({ type: 'START', tabId: 1 });
@@ -402,7 +434,7 @@ describe('background capture integration with browser ports mocked', () => {
       target: { tabId: 1 },
       files: ['content-scripts/twitch.js'],
     });
-    expect(fixture.getStreamId).toHaveBeenCalledWith({ targetTabId: 1 });
+    expect(fixture.getStreamId).not.toHaveBeenCalled();
   });
   it('never opens media or an offscreen document when listening is off', async () => {
     await dispatch({ type: 'SETTINGS', settings: { listen: false } });
@@ -489,7 +521,7 @@ describe('background capture integration with browser ports mocked', () => {
     expect((await dispatch({ type: 'GET_STATE' })).state.capture.error).toBe(
       'restartRequired',
     );
-    expect(fixture.getStreamId).toHaveBeenCalledOnce();
+    expect(fixture.getStreamId).not.toHaveBeenCalled();
   });
   it('enabling listening mid-session with denied permission keeps an explicit toolbar restart path', async () => {
     await dispatch({ type: 'SETTINGS', settings: { listen: false } });
@@ -509,7 +541,7 @@ describe('background capture integration with browser ports mocked', () => {
     fixture.permission = 'denied';
     fixture.storage['streamlaughs:mic-consent'] = true;
     const result = await dispatch({ type: 'START', tabId: 1 });
-    expect(fixture.getStreamId).toHaveBeenCalledOnce();
+    expect(fixture.getStreamId).not.toHaveBeenCalled();
     expect(result.state.capture.phase).toBe('active');
   });
   it('listening-off releases audio and ignores the late owner-idle report without ending the session', async () => {
@@ -529,7 +561,7 @@ describe('background capture integration with browser ports mocked', () => {
     const second = await dispatch({ type: 'START', tabId: 2 });
     expect(second.state.session!.id).not.toBe(first.state.session!.id);
     expect(fixture.recaps).toHaveLength(1);
-    expect(fixture.getStreamId).toHaveBeenLastCalledWith({ targetTabId: 2 });
+    expect(fixture.getStreamId).not.toHaveBeenCalled();
     fixture.changed[0]!(2, { url: 'https://www.twitch.tv/directory' });
     expect((await dispatch({ type: 'GET_STATE' })).state.session).toBeNull();
     expect(fixture.recaps).toHaveLength(2);
@@ -542,7 +574,7 @@ describe('background capture integration with browser ports mocked', () => {
     const result = await loadWorker();
     expect(result.state.status).toBe('paused');
     expect(result.state.capture.phase).toBe('paused');
-    expect(fixture.getStreamId).toHaveBeenCalledOnce();
+    expect(fixture.getStreamId).not.toHaveBeenCalled();
     expect(fixture.ensureOwner).toHaveBeenCalledOnce();
   });
   it('tab track ending stops and saves even while the tab remains open', async () => {

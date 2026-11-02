@@ -2,10 +2,34 @@ import { AUDIO_DEBUG } from '../../src/audio/config';
 import { AudioEngine, microphonePermission } from '../../src/audio/engine';
 import { OwnerCommandSchema } from '../../src/audio/protocol';
 import { InferenceBridge } from '../../src/inference/bridge';
+import { defaultLab, TaskProbe } from '../../src/stutter';
 
 const deliveries = new Set<Promise<unknown>>();
+let lab = defaultLab();
+let noticeSent = false;
+const tasks = new TaskProbe();
 const engine = new AudioEngine((message) => {
-  if (message.type === 'AUDIO_REPORT') inference?.sync(message);
+  if (message.type === 'AUDIO_REPORT') {
+    tasks.tick();
+    const audio = engine.diagnostics();
+    inference?.setLab(lab, audio.playback.speechPaused);
+    inference?.sync(message);
+    if (
+      !noticeSent &&
+      (audio.bluetooth ||
+        audio.playback.watchdogGaps ||
+        (audio.playback.underruns ?? 0) > 1)
+    ) {
+      noticeSent = true;
+      void chrome.runtime
+        .sendMessage({
+          type: 'AUDIO_STUTTER_NOTICE',
+          ownerId: message.ownerId,
+          sessionId: message.sessionId,
+        })
+        .catch(() => {});
+    }
+  }
   void chrome.runtime.sendMessage(message).catch(() => {});
 });
 const inference = new InferenceBridge(engine.frames, (message) => {
@@ -37,13 +61,30 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, reply) => {
           sessionId: engine.status()?.sessionId ?? null,
           audio: engine.diagnostics(),
           inference: inference.diagnostics(),
+          lab: { ...lab },
+          offscreenTasks: tasks.snapshot(),
         };
       case 'AUDIO_PREVIEW':
         return parsed.data.speech
           ? inference.speechPreview()
           : inference.preview();
       case 'AUDIO_START':
+        lab = defaultLab();
+        tasks.reset();
+        noticeSent = false;
         return engine.start(parsed.data);
+      case 'AUDIO_LAB': {
+        const previous = lab;
+        lab = parsed.data.switches;
+        try {
+          await engine.setLab(lab, parsed.data.streamId);
+        } catch (error) {
+          lab = previous;
+          throw error;
+        }
+        inference.setLab(lab, engine.diagnostics().playback.speechPaused);
+        return { ...lab };
+      }
       case 'AUDIO_PAUSE':
         return engine.pause(parsed.data.paused);
       case 'AUDIO_DRAIN':

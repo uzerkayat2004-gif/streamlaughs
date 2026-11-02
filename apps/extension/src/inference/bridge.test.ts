@@ -39,6 +39,54 @@ afterEach(() => {
   vi.unstubAllGlobals();
   WorkerFake.instances = [];
 });
+it('terminates the speech worker for the safety pause, keeps the laugh worker, and recreates speech on recovery', () => {
+  vi.stubGlobal('Worker', WorkerFake);
+  vi.stubGlobal('chrome', {
+    runtime: { getURL: (p: string) => `chrome-extension://test${p}` },
+  });
+  const bridge = new InferenceBridge(new AudioFrameHub(), vi.fn());
+  bridge.sync(report());
+  const [rt, speech, sound] = WorkerFake.instances;
+  bridge.setLab({ laughModel: true, speechModel: true }, true);
+  expect(speech!.terminate).toHaveBeenCalledOnce();
+  expect(sound!.terminate).not.toHaveBeenCalled();
+  expect(rt!.terminate).not.toHaveBeenCalled();
+  bridge.setLab({ laughModel: true, speechModel: true }, false);
+  expect(WorkerFake.instances).toHaveLength(4);
+  bridge.close();
+});
+it('aborts an in-flight speech budget overrun, retains laughs and retries after a bounded cooldown', () => {
+  vi.useFakeTimers({ toFake: ['performance'] });
+  vi.stubGlobal('Worker', WorkerFake);
+  vi.stubGlobal('chrome', {
+    runtime: { getURL: (p: string) => `chrome-extension://test${p}` },
+  });
+  const bridge = new InferenceBridge(new AudioFrameHub(), vi.fn());
+  bridge.sync(report());
+  const [rt, speech, sound] = WorkerFake.instances;
+  speech!.deliver({
+    type: 'speech_status',
+    model: { phase: 'ready', ms: 1, error: '' },
+  });
+  rt!.deliver({
+    type: 'speech_request',
+    id: 77,
+    samples: new Float32Array(16000),
+  });
+  vi.advanceTimersByTime(3001);
+  bridge.sync(report());
+  expect(speech!.terminate).toHaveBeenCalledOnce();
+  expect(sound!.terminate).not.toHaveBeenCalled();
+  expect(bridge.diagnostics()).toMatchObject({
+    speechOverruns: 1,
+    speechCooldownMs: 30000,
+    health: { lowPower: true },
+  });
+  vi.advanceTimersByTime(30001);
+  bridge.setLab({ laughModel: true, speechModel: true });
+  expect(WorkerFake.instances).toHaveLength(4);
+  bridge.close();
+});
 it('caps stop drain at 1500ms, stops frame input and keeps tracks/workers alive for the final save', async () => {
   vi.useFakeTimers();
   vi.stubGlobal('Worker', WorkerFake);

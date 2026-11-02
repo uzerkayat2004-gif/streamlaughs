@@ -1,5 +1,14 @@
 import { z } from 'zod';
+import { LabSwitchesSchema } from '../stutter';
 export const OwnerCommandSchema = z.discriminatedUnion('type', [
+  z
+    .object({
+      target: z.literal('offscreen'),
+      type: z.literal('AUDIO_LAB'),
+      switches: LabSwitchesSchema,
+      streamId: z.string().optional(),
+    })
+    .strict(),
   z
     .object({ target: z.literal('offscreen'), type: z.literal('AUDIO_DRAIN') })
     .strict(),
@@ -24,6 +33,7 @@ export const OwnerCommandSchema = z.discriminatedUnion('type', [
       sessionId: z.string(),
       streamId: z.string().optional(),
       micOnly: z.boolean().optional(),
+      nativePlayback: z.boolean().optional(),
       paused: z.boolean().optional(),
     })
     .strict(),

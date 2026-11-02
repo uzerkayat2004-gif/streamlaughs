@@ -7,6 +7,12 @@ import { openSelectedMicrophone } from './microphone';
 import { safeError } from '../diagnostics';
 import { AUDIO_STATUS_MS, MICROPHONE_CONSTRAINTS } from './config';
 import { AudioFrameHub, type AudioSource } from './ring-buffer';
+import {
+  bluetoothHint,
+  defaultLab,
+  type LabSwitches,
+  PlaybackWatchdog,
+} from '../stutter';
 
 type SourceStats = {
   rms: number;
@@ -86,13 +92,16 @@ export class AudioEngine {
   private deviceSignature = '';
   private changingDevice = false;
   private mutedSince: number | null = null;
+  private lab = defaultLab();
+  private watchdog = new PlaybackWatchdog();
+  private playback = this.watchdog.sample(null);
   private micAttempts = 0;
   private micOpened = 0;
   private micDeviceId = 'default';
   private micPermission: PermissionState = 'prompt';
   private deviceHandler = () => {
     const generation = this.generation;
-    if (this.changingDevice || !this.sessionId) return;
+    if (this.changingDevice || !this.sessionId || !this.lab.micCapture) return;
     void (async () => {
       const signature = await this.inputDevices();
       if (generation !== this.generation || signature === this.deviceSignature)
@@ -128,6 +137,14 @@ export class AudioEngine {
         muted: track?.muted ?? false,
         enabled: track?.enabled ?? false,
         sampleRate: track?.getSettings?.().sampleRate ?? 0,
+        channelCount: track?.getSettings?.().channelCount ?? 0,
+        echoCancellation: track?.getSettings?.().echoCancellation ?? false,
+        noiseSuppression: track?.getSettings?.().noiseSuppression ?? false,
+        autoGainControl: track?.getSettings?.().autoGainControl ?? false,
+        device:
+          this.micDeviceId === 'default'
+            ? 'system default'
+            : 'selected locally',
       };
     };
     return {
@@ -145,6 +162,10 @@ export class AudioEngine {
       micAttempts: this.micAttempts,
       micOpened: this.micOpened,
       errors: [...this.errors],
+      playback: { ...this.playback },
+      lab: { ...this.lab },
+      bluetooth:
+        !!this.mic && bluetoothHint(this.mic.getAudioTracks()[0]?.label ?? ''),
       noiseSuppression:
         this.mic?.getAudioTracks()[0]?.getSettings?.().noiseSuppression ??
         false,
@@ -241,23 +262,28 @@ export class AudioEngine {
     streamId,
     micDeviceId = 'default',
     micOnly = false,
+    nativePlayback = false,
     paused = false,
   }: {
     sessionId: string;
     streamId?: string;
     micDeviceId?: string;
     micOnly?: boolean;
+    nativePlayback?: boolean;
     paused?: boolean;
   }) {
     await this.stop();
     // Only the background's explicit mic-check gesture can request micOnly.
-    if (!streamId && !micOnly) throw new Error('capture');
+    if (!streamId && !micOnly && !nativePlayback) throw new Error('capture');
     const generation = ++this.generation;
     this.sessionId = sessionId;
     this.micDeviceId = micDeviceId;
     this.phase = 'starting';
     this.paused = paused;
     this.micLost = false;
+    this.lab = { ...defaultLab(), tabCapture: !!streamId };
+    this.watchdog = new PlaybackWatchdog();
+    this.playback = this.watchdog.sample(null);
     this.lastError = '';
     try {
       if (streamId) {
@@ -280,7 +306,11 @@ export class AudioEngine {
           };
       }
       if (this.tab) {
-        this.playbackContext = new AudioContext({ latencyHint: 'playback' });
+        const rate = this.tab.getAudioTracks()[0]?.getSettings?.().sampleRate;
+        this.playbackContext = new AudioContext({
+          latencyHint: 'playback',
+          ...(rate ? { sampleRate: rate } : {}),
+        });
         // Direct replay is independent of processing/pause/microphone health.
         this.tabPlayback = this.playbackContext.createMediaStreamSource(
           this.tab,
@@ -491,6 +521,7 @@ export class AudioEngine {
     return this.status();
   }
   private tick() {
+    this.playback = this.watchdog.sample(this.playbackContext);
     if (
       this.mic
         ?.getAudioTracks()
@@ -587,5 +618,87 @@ export class AudioEngine {
     this.mutedSince = null;
     this.report();
     this.sessionId = null;
+  }
+  /** Live diagnostic isolation; never changes detector settings or saved session data. */
+  async setLab(next: LabSwitches, streamId?: string) {
+    if (!this.sessionId) return this.status();
+    const generation = this.generation;
+    if (next.tabCapture && !this.tab) {
+      if (!streamId) throw new Error('tab capture needs a toolbar gesture');
+      const tab = await this.acquire(
+        {
+          audio: {
+            mandatory: {
+              chromeMediaSource: 'tab',
+              chromeMediaSourceId: streamId,
+            },
+          } as unknown as MediaTrackConstraints,
+          video: false,
+        },
+        generation,
+      );
+      const rate = tab.getAudioTracks()[0]?.getSettings?.().sampleRate;
+      const context = new AudioContext({
+        latencyHint: 'playback',
+        ...(rate ? { sampleRate: rate } : {}),
+      });
+      const source = context.createMediaStreamSource(tab);
+      try {
+        source.connect(context.destination);
+        await this.resumeContext(context);
+      } catch (error) {
+        stopTracks(tab);
+        source.disconnect();
+        await context.close();
+        throw error;
+      }
+      if (generation !== this.generation) {
+        stopTracks(tab);
+        source.disconnect();
+        await context.close();
+        return this.status();
+      }
+      this.tab = tab;
+      this.playbackContext = context;
+      this.tabPlayback = source;
+      for (const track of tab.getAudioTracks())
+        track.onended = () => {
+          if (generation !== this.generation || !this.sessionId) return;
+          this.emit({
+            type: 'AUDIO_TAB_ENDED',
+            sessionId: this.sessionId,
+            ownerId: this.ownerId,
+          });
+          void this.stop();
+        };
+      this.attach('tab', tab, generation);
+      this.watchdog = new PlaybackWatchdog();
+    } else if (!next.tabCapture && this.tab) {
+      this.disconnect('tab');
+      stopTracks(this.tab);
+      this.tab = null;
+      this.tabPlayback?.disconnect();
+      this.tabPlayback = null;
+      const context = this.playbackContext;
+      this.playbackContext = null;
+      await context?.close();
+      this.frames.clear();
+      this.stats.tab = emptyStats();
+      this.watchdog = new PlaybackWatchdog();
+    }
+    this.lab = { ...next };
+    if (!next.micCapture && this.mic) {
+      this.disconnect('mic');
+      stopTracks(this.mic);
+      this.mic = null;
+      this.micLost = false;
+      this.stats.mic = emptyStats();
+      this.frames.clear();
+    } else if (next.micCapture && !this.mic) await this.retryMic();
+    this.phase = this.paused ? 'paused' : this.micLost ? 'micLost' : 'active';
+    this.playback = this.watchdog.sample(this.playbackContext);
+    this.setProcessing();
+    this.report();
+    return this.status();
   }
 }

@@ -7,6 +7,7 @@ import {
   PersonalEventSchema,
 } from '@laughline/shared';
 import { AUDIO_DEBUG } from '../audio/config';
+import { emptyTasks, TaskStatsSchema, type LabSwitches } from '../stutter';
 import type { AudioFrameHub } from '../audio/ring-buffer';
 import {
   emptyWorkerDiagnostics,
@@ -87,6 +88,12 @@ export class InferenceBridge {
     const stale = performance.now() - this.lastWorkerReport > 1500;
     return {
       ...this.productionDiagnostics,
+      workerTasks: { ...this.taskStats },
+      speechOverruns: this.speechOverruns,
+      speechCooldownMs: Math.max(
+        0,
+        this.speechCooldownUntil - performance.now(),
+      ),
       soundCpuMsPerSecond: this.cost('sound'),
       speechCpuMsPerSecond: this.cost('speech'),
       models: {
@@ -95,93 +102,86 @@ export class InferenceBridge {
         yamnet: this.soundState,
       },
       ...(stale ? { micFps: 0, tabFps: 0 } : {}),
-      health: { ...this.health },
+      health: {
+        ...this.health,
+        lowPower:
+          this.health.lowPower || performance.now() < this.speechCooldownUntil,
+      },
     };
   }
-  private forwardSpeech() {
-    if (!this.pendingSpeech || !this.worker) return;
-    if (this.speechState.phase === 'error') {
-      const pending = this.pendingSpeech;
-      pending.samples.fill(0);
-      this.pendingSpeech = null;
-      this.worker.postMessage({
-        type: 'speech_result',
-        id: pending.id,
-        error: this.speechState.error || 'speech model unavailable',
-      });
-    } else if (this.speechState.phase === 'ready' && this.speechWorker) {
-      const pending = this.pendingSpeech;
-      this.pendingSpeech = null;
-      this.activeSpeechId = pending.id;
-      this.speechWorker.postMessage(
-        { type: 'speech', id: pending.id, samples: pending.samples },
-        [pending.samples.buffer],
-      );
-    }
-  }
-  private forwardSound() {
-    const pending = this.pendingSound;
-    if (!pending || !this.worker) return;
-    if (this.soundState.phase === 'error') {
-      pending.samples.fill(0);
-      pending.reference?.fill(0);
-      this.pendingSound = null;
-      this.worker.postMessage({
-        type: 'sound_result',
-        id: pending.id,
-        error: this.soundState.error,
-      });
-    } else if (this.soundState.phase === 'ready' && this.soundWorker) {
-      this.pendingSound = null;
-      this.activeSoundId = pending.id;
-      this.soundWorker.postMessage({ type: 'sound', ...pending }, [
-        pending.samples.buffer,
-        ...(pending.reference ? [pending.reference.buffer] : []),
-      ]);
-    }
-  }
-  constructor(
-    hub: AudioFrameHub,
-    private send: (message: unknown) => void,
+  private modes = { laugh: true, speech: true };
+  private requestedModes = { laughModel: true, speechModel: true };
+  private watchdogPause = false;
+  private speechDeadline = 0;
+  private speechCooldownUntil = 0;
+  private speechOverruns = 0;
+  private taskStats = {
+    realtime: emptyTasks(),
+    sound: emptyTasks(),
+    speech: emptyTasks(),
+  };
+  setLab(
+    switches: Pick<LabSwitches, 'laughModel' | 'speechModel'>,
+    automaticSpeechPause = false,
   ) {
-    hub.subscribe((source, frame, ts) => {
-      if (this.finishing || !this.worker || this.health.phase !== 'ready')
-        return;
-      if (this.inFlight >= C.maxTransportFrames) {
-        this.drops++;
-        return;
-      }
-      const copy = frame.slice();
-      this.inFlight++;
-      this.worker.postMessage(
-        { type: 'frame', source, frame: copy, ts, drops: this.drops },
-        [copy.buffer],
-      );
-      this.drops = 0;
-    });
-  }
-  sync(owner: AudioReport) {
-    this.owner = owner;
-    if (this.finishing) return;
-    if (owner.phase !== 'active' || owner.micLost || !owner.hasMic) {
-      this.close();
-      this.failed = false;
+    this.requestedModes = { ...switches };
+    this.watchdogPause = automaticSpeechPause;
+    const next = {
+      laugh: switches.laughModel,
+      speech:
+        switches.speechModel &&
+        !automaticSpeechPause &&
+        performance.now() >= this.speechCooldownUntil,
+    };
+    if (next.laugh === this.modes.laugh && next.speech === this.modes.speech)
       return;
-    }
-    if (this.worker || this.failed) return;
-    this.health = { ...emptyInferenceHealth(), phase: 'warming' };
-    this.productionDiagnostics = emptyWorkerDiagnostics();
-    this.speechState = modelState();
-    this.soundState = modelState();
-    this.publish([]);
-    const worker = new Worker(chrome.runtime.getURL('/inference-worker.js'));
-    this.worker = worker;
-    const speechWorker = new Worker(chrome.runtime.getURL('/speech-worker.js'));
-    this.speechWorker = speechWorker;
+    this.modes = next;
+    this.worker?.postMessage({ type: 'modes', ...next });
+    if (!next.speech) {
+      this.speechWorker?.terminate();
+      this.speechWorker = null;
+      this.pendingSpeech?.samples.fill(0);
+      this.pendingSpeech = null;
+      if (this.activeSpeechId !== null)
+        this.worker?.postMessage({
+          type: 'speech_result',
+          id: this.activeSpeechId,
+          error: 'speech paused',
+        });
+      this.activeSpeechId = null;
+      this.speechState = modelState();
+      this.speechText = '';
+      this.lastPhrase = '';
+    } else if (this.worker && !this.speechWorker)
+      this.startSpeechWorker(this.worker);
+    if (!next.laugh) {
+      this.soundWorker?.terminate();
+      this.soundWorker = null;
+      this.pendingSound?.samples.fill(0);
+      this.pendingSound?.reference?.fill(0);
+      this.pendingSound = null;
+      if (this.activeSoundId !== null)
+        this.worker?.postMessage({
+          type: 'sound_result',
+          id: this.activeSoundId,
+          error: 'sound paused',
+        });
+      this.activeSoundId = null;
+      this.soundState = modelState();
+    } else if (this.worker && !this.soundWorker)
+      this.startSoundWorker(this.worker);
+    if (this.owner) this.sync(this.owner);
+  }
+  private readTasks(key: keyof typeof this.taskStats, value: unknown) {
+    const parsed = TaskStatsSchema.safeParse(value);
+    if (parsed.success) this.taskStats[key] = parsed.data;
+  }
+  private startSoundWorker(worker: Worker) {
     const soundWorker = new Worker(chrome.runtime.getURL('/sound-worker.js'));
     this.soundWorker = soundWorker;
     soundWorker.onmessage = ({ data }) => {
       if (soundWorker !== this.soundWorker || worker !== this.worker) return;
+      this.readTasks('sound', data.tasks);
       if (data.type === 'sound_status') {
         const parsed = ModelStateSchema.safeParse(data.model);
         if (parsed.success) this.soundState = parsed.data;
@@ -218,8 +218,13 @@ export class InferenceBridge {
       type: 'init',
       base: chrome.runtime.getURL('').replace(/\/$/, ''),
     });
+  }
+  private startSpeechWorker(worker: Worker) {
+    const speechWorker = new Worker(chrome.runtime.getURL('/speech-worker.js'));
+    this.speechWorker = speechWorker;
     speechWorker.onmessage = ({ data }) => {
       if (speechWorker !== this.speechWorker || worker !== this.worker) return;
+      this.readTasks('speech', data.tasks);
       if (data.type === 'speech_status') {
         const parsed = ModelStateSchema.safeParse(data.model);
         if (parsed.success) this.speechState = parsed.data;
@@ -293,8 +298,109 @@ export class InferenceBridge {
       type: 'init',
       base: chrome.runtime.getURL('').replace(/\/$/, ''),
     });
+  }
+  private forwardSpeech() {
+    if (!this.pendingSpeech || !this.worker) return;
+    if (this.speechState.phase === 'error') {
+      const pending = this.pendingSpeech;
+      pending.samples.fill(0);
+      this.pendingSpeech = null;
+      this.worker.postMessage({
+        type: 'speech_result',
+        id: pending.id,
+        error: this.speechState.error || 'speech model unavailable',
+      });
+    } else if (this.speechState.phase === 'ready' && this.speechWorker) {
+      const pending = this.pendingSpeech;
+      this.pendingSpeech = null;
+      this.activeSpeechId = pending.id;
+      // Reuse the existing speech RTF budget; a stalled job must not hog a core indefinitely.
+      this.speechDeadline =
+        performance.now() +
+        Math.max(3000, (pending.samples.length / 16) * C.whisperBudgetRtf);
+      this.speechWorker.postMessage(
+        { type: 'speech', id: pending.id, samples: pending.samples },
+        [pending.samples.buffer],
+      );
+    }
+  }
+  private forwardSound() {
+    const pending = this.pendingSound;
+    if (!pending || !this.worker) return;
+    if (this.soundState.phase === 'error') {
+      pending.samples.fill(0);
+      pending.reference?.fill(0);
+      this.pendingSound = null;
+      this.worker.postMessage({
+        type: 'sound_result',
+        id: pending.id,
+        error: this.soundState.error,
+      });
+    } else if (this.soundState.phase === 'ready' && this.soundWorker) {
+      this.pendingSound = null;
+      this.activeSoundId = pending.id;
+      this.soundWorker.postMessage({ type: 'sound', ...pending }, [
+        pending.samples.buffer,
+        ...(pending.reference ? [pending.reference.buffer] : []),
+      ]);
+    }
+  }
+  constructor(
+    hub: AudioFrameHub,
+    private send: (message: unknown) => void,
+  ) {
+    hub.subscribe((source, frame, ts) => {
+      if (this.finishing || !this.worker || this.health.phase !== 'ready')
+        return;
+      if (this.inFlight >= C.maxTransportFrames) {
+        this.drops++;
+        return;
+      }
+      const copy = frame.slice();
+      this.inFlight++;
+      this.worker.postMessage(
+        { type: 'frame', source, frame: copy, ts, drops: this.drops },
+        [copy.buffer],
+      );
+      this.drops = 0;
+    });
+  }
+  sync(owner: AudioReport) {
+    if (this.owner?.sessionId !== owner.sessionId) this.speechCooldownUntil = 0;
+    this.owner = owner;
+    if (
+      this.activeSpeechId !== null &&
+      performance.now() > this.speechDeadline
+    ) {
+      this.speechOverruns++;
+      this.speechCooldownUntil = performance.now() + 30000;
+      this.setLab(this.requestedModes, this.watchdogPause);
+      return;
+    }
+    if (this.finishing) return;
+    if (
+      (!this.modes.laugh && !this.modes.speech) ||
+      owner.phase !== 'active' ||
+      owner.micLost ||
+      !owner.hasMic
+    ) {
+      this.close();
+      this.failed = false;
+      return;
+    }
+    if (this.worker || this.failed) return;
+    this.health = { ...emptyInferenceHealth(), phase: 'warming' };
+    this.productionDiagnostics = emptyWorkerDiagnostics();
+    this.speechState = modelState();
+    this.soundState = modelState();
+    this.publish([]);
+    const worker = new Worker(chrome.runtime.getURL('/inference-worker.js'));
+    this.worker = worker;
+    if (this.modes.speech) this.startSpeechWorker(worker);
+    if (this.modes.laugh) this.startSoundWorker(worker);
     worker.onmessage = ({ data }) => {
       if (worker !== this.worker) return;
+      this.readTasks('realtime', data.diagnostics?.tasks);
       if (data.type === 'finished') this.finished?.();
       else if (data.type === 'ack')
         this.inFlight = Math.max(0, this.inFlight - 1);
@@ -359,6 +465,7 @@ export class InferenceBridge {
     worker.postMessage({
       type: 'init',
       externalSound: true,
+      modes: { ...this.modes },
       base: chrome.runtime.getURL('').replace(/\/$/, ''),
     });
   }
@@ -385,7 +492,11 @@ export class InferenceBridge {
       type: 'INFERENCE_STATUS',
       ownerId: this.owner.ownerId,
       sessionId: this.owner.sessionId,
-      health: this.health,
+      health: {
+        ...this.health,
+        lowPower:
+          this.health.lowPower || performance.now() < this.speechCooldownUntil,
+      },
     });
   }
 

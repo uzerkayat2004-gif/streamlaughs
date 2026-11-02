@@ -4,7 +4,7 @@
 
 A little crowd for Twitch: your local laughs, everyone’s anonymous reactions, and a Wrapped-style recap when the stream ends.
 
-**v0.8.3:** personal VOD/clip replays, a transparent jelly smiley, clean toolbar state, reliable reaction-word updates and readable streamer-card hover. [Causes, verification and update checks](docs/fixes-v083.md).
+**v0.8.4:** Twitch audio stays native by default, with a hidden live stutter lab, playback diagnostics and a speech-first safety pause. Laugh/word thresholds and matching rules are unchanged. [Evidence, limits and hardware checks](docs/audio-stutter-v084.md).
 
 > **Demo GIF / screenshot placeholder:** replace this line with the final crowd-blob GIF after recording. [Current extension screenshots](docs/screenshots/part6) · [Website preview](docs/screenshots/part5/home-desktop.png).
 
@@ -13,6 +13,8 @@ A little crowd for Twitch: your local laughs, everyone’s anonymous reactions, 
 1. [Download StreamLaughs](https://streamlaughs.vercel.app/install?downloaded=1) and unzip it into a permanent folder. One ZIP contains the same extension for Windows, Mac and Linux. Mac: double-click in Finder. Linux: choose Extract here in your file manager.
 2. Open `chrome://extensions` (Edge: `edge://extensions`, Brave: `brave://extensions`), enable **Developer mode**, choose **Load unpacked**, and select the extracted folder containing `manifest.json`. [Illustrated install guide](https://streamlaughs.vercel.app/install).
 3. Pin the icon. Finish **Welcome → allow mic → sharing choice**, open a Twitch stream and press **start** in the toolbar popup, or **Alt+Shift+L**. “watch without mic” keeps the crowd view without opening either audio input.
+
+Twitch sound stays native by default. `tabCapture` is retained only for an optional, session-only speaker echo reference in **Alt+Shift+D → stutter lab**; `offscreen` owns local mic capture and processing. The lab shows granted device settings and numeric performance counters, never saved audio. [Stutter lab, evidence and five-minute wired/Bluetooth checks](docs/audio-stutter-v084.md).
 
 To update from v0.6.2 onward, open the popup and choose **update to v…**. The extension checks and downloads the ZIP, then shows three illustrated steps: unzip, copy its contents into your **same existing folder** and replace files, then press **finish update**. It saves any active recording before reloading; recaps and settings stay saved. Refresh Twitch afterwards. Earlier installs need one manual download, same-folder replacement and reload to get this flow. [Update details and troubleshooting](docs/popup-updates-part12.md).
 
@@ -90,7 +92,7 @@ Original code: [MIT](LICENSE). Models, fonts, runtimes and dependencies retain t
 
 The microphone pipeline was reproduced with the packaged production extension before the UI changed. See [the diagnosis and headed WAV proof](docs/detection-v080.md) and [the v0.8 UI/data notes and final acceptance steps](docs/ui-v080.md). The new laughing-face icon, glass live meter, mic check, saved-stream actions, unread recap badge, yellow/coral/teal stories, grouped streamer history and local PNG export ship together. Missing facts are skipped; fan peaks are never presented as fan totals or personal coincidence.
 
-**Updating a ZIP install:** download from the website, unzip and replace the files in the **same existing installed folder**, click **reload** in `chrome://extensions`, then **refresh the Twitch tab**. Never click Remove. Your browser keeps its existing local recaps and settings. The popup and hidden debug panel show v0.8.0; an update also offers a glass refresh note on already open Twitch tabs.
+**Updating a ZIP install:** download from the website, unzip and replace the files in the **same existing installed folder**, click **reload** in `chrome://extensions`, then **refresh the Twitch tab**. Never click Remove. Your browser keeps its existing local recaps and settings. The popup and hidden debug panel show v0.8.4; an update also offers a glass refresh note on already open Twitch tabs.
 
 ### Latest: v0.8.1 real-device fixes
 

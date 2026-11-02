@@ -82,7 +82,7 @@ export function Popup() {
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false);
   useEffect(() => {
-    const disconnect = connectSurface();
+    const disconnect = connectSurface(250);
     let live = true;
     const refresh = async () => {
       try {
