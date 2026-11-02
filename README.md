@@ -30,7 +30,7 @@ Your mic is processed **on your own computer**. Nothing you say is recorded or s
 
 Built for the **Codex × TwitchCon Hackathon** · made with OpenAI Codex
 
-**▶ Demo video:** coming soon
+**▶ Demo video:** [watch on YouTube (2:36)](https://www.youtube.com/watch?v=uV_vTzBqwYQ)
 
 </div>
 
@@ -84,6 +84,12 @@ Don't want to install yet? Play the full guided demo at [streamlaughs.vercel.app
 | **My streamers**: every channel you watched, with laugh sparklines | No bot, no chat permission, no extra OAuth scopes |
 | **Share card**: a 1080×1920 image and a stats-only link, made only when you tap share | |
 | Works on live streams and on **VODs and replays** (replays stay personal) | |
+
+## What's new in v0.8.8
+
+- **Laughs and "W" count again.** Fixed a calibration bug that kept counts at zero, and "W" is matched properly.
+- **Cleaner settings.** Shorter panel; hold the version number to open mic and model diagnostics.
+- **Judge ZIP.** Latest build download on Home, Install and Try.
 
 ## What's new in v0.8.7
 
