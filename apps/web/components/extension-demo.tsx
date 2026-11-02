@@ -70,9 +70,9 @@ const STEPS: Step[] = [
   },
   {
     title: 'your recap, story style.',
-    text: 'Your laughs, your biggest minute, your words and your streak with this streamer.',
+    text: 'Your laughs, your biggest minute, your words, then rate the stream for the streamer.',
     action: 'share it',
-    hold: 11000,
+    hold: 14800,
   },
   {
     title: 'share the night, if you want.',
@@ -441,7 +441,83 @@ const STORIES = [
   { tone: 'teal', key: 'minute' },
   { tone: 'yellow', key: 'words' },
   { tone: 'pink', key: 'streak' },
+  { tone: 'ink', key: 'rate' },
 ] as const;
+
+const RATE_REASONS = ['funny', 'chill vibes', 'hype moments', 'good chat'];
+
+/** The rating slide, auto-played: a fan picks 8, two reasons, then sends. */
+function RateStory() {
+  const [score, setScore] = useState<number | null>(null);
+  const [picked, setPicked] = useState<string[]>([]);
+  const [sent, setSent] = useState(false);
+  useEffect(() => {
+    const t = [
+      setTimeout(() => setScore(8), 700),
+      setTimeout(() => setPicked(['funny']), 1300),
+      setTimeout(() => setPicked(['funny', 'chill vibes']), 1800),
+      setTimeout(() => setSent(true), 2500),
+    ];
+    return () => {
+      for (const x of t) clearTimeout(x);
+    };
+  }, []);
+  const tone = !score ? 'y' : score < 5 ? 'c' : score < 8 ? 'y' : 't';
+  return (
+    <div className="td-rate">
+      <p className="td-s-kicker">rate tonight’s stream</p>
+      <p className={`td-rate-score is-${tone}`}>
+        {score ?? '–'}
+        <small>/10</small>
+      </p>
+      <div className="td-rate-pills">
+        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+          <button
+            key={n}
+            type="button"
+            className={score === n ? 'on' : ''}
+            onClick={() => {
+              setScore(n);
+              setSent(false);
+            }}
+          >
+            {n}
+          </button>
+        ))}
+      </div>
+      <div className="td-rate-chips">
+        {RATE_REASONS.map((r) => (
+          <button
+            key={r}
+            type="button"
+            className={picked.includes(r) ? 'on' : ''}
+            onClick={() => {
+              setSent(false);
+              setPicked((p) =>
+                p.includes(r)
+                  ? p.filter((x) => x !== r)
+                  : p.length < 3
+                    ? [...p, r]
+                    : p,
+              );
+            }}
+          >
+            {r}
+          </button>
+        ))}
+      </div>
+      <button
+        type="button"
+        className={`td-rate-send ${sent ? 'is-sent' : ''}`}
+        onClick={() => setSent(true)}
+        disabled={!score}
+      >
+        {sent ? 'sent · thanks!' : 'send'}
+      </button>
+      <p className="td-s-small">anonymous · {CHANNEL} sees it at 5+ fans</p>
+    </div>
+  );
+}
 
 function StoryBody({ index }: { index: number }) {
   if (index === 0)
@@ -463,6 +539,7 @@ function StoryBody({ index }: { index: number }) {
         <p className="td-s-small">open the VOD at this moment</p>
       </>
     );
+  if (index === 4) return <RateStory />;
   if (index === 2)
     return (
       <>
@@ -861,7 +938,7 @@ export function ExtensionDemo() {
       setShare(false);
       setRecap(true);
       setStory(0);
-      [1, 2, 3].forEach((s, i) => {
+      [1, 2, 3, 4].forEach((s, i) => {
         later(2600 * (i + 1), () => setStory(s));
       });
     }
