@@ -390,6 +390,14 @@ export function Popup() {
             test my mic
           </button>
         </nav>
+        <a
+          className="streamer-link"
+          href={`${SITE_URL || PRODUCT.siteUrl}/dashboard?from=extension`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          <span aria-hidden="true">◡</span> streamer? see your fans ↗
+        </a>
         <small className="popup-version">
           v{chrome.runtime.getManifest().version}
         </small>
@@ -534,6 +542,20 @@ export function Popup() {
                 <br />
                 Audio is processed on your PC and never saved or sent.
               </p>
+              <div className="streamer-row">
+                <strong>for streamers</strong>
+                <p className="sub">
+                  see how your fans laughed and rated your streams.
+                </p>
+                <a
+                  className="streamer-link"
+                  href={`${SITE_URL || PRODUCT.siteUrl}/dashboard?from=extension`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  open my streamer page ↗
+                </a>
+              </div>
               {SITE_URL && (
                 <a
                   className="textbtn"

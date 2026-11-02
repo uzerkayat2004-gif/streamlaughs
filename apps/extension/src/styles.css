@@ -2893,3 +2893,38 @@ svg {
 .migration-steps { padding-left: 22px; }
 .migration-steps li { padding: 16px 0; line-height: 1.6; }
 .migration-steps p { font-size: 14px; color: #b8b9c3; }
+
+/* streamer page link (popup + settings) */
+.streamer-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 8px auto 0;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: #ffd23f1f;
+  border: 1px solid #ffd23f55;
+  color: #ffd23f;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  width: fit-content;
+  transition: transform 0.2s, background 0.2s;
+}
+.streamer-link:hover {
+  background: #ffd23f;
+  color: #14141a;
+  transform: translateY(-1px);
+}
+.streamer-row {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 14px;
+  background: #ffffff0a;
+  margin: 6px 0;
+}
+.streamer-row .streamer-link {
+  margin: 4px 0 0;
+}

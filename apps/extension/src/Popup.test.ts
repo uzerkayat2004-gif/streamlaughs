@@ -2,6 +2,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, expect, it, vi } from 'vitest';
 import { Popup } from './Popup';
+
 afterEach(() => vi.unstubAllGlobals());
 it('links the header to the configured website and keeps the three saved/mic actions as buttons', () => {
   vi.stubGlobal('chrome', {
@@ -18,5 +19,7 @@ it('links the header to the configured website and keeps the three saved/mic act
   for (const label of ['last recap', 'my streamers', 'test my mic'])
     expect(html).toContain(`>${label}</button>`);
   expect(html).toContain('finding your Twitch tab');
+  expect(html).toContain('streamer? see your fans');
+  expect(html).toContain('/dashboard?from=extension');
   expect(html).not.toContain('>open Twitch');
 });
