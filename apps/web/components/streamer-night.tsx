@@ -570,7 +570,7 @@ export function StreamerNight({
         </button>
       </header>
 
-      <div className="sn-grid">
+      <div className={`sn-grid${hideRatings ? ' no-ratings' : ''}`}>
         <article className="sn-tile sn-peak">
           <p className="sn-kicker">at the peak</p>
           <strong>

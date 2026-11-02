@@ -715,3 +715,12 @@
   border: 0;
   cursor: default;
 }
+
+/* hark: ratings live in their own card above, so close the grid gaps */
+.sn-grid.no-ratings .sn-peak,
+.sn-grid.no-ratings .sn-moment {
+  grid-column: span 6;
+}
+.sn-grid.no-ratings .sn-more {
+  grid-column: span 12;
+}

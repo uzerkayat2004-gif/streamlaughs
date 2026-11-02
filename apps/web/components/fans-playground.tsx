@@ -420,7 +420,7 @@ export function FansPlayground({
   group?: boolean;
   orbit?: boolean;
 }) {
-  const [reset, setReset] = useState(0);
+  const reset = 0;
   return (
     <div
       className={`fans-playground ${group ? 'playground-group' : ''} ${orbit ? 'playground-orbiting' : ''}`}
@@ -449,20 +449,8 @@ export function FansPlayground({
           <Plaything label="no way" reset={reset} />
           <Plaything label="LMAO" tone="yellow" reset={reset} />
           <Plaything label="brooo" tone="coral" reset={reset} />
-          <Plaything
-            kind="spark"
-            label="yellow sparkle"
-            tone="yellow"
-            reset={reset}
-          />
         </>
       )}
-      <div className="playground-help">
-        <span>drag a little joy anywhere</span>
-        <button type="button" onClick={() => setReset(reset + 1)}>
-          reset ↺
-        </button>
-      </div>
     </div>
   );
 }

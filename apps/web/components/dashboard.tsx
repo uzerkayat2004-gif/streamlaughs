@@ -1,11 +1,9 @@
 'use client';
-import { FanRatings } from './fan-ratings';
-import type { RatingsReport } from '@laughline/shared';
-import type { CrowdState } from '@laughline/shared';
+import type { CrowdState, RatingsReport } from '@laughline/shared';
 import { useEffect, useState } from 'react';
 import { RealCrowdSource } from '../../extension/src/real-crowd-source';
 import { CrowdArt } from './crowd-art';
-import { StoreButtons } from './store-buttons';
+import { FanRatings } from './fan-ratings';
 export function LiveCrowd({
   api,
   channel,
@@ -167,7 +165,10 @@ export function Dashboard({
       )}
       {demo && (
         <div className="download-invite">
-          <StoreButtons />
+          <p>want this for your own channel?</p>
+          <a className="button yellow" href="/streamers">
+            get your fan page →
+          </a>
         </div>
       )}
     </main>

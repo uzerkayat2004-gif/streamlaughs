@@ -1,6 +1,6 @@
 import { authenticated } from '../../../../lib/auth';
-import { ownsChannel } from '../../../../lib/session-crypto';
 import { fanRatings } from '../../../../lib/ratings';
+import { ownsChannel } from '../../../../lib/session-crypto';
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ channel: string }> },

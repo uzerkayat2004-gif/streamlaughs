@@ -1,7 +1,11 @@
 import { PRODUCT } from '@laughline/shared';
 import Link from 'next/link';
 import { Arrow } from '../components/brand';
-import { FansPlayground, HomeMotion } from '../components/fans-playground';
+import {
+  FansPlayground,
+  HomeMotion,
+  Smile,
+} from '../components/fans-playground';
 import { RatingsPreview } from '../components/ratings-preview';
 import { StoreButtons } from '../components/store-buttons';
 
@@ -18,8 +22,8 @@ export default function Home() {
               <em>alone again.</em>
             </h1>
             <p className="hero-copy">
-              Your favourite stream. Your kind of funny. See who’s laughing with
-              you, right on Twitch.
+              A tiny dot on Twitch shows when everyone watching is laughing with
+              you. Your audio never leaves your PC.
             </p>
             <div className="hero-actions">
               <StoreButtons />
@@ -27,34 +31,8 @@ export default function Home() {
                 <span className="play-outline">▶</span> watch the demo
               </Link>
             </div>
-            <p className="quiet-caption">
-              your people. your stream. your kind of funny.
-            </p>
           </div>
           <FansPlayground orbit />
-        </div>
-        <a
-          href="#the-feeling"
-          className="scroll-cue"
-          aria-label="scroll to the interactive smiley"
-        >
-          a little more together <span>↓</span>
-        </a>
-      </section>
-      <section
-        className="full-screen feeling-section"
-        id="the-feeling"
-        aria-labelledby="feeling-title"
-      >
-        <div className="section-content" data-reveal>
-          <h2 id="feeling-title" className="sr-only">
-            a little feeling of together.
-          </h2>
-          <FansPlayground />
-          <p className="feeling-caption">
-            a tiny dot on Twitch that lights up
-            <br className="mobile-break" /> when the room laughs.
-          </p>
         </div>
       </section>
       <section
@@ -86,8 +64,8 @@ export default function Home() {
         aria-labelledby="streamer-title"
       >
         <div className="section-content" data-reveal>
-          <span className="outline-spark" aria-hidden="true">
-            ✳
+          <span className="invite-smile" aria-hidden="true">
+            <Smile tone="yellow" />
           </span>
           <h2 id="streamer-title">
             see the moments
@@ -95,8 +73,7 @@ export default function Home() {
             <em>your fans loved.</em>
           </h2>
           <p>
-            A live laugh meter and a recap of what made your fans laugh.
-            <br />
+            A live laugh meter and a recap of what made your fans laugh. <br />
             Anonymous and private to you.
           </p>
           <Link className="button outline" href="/streamers">

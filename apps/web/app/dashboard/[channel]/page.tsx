@@ -1,10 +1,10 @@
-import { fanRatings } from '../../../lib/ratings';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { Dashboard } from '../../../components/dashboard';
 import { StreamerNight } from '../../../components/streamer-night';
 import { authenticated } from '../../../lib/auth';
 import { crowdConfigured, workerUrl } from '../../../lib/config';
+import { fanRatings } from '../../../lib/ratings';
 import { report } from '../../../lib/report';
 import { ownsChannel } from '../../../lib/session-crypto';
 export const dynamic = 'force-dynamic';

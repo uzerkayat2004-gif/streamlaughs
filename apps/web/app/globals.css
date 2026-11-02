@@ -2783,3 +2783,31 @@ tbody th {
     opacity: 1;
   }
 }
+
+/* hark: small yellow jelly above the streamer invite */
+.invite-smile {
+  display: block;
+  width: 84px;
+  height: 84px;
+  margin: 0 auto 30px;
+  filter: drop-shadow(0 18px 30px #ffd23f2e);
+}
+.download-invite {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  margin: 72px auto 24px;
+  text-align: center;
+}
+.download-invite p {
+  color: var(--muted);
+  font-size: 16px;
+}
+.final-invite .store-actions {
+  align-items: center;
+  margin: 0 auto;
+  text-align: center;
+}
+.final-invite .store-buttons {
+  justify-content: center;
+}

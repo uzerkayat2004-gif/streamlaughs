@@ -1,11 +1,11 @@
 'use client';
 import {
-  ratingColor,
   RATING_REASONS,
-  RatingsReportSchema,
   type RatingsReport,
+  RatingsReportSchema,
+  ratingColor,
 } from '@laughline/shared';
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { type CSSProperties, useEffect, useRef, useState } from 'react';
 
 function AnimatedAverage({
   value,
@@ -198,7 +198,10 @@ export function FanRatings({
       )}
       {!compact && !!data?.trend.length && (
         <fieldset className="ratings-trend" aria-label="last ten rated streams">
-          <legend>your last {data.trend.length} streams · tap a night</legend>
+          <legend>
+            your last {data.trend.length} streams · tap a night · white dot =
+            under 5 fans
+          </legend>
           <svg
             viewBox="0 0 1000 110"
             preserveAspectRatio="none"

@@ -71,8 +71,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <nav aria-label="footer navigation">
             <Link href="/try">demo</Link>
             <Link href="/streamers">for streamers</Link>
-            <StoreButtons compact />
-            <Link href="/install">install help</Link>
+            <Link href="/install">install</Link>
             <Link href="/privacy">privacy</Link>
             <a href="mailto:kayatuzair525@gmail.com">contact ↗</a>
           </nav>
