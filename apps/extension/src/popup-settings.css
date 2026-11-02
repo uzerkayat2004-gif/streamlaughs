@@ -1,0 +1,109 @@
+/* One contained scroll surface: the old unbounded sheet was clipped by the popup. */
+.popup > .sheet {
+  max-height: calc(100% - 12px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  background: #14141a;
+  scrollbar-width: thin;
+  scrollbar-color: #ffffff55 transparent;
+}
+.popup:has(> .sheet) > .screen {
+  overflow: hidden;
+  pointer-events: none;
+}
+.popup > .scrim {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  touch-action: none;
+}
+.compact-settings {
+  display: grid;
+  gap: 14px;
+  padding-top: 22px;
+}
+.compact-settings .sensitivity-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+.compact-settings select {
+  min-width: 103px;
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid #ffffff35;
+  border-radius: 99px;
+  background: #14141a;
+  color: #ffd23f;
+  font: inherit;
+}
+.compact-settings .toggle {
+  margin: 0;
+  padding-block: 10px;
+}
+.compact-settings .settings-privacy {
+  font-size: 11px;
+  color: #ffffffaa;
+  margin: 0;
+}
+.compact-settings .streamer-link {
+  justify-content: flex-start;
+  margin: 0;
+  padding: 10px 0;
+}
+.compact-settings .history-transfer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+}
+.compact-settings .history-transfer .sub {
+  width: 100%;
+  margin: 0;
+}
+.compact-settings .settings-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-block: 8px;
+}
+.compact-settings .danger {
+  margin: 0;
+}
+.compact-settings .settings-version {
+  justify-self: start;
+  margin: 0;
+  padding: 8px 0;
+}
+.popup-version,
+.settings-version {
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.quick-diagnostics {
+  border: 1px solid #2ee6c555;
+  border-radius: 20px;
+  padding: 18px;
+  background: #14141a;
+  margin: 20px 0;
+  max-width: 640px;
+}
+.quick-diagnostics h2 {
+  color: #ffd23f;
+  font-size: 24px;
+}
+.quick-diagnostics label {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+.quick-diagnostics b {
+  color: #2ee6c5;
+}
+.quick-diagnostics meter {
+  accent-color: #2ee6c5;
+  flex: 1;
+}

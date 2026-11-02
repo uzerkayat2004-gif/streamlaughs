@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./judges.css";
 @theme inline {
   --font-sans: var(--body);
 }

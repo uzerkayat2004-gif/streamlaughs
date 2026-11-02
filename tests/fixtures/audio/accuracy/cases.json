@@ -49,5 +49,21 @@
     "seconds": 47,
     "sha256": "1e58c5c2e9761fd5a380b6cb44671c991a44965060d067e81f9233266b96ed81",
     "originalSha256": "07db93dd56f67020abfa7eb2850eb16c1ee364d2bff581402f4d1c414666cd71"
+  },
+  {
+    "name": "judge-words",
+    "seconds": 101,
+    "laughs": 0,
+    "words": {
+      "w": 2,
+      "lets go": 2
+    },
+    "sha256": "c2f0a212dee76d62d08704ed0e3d93383aa55e07c38085a1d89cf24daf854e1b"
+  },
+  {
+    "name": "startup-with-voice",
+    "file": "tests/fixtures/audio/laugh-lets-go.wav",
+    "seconds": 40,
+    "sha256": "07db93dd56f67020abfa7eb2850eb16c1ee364d2bff581402f4d1c414666cd71"
   }
 ]

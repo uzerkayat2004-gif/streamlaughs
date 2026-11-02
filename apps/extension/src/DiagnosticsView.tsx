@@ -2,12 +2,13 @@ import { PRODUCT } from '@laughline/shared';
 
 import { useState } from 'react';
 
-import { AccuracyLog, usePipelineReport } from './PipelinePanel';
+import { AccuracyLog, micProblem, usePipelineReport } from './PipelinePanel';
 
 import { copyableReport } from './diagnostics';
+import { verifyVisibleMicrophone } from './audio/microphone';
 
 export function Diagnostics() {
-  const { report, phrase } = usePipelineReport(true, true, true);
+  const { report, phrase, word } = usePipelineReport(true, true, true);
 
   const [message, setMessage] = useState('');
 
@@ -18,6 +19,79 @@ export function Diagnostics() {
     <main className="diagnostics-page">
       <h1>{PRODUCT.name} · local audio diagnostics</h1>
       <p>live on this PC. no audio or transcripts in this report.</p>
+      <section
+        className="quick-diagnostics"
+        aria-label="quick microphone readout"
+      >
+        <h2>v{chrome.runtime.getManifest().version} · mic check</h2>
+        <label>
+          mic level{' '}
+          <meter
+            aria-label="quick mic level"
+            min={0}
+            max={1}
+            value={Math.min(1, (audio?.metrics.micLevel ?? 0) * 12)}
+          />
+        </label>
+        <p>
+          {audio?.mic.name ?? 'no microphone open'} ·{' '}
+          {audio?.mic.state ?? 'none'} · {Math.round(ai?.micFps ?? 0)} frames/s
+        </p>
+        <ul>
+          {(['vad', 'yamnet', 'whisper'] as const).map((name) => (
+            <li key={name}>
+              {name === 'yamnet'
+                ? 'laugh model'
+                : name === 'whisper'
+                  ? 'word model'
+                  : 'VAD'}
+              : {ai?.models[name].phase ?? 'idle'}
+              {ai?.models[name].error ? ` · ${ai.models[name].error}` : ''}
+            </li>
+          ))}
+        </ul>
+        <p>
+          last laugh score: <b>{(ai?.laughScore ?? 0).toFixed(3)}</b>
+        </p>
+        <p>
+          last heard word: <b>{word || 'none yet'}</b>
+        </p>
+        <p role="status">
+          {(ai?.health.calibrationRemainingMs ?? 0) > 0
+            ? 'stay quiet for 3 sec, then laugh or say “W” or “let’s go”.'
+            : micProblem(report) || 'ready · laugh or say “W” or “let’s go”.'}
+        </p>
+        {!report?.listening && (
+          <button
+            type="button"
+            className="textbtn"
+            onClick={async () => {
+              try {
+                await verifyVisibleMicrophone();
+                await chrome.runtime.sendMessage({
+                  type: 'SETTINGS',
+                  settings: { listen: true },
+                });
+                if (report?.sessionId)
+                  await chrome.runtime.sendMessage({ type: 'RETRY_MIC' });
+                setMessage('mic on · return to Twitch and press start');
+              } catch {
+                setMessage('mic needs permission · open Welcome and allow it');
+              }
+            }}
+          >
+            turn on my mic
+          </button>
+        )}
+        {(ai?.stages.speechRequests ?? 0) > (ai?.stages.speechResults ?? 0) && (
+          <p role="status">
+            word model processing · keeping Twitch audio smooth
+          </p>
+        )}
+        <a className="textbtn" href={chrome.runtime.getURL('/mic-test.html')}>
+          choose input / test my mic ↗
+        </a>
+      </section>
       <button
         type="button"
         className="btn"
@@ -26,7 +100,7 @@ export function Diagnostics() {
           if (!report) return;
 
           try {
-            await navigator.clipboard.writeText(copyableReport(report));
+            await navigator.clipboard.writeText(copyableReport(report, word));
 
             setMessage('report copied');
           } catch {

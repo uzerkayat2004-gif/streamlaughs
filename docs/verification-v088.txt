@@ -1,0 +1,390 @@
+StreamLaughs v0.8.8 — targeted verification — 2026-11-03 IST
+
+Started by pulling main through a07c0d4 (Unicode-noncharacter escaping fix).
+Only targeted unit/recorded-input/browser checks; no full suite or e2e runner.
+No Worker changes. Store upload is not performed. A GitHub release is explicitly requested.
+Store approval metadata remains Chrome 0.6.4 / Edge 0.6.1.
+
+RED: unmodified startup-with-voice production fake-mic session: 0 laughs, 0 words,
+about 1,967 mic frames, all models ready. Same PCM with quiet prelude detected.
+Opening speech poisoned the calibrated floor; every segment was below that floor.
+RED: standalone W cases failed before adding the local allowlist entry.
+
+> Targeted extension Vitest after retaining the proven encoder: 16 files / 86 tests passed.
+> Targeted web judge-install Vitest: 1 file / 1 test passed.
+> Extension + web typecheck: passed.
+> Web biome lint: 71 files passed. Extension changed-file lint: no errors;
+  one pre-existing unused-variable warning and a redundant-fragment info.
+> Production Chrome, Edge, website and store ZIP builds: passed.
+> Bundled asset SHA receipts: 14 assets passed.
+> Store ZIP: one manifest.json, version 0.8.8, no key, no downloads permission.
+> Staged Git index: private-key/100 MB checks passed; gitleaks redacted scan: no leaks.
+
+> Final extracted production ZIP identity / Chromium packaging
+{
+  "version": "0.8.8",
+  "id": "fkocldgggcmhihelohiicoakcfomhepg",
+  "bytes": 40463895,
+  "sha256": "c599549147055f6faffb6811e467dca388db683e2e0f0c1ea7712c3f0cc46559",
+  "folder": "D:\\Codex-generated-cache\\streamlaughs-v088\\production-ippxmk23",
+  "utf8Scripts": 28,
+  "rawNoncharacters": 0,
+  "chromiumPack": true
+}
+
+> Final ZIP through Chromium fake microphone (permission -> Start -> offscreen
+  -> AudioWorklet -> inference worker -> visible Twitch panel); native tab audio.
+[
+  {
+    "case": "judge-words",
+    "passed": true,
+    "version": "0.8.8",
+    "laughs": 0,
+    "words": [
+      {
+        "count": 2,
+        "word": "w"
+      },
+      {
+        "count": 2,
+        "word": "lets go"
+      }
+    ],
+    "micFrames": 5101,
+    "detectors": {
+      "dsp": 0,
+      "yamnet": 0,
+      "both": 0
+    },
+    "panelWord": "lets go",
+    "sawCalibration": true,
+    "fixtureSha256": "c2f0a212dee76d62d08704ed0e3d93383aa55e07c38085a1d89cf24daf854e1b"
+  },
+  {
+    "case": "startup-with-voice",
+    "passed": true,
+    "version": "0.8.8",
+    "laughs": 3,
+    "words": [
+      {
+        "count": 2,
+        "word": "lets go"
+      }
+    ],
+    "micFrames": 1967,
+    "detectors": {
+      "dsp": 0,
+      "yamnet": 0,
+      "both": 3
+    },
+    "panelWord": "lets go",
+    "sawCalibration": true,
+    "fixtureSha256": "07db93dd56f67020abfa7eb2850eb16c1ee364d2bff581402f4d1c414666cd71"
+  },
+  {
+    "case": "normal-60s",
+    "passed": true,
+    "version": "0.8.8",
+    "laughs": 0,
+    "words": [],
+    "micFrames": 3872,
+    "detectors": {
+      "dsp": 0,
+      "yamnet": 0,
+      "both": 0
+    },
+    "panelWord": "",
+    "sawCalibration": true,
+    "fixtureSha256": "bb101ec1f522ad821779eca795b932ea3fec0d7fc265c9f54215bc59e1b16adb"
+  },
+  {
+    "case": "room-noises-30s",
+    "passed": true,
+    "version": "0.8.8",
+    "laughs": 0,
+    "words": [],
+    "micFrames": 2331,
+    "detectors": {
+      "dsp": 0,
+      "yamnet": 0,
+      "both": 0
+    },
+    "panelWord": "",
+    "sawCalibration": true,
+    "fixtureSha256": "7a160ba66d83bb8a7a141dbffe8877c7c2c4f60ba908cc49ea94111d553b5938"
+  },
+  {
+    "case": "talk-three-laughs",
+    "passed": true,
+    "version": "0.8.8",
+    "laughs": 3,
+    "words": [],
+    "micFrames": 3872,
+    "detectors": {
+      "dsp": 0,
+      "yamnet": 0,
+      "both": 3
+    },
+    "panelWord": "",
+    "sawCalibration": true,
+    "undo": {
+      "restoredWithinFiveSeconds": true,
+      "expiredAfterFiveSeconds": true,
+      "savedRecapLaughs": 2
+    },
+    "fixtureSha256": "8c6db7715f7251d3f71e1b2aebb95d151acf9f79ce5e3b28587b05e803647657"
+  },
+  {
+    "case": "bleed-60s",
+    "passed": true,
+    "version": "0.8.8",
+    "laughs": 0,
+    "words": [],
+    "micFrames": 3872,
+    "detectors": {
+      "dsp": 0,
+      "yamnet": 0,
+      "both": 0
+    },
+    "panelWord": "",
+    "sawCalibration": true,
+    "fixtureSha256": "b773946f2389493cc456fcc66a64e89c72b6fabad2e7e84a9e53ca47257342ee"
+  },
+  {
+    "case": "bleed-three-laughs",
+    "passed": true,
+    "version": "0.8.8",
+    "laughs": 3,
+    "words": [],
+    "micFrames": 3885,
+    "detectors": {
+      "dsp": 0,
+      "yamnet": 0,
+      "both": 3
+    },
+    "panelWord": "",
+    "sawCalibration": true,
+    "fixtureSha256": "107f1eeb379fe5ae4f73e1d27ef1422d881097b797b4c3006ae3693838262cd9"
+  },
+  {
+    "case": "reaction-words",
+    "passed": true,
+    "version": "0.8.8",
+    "laughs": 0,
+    "words": [
+      {
+        "count": 2,
+        "word": "bro"
+      },
+      {
+        "count": 1,
+        "word": "no way"
+      }
+    ],
+    "micFrames": 2318,
+    "detectors": {
+      "dsp": 0,
+      "yamnet": 0,
+      "both": 0
+    },
+    "panelWord": "bro",
+    "sawCalibration": true,
+    "fixtureSha256": "58c4cd7667b429ffb806ab3434f41d274c43553c385bd13bbe229f83a12e3153"
+  },
+  {
+    "case": "existing-laugh-word",
+    "passed": true,
+    "version": "0.8.8",
+    "laughs": 2,
+    "words": [
+      {
+        "count": 2,
+        "word": "lets go"
+      }
+    ],
+    "micFrames": 2318,
+    "detectors": {
+      "dsp": 0,
+      "yamnet": 0,
+      "both": 2
+    },
+    "panelWord": "lets go",
+    "sawCalibration": true,
+    "fixtureSha256": "1e58c5c2e9761fd5a380b6cb44671c991a44965060d067e81f9233266b96ed81"
+  }
+]
+
+> Five-minute fresh default session: PASS
+{
+  "version": "0.8.8",
+  "durationSeconds": 300.293,
+  "acceptanceDuration": true,
+  "nativeTwitchPlayback": true,
+  "extensionPassthroughContexts": 0,
+  "nativeAudioUnderruns": null,
+  "nativeAudioUnderrunsNote": "HTML video exposes no audio underrun counter; no extension passthrough exists",
+  "outputClockGaps": 0,
+  "setupOffscreenLongTasks": {
+    "supported": true,
+    "count": 0,
+    "worstMs": 0,
+    "stalls": 1,
+    "worstStallMs": 199.90000000037253
+  },
+  "offscreenLongTasks": {
+    "supported": true,
+    "count": 0,
+    "worstMs": 0,
+    "stalls": 1,
+    "worstStallMs": 199.90000000037253
+  },
+  "newOffscreenLongTasks": 0,
+  "worstOffscreenLongTaskMs": 0,
+  "workerTasks": {
+    "realtime": {
+      "supported": false,
+      "count": 0,
+      "worstMs": 0,
+      "stalls": 2,
+      "worstStallMs": 558
+    },
+    "sound": {
+      "supported": false,
+      "count": 0,
+      "worstMs": 0,
+      "stalls": 1,
+      "worstStallMs": 164.80000000074506
+    },
+    "speech": {
+      "supported": false,
+      "count": 0,
+      "worstMs": 0,
+      "stalls": 18,
+      "worstStallMs": 1658.0999999996275
+    }
+  },
+  "contentLongTasks": {
+    "count": 0,
+    "worstMs": 0
+  },
+  "speakerConnections": 0,
+  "tabCaptureTracks": 0,
+  "modelWorkMsPerSecond": {
+    "mean": 114.10406544072384,
+    "peak": 1320.9215139512833,
+    "definition": "elapsed inference work, not OS CPU utilization"
+  },
+  "droppedVideoFrames": 0,
+  "totalVideoFrames": 7807,
+  "mic": {
+    "name": "Fake Audio Input 1",
+    "state": "live",
+    "muted": false,
+    "enabled": true,
+    "sampleRate": 44100,
+    "channelCount": 2,
+    "echoCancellation": false,
+    "noiseSuppression": false,
+    "autoGainControl": false,
+    "device": "system default"
+  },
+  "laughs": 13,
+  "words": 13,
+  "modelErrors": 0,
+  "speechBudgetOverruns": 0,
+  "speechCooldownMs": 0,
+  "modelWork10sMs": {
+    "peak": 2080.7999999932945,
+    "limit": 2500,
+    "definition": "conservative elapsed model work, sleeps excluded; not an OS CPU measurement"
+  },
+  "liveSwitchesPassed": false,
+  "defaultSession": true,
+  "capturedTabProbe": null
+}
+
+> Additional live-reconfiguration stress: FAIL strict performance target
+Repeated mic/model/overlay switches followed by 303.538 s retained native playback,
+3 laughs and 1 word, but produced 8 new offscreen Long Tasks (worst 80 ms),
+2 content Long Tasks (worst 63 ms), 130 video drops and peak conservative elapsed
+model work 35,030.9 ms/10 s. Retained as a failure; do not report it as smooth.
+The separate fresh default session above isolates ordinary Start from reconfiguration.
+
+> Settings/UI + judge downloads: final ZIP in fresh Chromium profile
+{
+  "extension": {
+    "id": "fkocldgggcmhihelohiicoakcfomhepg",
+    "version": "0.8.8",
+    "settingsToggle": true,
+    "historyRoundTrip": true,
+    "geometry": {
+      "top": 12,
+      "bottom": 400,
+      "parentTop": 0,
+      "parentBottom": 400,
+      "scroll": 206.39999389648438,
+      "max": 207
+    },
+    "focusTrap": true,
+    "longPress": true,
+    "quickReadout": true
+  },
+  "pages": [
+    {
+      "path": "/",
+      "viewport": 1920,
+      "status": 200,
+      "scroll": 1905
+    },
+    {
+      "path": "/install",
+      "viewport": 1920,
+      "status": 200,
+      "scroll": 1905
+    },
+    {
+      "path": "/try",
+      "viewport": 1920,
+      "status": 200,
+      "scroll": 1905
+    },
+    {
+      "path": "/",
+      "viewport": 390,
+      "status": 200,
+      "scroll": 375
+    },
+    {
+      "path": "/install",
+      "viewport": 390,
+      "status": 200,
+      "scroll": 375
+    },
+    {
+      "path": "/try",
+      "viewport": 390,
+      "status": 200,
+      "scroll": 375
+    }
+  ],
+  "download": {
+    "bytes": 40463895,
+    "sha256": "c599549147055f6faffb6811e467dca388db683e2e0f0c1ea7712c3f0cc46559",
+    "version": "0.8.8"
+  }
+}
+
+Limits: fake microphone/fixture video are not physical Windows/Bluetooth tests.
+Native HTML video has no audio underrun counter; worker Long Tasks are unavailable.
+The model work metric is conservative elapsed inference work, not OS CPU usage.
+Recorded W/lets-go deliveries took about 13–14 seconds under the unchanged
+rolling CPU governor. This latency is deliberately
+reported, not presented as a hard real-time word guarantee. Laughs stay independent.
+Recorded startup laughs reached the sampled report approximately one second after
+their event timestamp (one-second polling granularity). Physical mic results vary.
+
+Reproduce: build, extract /download/zip, set AUDIO_PROBE_BUILD to that fresh folder,
+then pnpm test:accuracy; STUTTER_SECONDS=300 pnpm test:stutter.
+Fixture inputs/receipts/licenses: tests/fixtures/audio/README.md and accuracy/cases.json.
+Details: docs/diagnosis-v088.md. Numeric raw reports/logs remain outside Git in
+D:/Codex-generated-cache/streamlaughs-v088 and ../../work/v088-*.txt.

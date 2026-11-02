@@ -1,0 +1,16 @@
+{
+  "name": "judge-words",
+  "seconds": 101,
+  "laughs": 0,
+  "words": {
+    "w": 2,
+    "lets go": 2
+  },
+  "wSource": "https://commons.wikimedia.org/wiki/File:En-us-w.ogg",
+  "wAuthor": "Twocs (Tom Anderson)",
+  "wLicense": "CC BY-SA 3.0",
+  "wLicenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+  "wSourceSha256": "560130f524ca3253e40a4553cfbc6733959fdec621359338b0f73542a2c7011c",
+  "sha256": "c2f0a212dee76d62d08704ed0e3d93383aa55e07c38085a1d89cf24daf854e1b",
+  "transformation": "mono PCM16 16 kHz conversion, silence padding and unchanged utterance montage; no synthetic voice"
+}

@@ -76,9 +76,11 @@ export function HistoryTransfer({ save = false }: { save?: boolean }) {
           }
         }}
       />
-      <p className="sub" role="status">
-        {status || 'local JSON only · nothing uploaded'}
-      </p>
+      {status && (
+        <p className="sub" role="status">
+          {status}
+        </p>
+      )}
     </div>
   );
 }

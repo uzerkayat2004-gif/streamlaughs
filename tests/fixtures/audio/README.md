@@ -18,3 +18,10 @@ These are smoke/regression inputs, not a representative accuracy dataset. A fake
 Speech: Daniel Alvarez / dastudiospr, [Let’s Go (male), Freesound 529817](https://freesound.org/people/dastudiospr/sounds/529817/), [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). Public preview source: `https://cdn.freesound.org/previews/529/529817_10761583-hq.mp3`, converted with `ffmpeg -i SOURCE -ac 1 -ar 16000 -c:a pcm_s16le lets-go.wav`. The spoken recording is unchanged apart from resampling; it is not synthesized speech.
 
 The loud integration case adds a generated 317 Hz spill signal to the microphone fixture while the tab plays its own video/audio. This checks that independent human reactions survive additive speaker-like spill. It does not replace physical Windows/room/AEC checks. All fixtures are test-only and excluded from packages.
+
+
+## v0.8.8 recorded W regression
+
+`accuracy/w-source.wav` is the human pronunciation of the letter W by **Twocs (Tom Anderson)**, from [En-us-w.ogg](https://commons.wikimedia.org/wiki/File:En-us-w.ogg), under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). Source: `https://upload.wikimedia.org/wikipedia/commons/4/4b/En-us-w.ogg`. Converted with `ffmpeg -i En-us-w.ogg -ac 1 -ar 16000 -c:a pcm_s16le w-source.wav`.
+
+`accuracy/judge-words.wav` combines that recording twice and the original CC0 “let’s go” recording twice, with silence padding. No synthesized voice or injected inference events. The converted recording and montage are distributed under CC BY-SA 3.0; attribution, transformation and SHA-256 receipts are in `accuracy/judge-words.json`. These test fixtures are never bundled in the extension/download.

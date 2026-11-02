@@ -231,6 +231,7 @@ const common = new Set(
     .concat(REACTION_WORDS.flatMap((s) => s.split(' '))),
 );
 const standaloneReactions = new Set([
+  'w',
   'what',
   'good',
   'great',
@@ -285,6 +286,9 @@ export function extractWords(text: string): {
 } {
   if (hallucinationReason(text))
     return { phrases: [], hype: false, matched: 0, rejected: 1 };
+  // Whisper may spell the spoken letter instead of emitting its glyph. Only
+  // alias a complete standalone utterance; never rewrite an ordinary sentence.
+  if (/^\s*double[\s-]+(?:u|you|yew)[.!?\s]*$/i.test(text)) text = 'w';
   const raw =
     text
       .replace(/[’‘]/g, "'")

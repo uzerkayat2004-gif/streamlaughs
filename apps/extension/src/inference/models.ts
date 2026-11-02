@@ -179,8 +179,6 @@ export class LocalModels implements ModelRunner {
         await this.whisper(new Float32Array(16000), { max_new_tokens: 1 });
         this.backend = 'mixed';
       } catch {
-        if (preference === 'webgpu')
-          throw new Error('WebGPU initialization failed');
         await this.whisper?.dispose().catch(() => {});
         this.whisper = await makeWhisper('wasm');
       }
@@ -189,7 +187,12 @@ export class LocalModels implements ModelRunner {
     // Warm the WASM encoder/decoder before marking the model ready. Cold kernel
     // compilation must not consume the first real reaction's rolling work budget.
     if (this.backend === 'wasm')
-      await this.whisper(new Float32Array(16000), { max_new_tokens: 1 });
+      // Warm the cached decoder too. One token only compiles the initial
+      // branch; a cold cached kernel can consume a whole live speech budget.
+      await this.whisper(new Float32Array(16000), {
+        min_new_tokens: 2,
+        max_new_tokens: 2,
+      });
     this.loadMs.whisper = performance.now() - start;
     this.status.whisper = {
       phase: 'ready',

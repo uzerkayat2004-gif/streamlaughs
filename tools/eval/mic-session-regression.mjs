@@ -97,12 +97,23 @@ try {
   let diagnostic;
   let sawCalibration = false;
   const decisions = new Map();
+  const deliveries = new Map();
   for (let n = 0; n < (duration ?? 90); n++) {
     diagnostic = await popup.evaluate(() =>
       chrome.runtime.sendMessage({ type: 'GET_DIAGNOSTICS' }),
     );
     for (const row of diagnostic.inference?.accuracyLog ?? [])
       decisions.set(`${row.kind}-${row.ts}`, row);
+    for (const event of diagnostic.inference?.events ?? []) {
+      const key = `${event.kind}-${event.ts}`;
+      if (!deliveries.has(key))
+        deliveries.set(key, {
+          kind: event.kind,
+          observedMs: Date.now() - started,
+          eventMs: event.ts - started,
+          deliveryDelayMs: Math.max(0, Date.now() - event.ts),
+        });
+    }
     if (diagnostic.inference?.health.calibrationRemainingMs > 0)
       sawCalibration = true;
     if (
@@ -162,6 +173,7 @@ try {
     stages: ai?.stages,
     accuracyLog: ai?.accuracyLog,
     accuracyDecisions: [...decisions.values()],
+    deliveries: [...deliveries.values()],
     laughDetectors: ai?.laughDetectors,
     words: counts.words,
     guard: ai?.guard,

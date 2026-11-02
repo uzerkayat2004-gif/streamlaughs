@@ -10,18 +10,12 @@ import { useEffect, useState } from 'react';
 import { useStore } from 'zustand';
 import { AppIcon } from './AppIcon';
 import { command, connectSurface, surface } from './bridge';
-import { Backdrop, crowdLabel, Mark, Sheet, Timer, Toggle } from './components';
+import { Backdrop, crowdLabel, Mark, Sheet, Timer } from './components';
 import { db } from './db';
-import { HistoryTransfer } from './HistoryTransfer';
+import { CompactSettings } from './CompactSettings';
+import { VersionButton } from './VersionButton';
 import { StreamerAvatar } from './HistoryView';
 import type { StreamerProfile } from './history';
-import {
-  getInstallKind,
-  type InstallKind,
-  installPresentation,
-} from './install-type';
-import { MicDevicePicker } from './MicDevicePicker';
-import { MicTest } from './MicTest';
 import { StopSaved } from './StopSaved';
 import { SITE_URL } from './site';
 
@@ -32,13 +26,7 @@ import { audioNotice, friendlyError } from './ui-status';
 import { resolveWatchContext } from './watch-context';
 
 export function Popup() {
-  const [micTestOpen, setMicTestOpen] = useState(false);
   const { snapshot, ready } = useStore(surface.store);
-  const [install, setInstall] = useState<InstallKind>('other');
-  useEffect(() => {
-    void getInstallKind().then(setInstall);
-  }, []);
-  const manual = installPresentation(install).switchBanner;
   const [replay, setReplay] = useState(false),
     [typedChannel, setTypedChannel] = useState('');
   const [contextLoading, setContextLoading] = useState(true);
@@ -106,9 +94,6 @@ export function Popup() {
   const session = snapshot.session,
     activeChannel = session?.channel ?? channel,
     notice = audioNotice(snapshot);
-  async function openMigration() {
-    await chrome.tabs.create({ url: chrome.runtime.getURL('/update.html') });
-  }
   const [profile, setProfile] = useState<StreamerProfile>();
   useEffect(() => {
     if (activeChannel)
@@ -264,7 +249,7 @@ export function Popup() {
                 onClick={() => void primary()}
               >
                 <span className="smile-breath">
-                  <AppIcon size={manual ? 140 : 190} />
+                  <AppIcon size={190} />
                 </span>
               </button>
               <h1>
@@ -288,21 +273,6 @@ export function Popup() {
                   : 'your people are one stream away.'}
               </p>
             </div>
-            {manual && (
-              <aside className="store-switch" aria-label="switch to the store">
-                <p>
-                  StreamLaughs is now on the Chrome Web Store with automatic
-                  updates.
-                </p>
-                <button
-                  className="textbtn"
-                  type="button"
-                  onClick={() => void openMigration()}
-                >
-                  Switch ↗
-                </button>
-              </aside>
-            )}
             {channel ? (
               <button
                 type="button"
@@ -405,9 +375,7 @@ export function Popup() {
         >
           <AppIcon size={14} /> streamer? see your fans ↗
         </a>
-        <small className="popup-version">
-          v{chrome.runtime.getManifest().version}
-        </small>
+        <VersionButton compact />
         {error && (
           <p className="error" role="alert">
             {error}
@@ -452,11 +420,6 @@ export function Popup() {
           </button>
         )}
       </section>
-      {micTestOpen && (
-        <Sheet title="test my mic" close={() => setMicTestOpen(false)}>
-          <MicTest />
-        </Sheet>
-      )}
       {settingsOpen && (
         <Sheet
           title={confirmDelete ? 'delete your data?' : 'settings'}
@@ -495,130 +458,11 @@ export function Popup() {
             </>
           ) : (
             <>
-              <MicDevicePicker
-                changed={() => {
-                  if (snapshot.session) void act({ type: 'RETRY_MIC' });
-                }}
+              <CompactSettings
+                settings={snapshot.settings}
+                change={(settings) => void act({ type: 'SETTINGS', settings })}
+                remove={() => setConfirmDelete(true)}
               />
-              <Toggle
-                title="listen for my laughs"
-                on={snapshot.settings.listen}
-                click={() =>
-                  void act({
-                    type: 'SETTINGS',
-                    settings: { listen: !snapshot.settings.listen },
-                  })
-                }
-              />
-              <label className="sub">
-                reaction sensitivity{' '}
-                <select
-                  aria-label="reaction sensitivity"
-                  value={snapshot.settings.sensitivity ?? 'normal'}
-                  onChange={(e) =>
-                    void act({
-                      type: 'SETTINGS',
-                      settings: {
-                        sensitivity: e.target.value as
-                          | 'strict'
-                          | 'normal'
-                          | 'sensitive',
-                      },
-                    })
-                  }
-                >
-                  <option value="strict">strict</option>
-                  <option value="normal">normal</option>
-                  <option value="sensitive">sensitive</option>
-                </select>
-              </label>
-              <Toggle
-                title="share with the fans"
-                detail="anonymous"
-                on={snapshot.settings.share}
-                click={() =>
-                  void act({
-                    type: 'SETTINGS',
-                    settings: { share: !snapshot.settings.share },
-                  })
-                }
-              />
-              <p className="sub preview-note">
-                Sharing sends counts and approved phrases. Watch only still
-                reveals channel presence.
-                <br />
-                Audio is processed on your PC and never saved or sent.
-              </p>
-              <div className="streamer-row">
-                <strong>for streamers</strong>
-                <p className="sub">
-                  see how your fans laughed and rated your streams
-                </p>
-                <a
-                  className="streamer-link"
-                  href={STREAMER_PAGE}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    void chrome.tabs.create({ url: STREAMER_PAGE });
-                  }}
-                >
-                  <AppIcon size={14} /> streamer? see your fans ↗
-                </a>
-              </div>
-              {SITE_URL && (
-                <a
-                  className="textbtn"
-                  href={`${SITE_URL}/privacy`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  privacy ↗
-                </a>
-              )}
-              <Toggle
-                title="send stream ratings"
-                detail="anonymous. streamers only see averages from 5+ fans."
-                on={snapshot.settings.sendRatings !== false}
-                click={() =>
-                  void act({
-                    type: 'SETTINGS',
-                    settings: {
-                      sendRatings: snapshot.settings.sendRatings === false,
-                    },
-                  })
-                }
-              />
-              <HistoryTransfer save={manual} />
-              {manual && (
-                <button
-                  type="button"
-                  className="textbtn"
-                  onClick={() => void openMigration()}
-                >
-                  Switch to the store ↗
-                </button>
-              )}
-              <button
-                type="button"
-                className="danger"
-                onClick={() => setConfirmDelete(true)}
-              >
-                delete my data
-              </button>
-              <button
-                type="button"
-                className="textbtn settings-version"
-                onClick={(event) => {
-                  if (event.shiftKey)
-                    void chrome.tabs.create({
-                      url: chrome.runtime.getURL('/diagnostics.html'),
-                    });
-                }}
-              >
-                version {chrome.runtime.getManifest().version}
-              </button>
             </>
           )}
         </Sheet>

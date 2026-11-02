@@ -10,7 +10,7 @@ import { decodeWav } from '../../../../tools/eval/wav.mjs';
 import { InferencePipeline } from './pipeline';
 import { createDatabase } from '../db';
 it.each(['independent', 'tab playback'] as const)(
-  'quiet recording with models unavailable: %s',
+  'quiet recording never counts heuristic-only reactions with models unavailable: %s',
   async (mode) => {
     const wav = decodeWav(
       readFileSync('../../tests/fixtures/audio/laugh-lets-go.wav'),
@@ -74,8 +74,9 @@ it.each(['independent', 'tab playback'] as const)(
       await database.sessions.put(session);
       await database.recaps.put(createRecap(session, 40000));
       const laughs = (await database.recaps.get('quiet'))?.totalLaughs ?? 0;
-      if (mode === 'independent') expect(laughs).toBeGreaterThanOrEqual(1);
-      else expect(laughs).toBe(0);
+      // v0.8.6 requires the classifier AND rhythm. A missing classifier must
+      // never re-enable the old DSP-only fallback, even on a real laugh clip.
+      expect(laughs).toBe(0);
       console.info(
         JSON.stringify({
           fixture: mode,
@@ -85,7 +86,7 @@ it.each(['independent', 'tab playback'] as const)(
         }),
       );
       expect(pipeline.diagnostics().stages.dspHits).toBeGreaterThanOrEqual(1);
-      expect(words).toHaveBeenCalled();
+      expect(words).not.toHaveBeenCalled();
     } finally {
       pipeline.clear();
       database.close();

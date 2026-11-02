@@ -44,6 +44,8 @@ export class AcousticFloor {
   private hfs: number[] = [];
   private records: (AcousticEvidence & { ts: number })[] = [];
   private elapsed = 0;
+  private retryQuiet = false;
+  private quietRetry: { rms: number; hf: number }[] = [];
   ingest(frame: Float32Array, ts: number, speech = false) {
     this.began ??= ts;
     this.elapsed = Math.max(0, ts - this.began);
@@ -61,11 +63,41 @@ export class AcousticFloor {
       this.floor = Math.max(0.00003, quantile(this.levels, 0.8));
       this.calibrationHf = quantile(this.hfs, 0.5);
     } else if (this.levels.length) {
+      // A foreground voice can start before the quiet countdown finishes.
+      // When the opening window includes >30 dB bursts above real quiet gaps,
+      // use those gaps, not the voice, as the room reference. Ordinary speaker
+      // bleed retains the conservative upper quantile (19 dB in the fixture).
+      const quiet = Math.max(0.00003, quantile(this.levels, 0.2));
+      if (20 * Math.log10(this.floor / quiet) >= 30) this.floor = quiet;
       this.calibratedFloor = this.floor;
+      // Continuous foreground speech has no quiet quantile to use. Keep the
+      // countdown visible until one real quiet second replaces that invalid
+      // startup reference. Ordinary room/speaker floors are never reset.
+      this.retryQuiet = this.floor >= 0.02;
       // Speaker-fixture calibration is ~0.0055 RMS; 0.006 missed it.
       this.bleed = this.floor >= 0.004;
       this.levels = [];
       this.hfs = [];
+    }
+    if (this.retryQuiet) {
+      if (!speech && rms < this.floor * 0.1) this.quietRetry.push({ rms, hf });
+      else this.quietRetry = [];
+      if (this.quietRetry.length >= 50) {
+        this.floor = this.calibratedFloor = Math.max(
+          0.00003,
+          quantile(
+            this.quietRetry.map((r) => r.rms),
+            0.8,
+          ),
+        );
+        this.calibrationHf = quantile(
+          this.quietRetry.map((r) => r.hf),
+          0.5,
+        );
+        this.bleed = this.floor >= 0.004;
+        this.retryQuiet = false;
+        this.quietRetry = [];
+      }
     }
     if (this.elapsed >= 3000 && !speech && rms < this.floor * 1.8)
       // Quiet speech gaps must not erase the room/speaker reference mid-session.
@@ -88,7 +120,7 @@ export class AcousticFloor {
       aboveFloorDb: db,
       highFrequencyRatio: hf,
       near,
-      calibrated: this.elapsed >= 3000,
+      calibrated: this.elapsed >= 3000 && !this.retryQuiet,
       bleed: this.bleed,
     };
     this.records.push({ ...result, ts });
@@ -115,11 +147,13 @@ export class AcousticFloor {
         db >= profile.aboveFloorDb &&
         rms >= profile.minimumRms &&
         (!this.bleed || hf >= this.calibrationHf * 0.7 || db >= 20),
-      calibrated: this.elapsed >= 3000,
+      calibrated: this.elapsed >= 3000 && !this.retryQuiet,
       bleed: this.bleed,
     };
   }
   remainingMs() {
+    if (this.retryQuiet)
+      return Math.max(20, 1000 - this.quietRetry.length * 20);
     return Math.max(0, 3000 - this.elapsed);
   }
 }

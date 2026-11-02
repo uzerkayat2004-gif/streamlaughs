@@ -1,5 +1,6 @@
 /** Local reaction aliases. Network crowd vocabulary remains a separate, stricter list. */
 export const REACTION_WORDS = [
+  'w',
   'bro',
   'bruh',
   'bhai',

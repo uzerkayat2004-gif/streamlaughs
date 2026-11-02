@@ -127,14 +127,17 @@ try {
   };
   let capturedTabProbe = null;
   const switchComparisons = [];
-  for (const change of [
+  // Isolate normal Start from optional live reconfiguration stress. Report which
+  // path was measured; a fresh default session must not imply switch coverage.
+  const changes = [
     ...(process.env.STUTTER_TAB_PROBE === '1' ? [{ tabCapture: true }] : []),
     { speechModel: false },
     { micCapture: false },
     { micCapture: true, laughModel: false, speechModel: true },
     { overlay: false },
     {},
-  ]) {
+  ];
+  for (const change of process.env.STUTTER_DEFAULT_SESSION === '1' ? [] : changes) {
     const result = await popup.evaluate(
       (switches) =>
         chrome.runtime.sendMessage({ type: 'STUTTER_LAB', switches }),
@@ -330,7 +333,8 @@ try {
         'conservative elapsed model work, sleeps excluded; not an OS CPU measurement',
     },
     switchComparisons,
-    liveSwitchesPassed: true,
+    liveSwitchesPassed: switchComparisons.length > 0,
+    defaultSession: process.env.STUTTER_DEFAULT_SESSION === '1',
     capturedTabProbe,
   };
   fs.mkdirSync(path.dirname(reportPath), { recursive: true });

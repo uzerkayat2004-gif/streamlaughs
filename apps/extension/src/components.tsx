@@ -343,8 +343,8 @@ export function Sheet({
           if (event.key === 'Escape') close();
           if (event.key === 'Tab') {
             const buttons = [
-              ...sheet.current!.querySelectorAll<HTMLButtonElement>(
-                'button:not(:disabled), a[href]',
+              ...sheet.current!.querySelectorAll<HTMLElement>(
+                'button:not(:disabled), a[href], select:not(:disabled), input:not(:disabled):not([type="hidden"]), [tabindex="0"]',
               ),
             ];
             const first = buttons[0],

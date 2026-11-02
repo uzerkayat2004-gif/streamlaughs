@@ -1,6 +1,28 @@
 import { expect, it } from 'vitest';
 import { AcousticFloor, LaughEpisodes } from './accuracy';
 
+it('does not calibrate opening speech bursts as a permanent room floor', () => {
+  const f = new AcousticFloor();
+  for (let t = 0; t < 3000; t += 20)
+    f.ingest(new Float32Array(320).fill(t % 1000 < 400 ? 0.04 : 0.0002), t);
+  const laugh = f.ingest(new Float32Array(320).fill(0.02), 3000, true);
+  expect(f.floor).toBeCloseTo(0.0002, 6);
+  expect(laugh.near).toBe(true);
+  expect(laugh.bleed).toBe(false);
+});
+it('asks for a quiet retry after continuous loud opening speech, then recovers', () => {
+  const f = new AcousticFloor();
+  for (let t = 0; t <= 3000; t += 20)
+    f.ingest(new Float32Array(320).fill(0.04), t, true);
+  expect(f.remainingMs()).toBeGreaterThan(0);
+  for (let t = 3020; t <= 4220; t += 20)
+    f.ingest(new Float32Array(320).fill(0.0002), t);
+  expect(f.remainingMs()).toBe(0);
+  expect(f.ingest(new Float32Array(320).fill(0.02), 4240, true).near).toBe(
+    true,
+  );
+});
+
 it('calibrates raw speaker/room level for three seconds, then requires a clear near-voice level step', () => {
   const f = new AcousticFloor();
   for (let k = 0; k < 150; k++)

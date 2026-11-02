@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./reference.css";
+@import "./popup-settings.css";
 
 .audio-debug {
   max-width: 640px;

@@ -9,6 +9,7 @@ import {
 } from '../components/fans-playground';
 import { RatingsPreview } from '../components/ratings-preview';
 import { StoreButtons } from '../components/store-buttons';
+import { JudgeInstall } from '../components/judge-install';
 
 export default function Home() {
   return (
@@ -49,6 +50,7 @@ export default function Home() {
           <p className="hero-copy">see your reaction watching them.</p>
           <div className="hero-actions">
             <StoreButtons hideNote />
+            <JudgeInstall />
             <Link className="text-link hero-peek" href="/try">
               watch the demo <span aria-hidden="true">↗</span>
             </Link>

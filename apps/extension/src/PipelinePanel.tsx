@@ -16,6 +16,7 @@ export function usePipelineReport(
 ) {
   const [report, setReport] = useState<DiagnosticsReport | null>(null);
   const [phrase, setPhrase] = useState('');
+  const [word, setWord] = useState('');
   useEffect(() => {
     if (!enabled) return;
     let alive = true,
@@ -32,10 +33,17 @@ export function usePipelineReport(
           if (next.lab) labSurface.accept(next.lab);
         }
         if (preview) {
-          const value = await chrome.runtime.sendMessage({
+          const heard = await chrome.runtime.sendMessage({
             type: 'GET_AUDIO_PREVIEW',
-            speech,
+            speech: false,
           });
+          if (alive && typeof heard === 'string') setWord(heard.slice(0, 80));
+          const value = speech
+            ? await chrome.runtime.sendMessage({
+                type: 'GET_AUDIO_PREVIEW',
+                speech: true,
+              })
+            : heard;
           if (alive && typeof value === 'string')
             setPhrase(value.slice(0, speech ? 20000 : 80));
         }
@@ -51,9 +59,10 @@ export function usePipelineReport(
       alive = false;
       clearInterval(timer);
       setPhrase('');
+      setWord('');
     };
   }, [enabled, preview, speech]);
-  return { report, phrase };
+  return { report, phrase, word };
 }
 export function micProblem(report: DiagnosticsReport | null) {
   if (!report) return 'connecting to the local audio owner…';

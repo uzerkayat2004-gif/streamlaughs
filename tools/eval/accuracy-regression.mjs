@@ -28,7 +28,9 @@ if (process.env.ACCURACY_FIRST) {
 let failed = 0;
 const reports = [];
 for (const c of cases) {
-  const file = c.file || path.join(fixtures, c.name + '.wav');
+  const file = c.file
+    ? path.resolve(root, c.file)
+    : path.join(fixtures, c.name + '.wav');
   if (
     c.sha256 &&
     crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex') !==
