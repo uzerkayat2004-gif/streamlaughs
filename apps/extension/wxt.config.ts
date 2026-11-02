@@ -78,6 +78,25 @@ export default defineConfig({
     plugins: [
       tailwindcss(),
       {
+        // Chrome refuses to load scripts holding Unicode noncharacters
+        // (e.g. Dexie's maxString U+FFFF, which the minifier writes as a raw
+        // character). Escape them so every script is valid for Chrome.
+        name: 'escape-noncharacters',
+        enforce: 'post',
+        generateBundle(_options, bundle) {
+          const bad = /[\uFDD0-\uFDEF\uFFFE\uFFFF]/g;
+          for (const file of Object.values(bundle)) {
+            if (file.type === 'chunk' && bad.test(file.code)) {
+              file.code = file.code.replace(
+                bad,
+                (ch) => `\\u${ch.charCodeAt(0).toString(16).padStart(4, '0')}`,
+              );
+            }
+            bad.lastIndex = 0;
+          }
+        },
+      },
+      {
         name: 'product-titles',
         transformIndexHtml(html) {
           const name = product.name
