@@ -447,7 +447,7 @@ export class InferencePipeline {
             : 0
           : smooth +
               (rhythm ? 0.15 : 0) -
-              0.5 * Math.max(0, scores.speech - scores.laugh) +
+              0.35 * Math.max(0, scores.speech - scores.laugh - 0.2) +
               (job.acoustic.aboveFloorDb > 6 ? 0.03 : 0),
       ),
     );

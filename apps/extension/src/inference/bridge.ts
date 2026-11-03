@@ -464,11 +464,18 @@ export class InferenceBridge {
           this.statusError = message.slice(0, 400);
         }
         const parsed = InferenceHealthSchema.safeParse(data.health);
-        if (!parsed.success) {
-          this.fail('invalid local inference health message');
-          return;
+        // A health-report shape mismatch must never stop detection: keep the
+        // worker and its events running, and surface the mismatch instead.
+        if (parsed.success) this.health = parsed.data;
+        else {
+          const message = `inference health report mismatch: ${parsed.error.issues
+            .map((issue) => issue.path.join('.') || 'missing report')
+            .slice(0, 4)
+            .join(', ')}`;
+          if (this.statusError !== message)
+            console.warn('StreamLaughs:', message);
+          this.statusError = message.slice(0, 400);
         }
-        this.health = parsed.data;
         if (AUDIO_DEBUG && data.debug && typeof data.debug === 'object')
           this.debug = {
             ...data.debug,

@@ -50,7 +50,7 @@ export const InferenceHealthSchema = z
     vadProbability: z.number().min(0).max(1),
     drops: z.number().int().nonnegative(),
     frameQueue: z.number().int().nonnegative(),
-    speechQueue: z.number().int().min(0).max(2),
+    speechQueue: z.number().int().nonnegative(),
     realTimeFactor: z.number().finite().nonnegative(),
     inferenceMs: z.number().finite().nonnegative(),
     tabLaughTs: z.number().finite().nonnegative(),

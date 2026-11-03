@@ -107,7 +107,7 @@ export function PipelineStages({
       ok: !blocked && fresh,
       reason: waiting(
         fresh
-          ? `${Math.round(audio?.metrics.micFps ?? 0)} frames/s captured · ${Math.round(ai?.micFps ?? 0)} frames/s at worker · averaging ${audio?.micWorklet.inputChannels ?? 0} input channels${ai?.inputGaps ? ` · ${ai.inputGaps} input gaps` : ''}`
+          ? `${Math.round(audio?.metrics.micFps ?? 0)} frames/s captured · ${Math.round(ai?.micFps ?? 0)} frames/s at worker · using the strongest of ${audio?.micWorklet.inputChannels ?? 0} input channels${ai?.inputGaps ? ` · ${ai.inputGaps} input gaps` : ''}`
           : 'no fresh 20 ms frames · retry microphone',
       ),
     },
