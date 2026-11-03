@@ -458,9 +458,13 @@ export class InferencePipeline {
               // plain speech with rhythm scores about 0.
               (rhythm
                 ? 0.15 +
-                  (scores.laugh >= 0.03 ? 0.35 * Math.min(1, job.dsp.score) : 0)
+                  (scores.laugh >= 0.03 || scores.speech < 0.5
+                    ? 0.4 * Math.min(1, job.dsp.score)
+                    : 0)
                 : 0) -
-              (rhythm && scores.laugh >= 0.03 ? 0.05 : 0.2) *
+              (rhythm && (scores.laugh >= 0.03 || scores.speech < 0.5)
+                ? 0.05
+                : 0.2) *
                 Math.max(0, scores.speech - scores.laugh - 0.4) +
               (job.acoustic.aboveFloorDb > 6 ? 0.03 : 0),
       ),

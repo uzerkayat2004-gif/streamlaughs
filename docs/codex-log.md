@@ -314,3 +314,10 @@ Owner's 0.9.7 report: Moonshine now prints real English ("… sorry, it's not by
 - A voiced segment that transcribes to no words and overlaps a rhythm hit (or laughter ≥ 0.15) counts one laugh.
 - Local diagnostics show a private word as first letter + length (e.g. [B·7]) instead of [private].
 Unit tests: 164 passed, 3 pre-existing mock failures. Not hardware-tested.
+
+## 2026-11-03 · v0.9.9 · empty short clips and headset laughs (Hark)
+
+Owner's 0.9.8 report (Headset Z1): 5 of 8 voice clips came back as an empty transcript (0.65–1.3 s). Node test on a known clip: raw sub-second slices often return "" while 150 ms of silence each side fixes them ("" → "Three p m to."); a doubled clip recovers more. Laughs: during a clear laugh the rhythm detector scored 0.91 with YAMNet speech 0.03 and laughter ~0, so the 0.9.8 boost (gated on laughter ≥ 0.03) never applied; confidence stayed 0.18.
+- Clips ≤1.5 s padded with 150 ms silence each side before Moonshine; clips ≤2.2 s still empty retry once played twice (counts halved).
+- Rhythm boost now applies when laughter ≥ 0.03 OR YAMNet speech < 0.5; weight 0.4 × rhythm score. Speech-rhythm test (speech 0.95) still rejects.
+Unit tests: 164 passed, 3 pre-existing mock failures. Not hardware-tested.

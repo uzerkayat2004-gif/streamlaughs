@@ -52,6 +52,18 @@ export default defineUnlistedScript(() => {
       )
     );
   }
+  function padClip(samples: Float32Array, pad: number) {
+    const out = new Float32Array(samples.length + pad * 2);
+    out.set(samples, pad);
+    return out;
+  }
+  function doubleClip(samples: Float32Array) {
+    const gap = 3200,
+      out = new Float32Array(samples.length * 2 + gap);
+    out.set(samples, 0);
+    out.set(samples, samples.length + gap);
+    return out;
+  }
   self.onmessage = async ({ data }) => {
     if (data.type === 'backoff') budget.backoff();
     else if (data.type === 'preview') {
@@ -78,7 +90,20 @@ export default defineUnlistedScript(() => {
         busy = true;
         const includePreview = previewUntil > Date.now();
         budget.beginJob();
-        text = await models.words(samples, false, budget);
+        // Moonshine drops many sub-second clips to "" when the word starts
+        // right at the cut. 150 ms of silence each side fixes most; a clip
+        // still empty gets one retry played twice ("bro" -> "bro bro").
+        const shortClip = samples.length <= 16000 * 1.5;
+        text = await models.words(
+          shortClip ? padClip(samples, 2400) : samples,
+          false,
+          budget,
+        );
+        let doubled = false;
+        if (!text.trim() && samples.length <= 16000 * 2.2) {
+          text = await models.words(doubleClip(samples), false, budget);
+          doubled = !!text.trim();
+        }
 
         const confidence = models.lastSpeechConfidence;
         const rejection = text.trim()
@@ -87,6 +112,14 @@ export default defineUnlistedScript(() => {
         const extracted = extractWords(text, {
           short: samples.length <= 16000 * 2.2,
         });
+        if (doubled) {
+          for (const phrase of extracted.phrases)
+            phrase.count = Math.max(1, Math.round(phrase.count / 2));
+          extracted.matched = extracted.phrases.reduce(
+            (n, p) => n + p.count,
+            0,
+          );
+        }
         const result = {
           ...(rejection
             ? { phrases: [], hype: false, matched: 0, rejected: 1 }
