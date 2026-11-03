@@ -21,6 +21,7 @@ import { mapSoundScores } from './rules';
 import type { SpeechBudget } from './speech-budget';
 import { WhisperConfidence } from './whisper-confidence';
 import { compactWhisperFeatures } from './whisper-features';
+import { loadSelfTestClip } from './selftest-fixture';
 
 const makeWhisper = (device: 'wasm' | 'webgpu') =>
   pipeline<'automatic-speech-recognition'>(
@@ -184,12 +185,15 @@ export class LocalModels implements ModelRunner {
           ? await pipeline<'automatic-speech-recognition'>(
               'automatic-speech-recognition',
               'moonshine-tiny',
-              { device, dtype: 'q8', local_files_only: true },
+              // q4 runs float matmuls; the q8 int8 kernels printed garbage on a
+              // Windows x86 Chrome (same text for every phrase).
+              { device, dtype: 'q4', local_files_only: true },
             )
           : await makeWhisper(device);
       if (this.speechModel === 'whisper') this.compactSpeech();
       await this.whisper(new Float32Array(16000), { max_new_tokens: 2 });
       this.backend = device === 'webgpu' ? 'mixed' : 'wasm';
+      await this.speechSelfTest(base);
     };
     this.speechModel = 'moonshine';
     try {
@@ -218,6 +222,18 @@ export class LocalModels implements ModelRunner {
       error: this.speechFallbackReason,
       ms: this.loadMs.whisper,
     };
+  }
+  speechSelfTestText = '';
+  // Runs a known 3 s English clip through the loaded model. A model that runs
+  // but prints the wrong words on this CPU is treated as a failed load.
+  private async speechSelfTest(base: string) {
+    const samples = await loadSelfTestClip(base);
+    if (!samples) return;
+    const out = await this.whisper(samples, { max_new_tokens: 24 });
+    const text = (Array.isArray(out) ? out[0]?.text : out.text) ?? '';
+    this.speechSelfTestText = text.slice(0, 120);
+    if (!/\b(meet|tuesday|think)\b/i.test(text))
+      throw new Error(`speech self-test failed · heard "${text.slice(0, 60)}"`);
   }
   loadFailed(error: unknown) {
     logAudioError('local model failed to load', error);
@@ -339,7 +355,7 @@ export class LocalModels implements ModelRunner {
           ? await pipeline<'automatic-speech-recognition'>(
               'automatic-speech-recognition',
               'moonshine-tiny',
-              { device: 'wasm', dtype: 'q8', local_files_only: true },
+              { device: 'wasm', dtype: 'q4', local_files_only: true },
             )
           : await makeWhisper('wasm');
       if (this.speechModel === 'whisper') this.compactSpeech();

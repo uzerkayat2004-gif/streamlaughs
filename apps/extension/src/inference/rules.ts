@@ -256,6 +256,8 @@ export function hallucinationReason(text: string) {
     .replace(/[^a-z' ]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+  // English-only model: non-ASCII letters mean garbled decoder output.
+  if (/[^\x00-\x7F♪♫♬’‘“”…–—]/.test(text)) return 'garbled transcript';
   if (
     /[♪♫♬]/.test(text) ||
     /\b(thank you|thanks for watching|thank you for watching|subtitles|subscribe to)\b/.test(

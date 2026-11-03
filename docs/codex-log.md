@@ -295,3 +295,11 @@ Owner's 0.9.5 report: level fixed (mic RMS 0.039, peak 0.17, AGC on). YAMNet sco
 - A phrase whose transcript is a laugh ("ha ha ha", "hehe", "lol", "lmao", "[laughs]") now counts a laugh (2 s lockout shared with YAMNet laughs).
 - Audit log 10 laugh + 10 word decisions (schema max 20; 0.9.5's 12+10 could exceed it).
 Unit tests: inference/audio 164 passed, 3 pre-existing mock failures. Not browser-tested.
+
+## 2026-11-03 · v0.9.7 · word model printed garbage on the owner's PC (Hark)
+
+Owner's 0.9.6 report: 18 Moonshine results, every one the same garbled text ("quartifies prconfirminé…ildeipsADD Ке…") whatever was said, so 0 words ever matched. The same model files + the same peak normalisation transcribe correctly in Node (onnxruntime-node), so the garbage is specific to the q8 int8 kernels in onnxruntime-web WASM on his Windows x86 Chrome 156 (likely cause, not proven).
+- Moonshine switched to the q4 export (MatMulNBits, float activations), pinned revision a6da124; q8 files removed. Node check: "Okay, so I think we should meet on Tuesday."
+- Load-time self-test: a bundled 3 s English clip (models/selftest.pcm) must transcribe to meet/tuesday/think, else Moonshine counts as failed (falls back to Whisper, which gets the same test).
+- Transcripts with non-ASCII letters are rejected as "garbled transcript".
+Unit tests: 164 passed, 3 pre-existing mock failures. check-assets verified. Not browser-tested.

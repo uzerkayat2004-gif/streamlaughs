@@ -149,17 +149,17 @@
       "license": "MIT"
     },
     {
-      "path": "moonshine-tiny/onnx/encoder_model_quantized.onnx",
-      "url": "https://huggingface.co/onnx-community/moonshine-tiny-ONNX/resolve/a6da1241cd305dcd64eab1edbd615f2bb9aabb95/onnx/encoder_model_quantized.onnx",
-      "bytes": 7937661,
-      "sha256": "c6fc4b7bc5af75c0591fd157a1f3829b533d18e9769a888fd95a62e470dd4f4a",
+      "path": "moonshine-tiny/onnx/encoder_model_q4.onnx",
+      "url": "https://huggingface.co/onnx-community/moonshine-tiny-ONNX/resolve/a6da1241cd305dcd64eab1edbd615f2bb9aabb95/onnx/encoder_model_q4.onnx",
+      "bytes": 10732274,
+      "sha256": "5f4c63779321f20e880148d677a7aeccaa8ac572ec5c8de1e53337915b26f26a",
       "license": "MIT"
     },
     {
-      "path": "moonshine-tiny/onnx/decoder_model_merged_quantized.onnx",
-      "url": "https://huggingface.co/onnx-community/moonshine-tiny-ONNX/resolve/a6da1241cd305dcd64eab1edbd615f2bb9aabb95/onnx/decoder_model_merged_quantized.onnx",
-      "bytes": 20243286,
-      "sha256": "eed87831c3a6103534aae7d47a5d485025c659a1323901513961c39fe8a1a367",
+      "path": "moonshine-tiny/onnx/decoder_model_merged_q4.onnx",
+      "url": "https://huggingface.co/onnx-community/moonshine-tiny-ONNX/resolve/a6da1241cd305dcd64eab1edbd615f2bb9aabb95/onnx/decoder_model_merged_q4.onnx",
+      "bytes": 44650684,
+      "sha256": "451510e9bc0d4d829e50f4feffda384a38fd0a7cc8aee72667b8fdb1fb4c7e08",
       "license": "MIT"
     },
     {
@@ -167,6 +167,13 @@
       "url": "https://raw.githubusercontent.com/usefulsensors/moonshine/main/LICENSE",
       "bytes": 14180,
       "sha256": "fa7d1174dd8af6a7cd280be20b80d10095ed4c19b5b20b61a7715c3ad790dc5f",
+      "license": "MIT"
+    },
+    {
+      "path": "selftest.pcm",
+      "url": "local: 3 s English speech fixture (StreamLaughs-owned TTS clip)",
+      "bytes": 96000,
+      "sha256": "5a0ea4f372a81d03880fd9a795fbe0e50f18846539e63fcb7739b0a2648fa43e",
       "license": "MIT"
     }
   ]
