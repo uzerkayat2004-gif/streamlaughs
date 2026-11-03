@@ -30,10 +30,11 @@ import type { SpeechBudget } from './speech-budget';
 import { WhisperConfidence } from './whisper-confidence';
 import { compactWhisperFeatures } from './whisper-features';
 
+const CHECK_OPTIONS = { language: 'english', task: 'transcribe' } as const;
 const makeWhisper = (device: 'wasm' | 'webgpu') =>
   pipeline<'automatic-speech-recognition'>(
     'automatic-speech-recognition',
-    'whisper-tiny.en',
+    'whisper-base',
     {
       device,
       dtype: 'q8',
@@ -57,7 +58,6 @@ const makeWhisper = (device: 'wasm' | 'webgpu') =>
  * "Oh" or "The" (tiny.en 0/10, base.en 3/10); multilingual base wrote
  * "bro"/"Pro" for 8/10 of the same clips. Accents are why.
  */
-const CHECK_OPTIONS = { language: 'english', task: 'transcribe' } as const;
 const makeChecker = () =>
   pipeline<'automatic-speech-recognition'>(
     'automatic-speech-recognition',
@@ -225,11 +225,18 @@ export class LocalModels implements ModelRunner {
             )
           : await makeWhisper(device);
       if (this.speechModel === 'whisper') this.compactSpeech();
-      await this.whisper(new Float32Array(16000), { max_new_tokens: 2 });
+      await this.whisper(new Float32Array(16000), {
+        ...CHECK_OPTIONS,
+        max_new_tokens: 2,
+      });
       this.backend = device === 'webgpu' ? 'mixed' : 'wasm';
       await this.speechSelfTest(base);
     };
-    this.speechModel = 'moonshine';
+    // v0.10.3: one model, multilingual Whisper base. English-only models and
+    // Moonshine Tiny missed accented short reactions (a real Indian-English
+    // "bro": Moonshine/tiny.en ~0/10, multilingual base 8/10), and the site
+    // download must stay under 100 MB, so Moonshine is no longer bundled.
+    this.speechModel = 'whisper';
     try {
       if (gpu) {
         try {
@@ -240,19 +247,13 @@ export class LocalModels implements ModelRunner {
         }
       } else await load('wasm');
     } catch (error) {
-      this.speechFallbackReason = `Moonshine failed: ${safeError(error)} · using bundled Whisper`;
-      logAudioError('Moonshine load · using bundled Whisper', error);
-      await this.whisper?.dispose().catch(() => {});
-      this.speechModel = 'whisper';
-      await load('wasm');
+      logAudioError('Whisper base load', error);
+      throw error;
     }
     this.loadMs.whisper = performance.now() - start;
     this.status.whisper = {
       phase: 'ready',
-      name:
-        this.speechModel === 'moonshine'
-          ? 'Moonshine Tiny'
-          : 'Whisper fallback',
+      name: 'Whisper base',
       error: this.speechFallbackReason,
       ms: this.loadMs.whisper,
     };
@@ -307,7 +308,10 @@ export class LocalModels implements ModelRunner {
   private async speechSelfTest(base: string) {
     const samples = await loadSelfTestClip(base);
     if (!samples) return;
-    const out = await this.whisper(samples, { max_new_tokens: 24 });
+    const out = await this.whisper(samples, {
+      ...CHECK_OPTIONS,
+      max_new_tokens: 24,
+    });
     const text = (Array.isArray(out) ? out[0]?.text : out.text) ?? '';
     this.speechSelfTestText = text.slice(0, 120);
     if (!/\b(meet|tuesday|think)\b/i.test(text))
@@ -379,6 +383,7 @@ export class LocalModels implements ModelRunner {
     stopping.push(deadline);
     // Transformers forwards generation options to model.generate; its ASR convenience type omits stopping_criteria.
     const options = {
+      ...CHECK_OPTIONS,
       // Fewer tokens for short clips: a 1 s reaction is 1 to 3 words, and the
       // extra room only filled with invented sentences.
       max_new_tokens: Math.max(5, Math.ceil((samples.length / 16000) * 4) + 2),

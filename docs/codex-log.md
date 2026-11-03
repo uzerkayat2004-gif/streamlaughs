@@ -336,7 +336,7 @@ Unit tests: inference/audio 164 + 4 new pass, 3 pre-existing mock failures. Not 
 
 - Owner rejected the teach screen (feels cheap); removed it. Voice match stays, auto-learning only.
 - Tested on his real recording: Whisper tiny.en scoring prefers "No"/"Oh" over "Bro" on 9/10; sherpa-onnx open-vocab KWS (gigaspeech 3.3M) caught 0 of his bros (fine on Piper); multilingual tiny bad; multilingual Whisper base 8/10 (incl. "Pro" alias), base.en 3/10, large-v3-turbo 5/10 at ~20 s/clip.
-- Checker is now whisper-base (multilingual, q8, 20 s context via tools/whisper_context.py, forced English), peak-normalised input. ~650 ms per short clip on sandbox CPU. ZIP grows ~75 MB.
+- Speech model is now multilingual whisper-base only (q8, 20 s context via tools/whisper_context.py, forced English). Moonshine Tiny and whisper-tiny.en removed: site download has a 100 MB budget (first deploy failed at ~118 MB). Main-path sim on his recording: 7/10 bro first pass, ~400 ms avg per phrase (sandbox CPU).
 - Full chain sim (Moonshine -> voice -> checker -> learning) with real 150 ms context: 6/10 first pass, 9/10 after learning. Known false: "Love" -> love, Moonshine "One." -> oye (pre-existing).
 
 ## 2026-11-04 · v0.10.2 · personal voice match ("teach your words") (Hark)

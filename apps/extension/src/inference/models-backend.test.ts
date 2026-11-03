@@ -39,7 +39,7 @@ it('loads WebGPU only when requested and available', async () => {
   const features = JSON.parse(
     readFileSync(
       new URL(
-        '../../public/models/whisper-tiny.en/preprocessor_config.json',
+        '../../public/models/whisper-base/preprocessor_config.json',
         import.meta.url,
       ),
       'utf8',
@@ -48,7 +48,7 @@ it('loads WebGPU only when requested and available', async () => {
   const model = JSON.parse(
     readFileSync(
       new URL(
-        '../../public/models/whisper-tiny.en/config.json',
+        '../../public/models/whisper-base/config.json',
         import.meta.url,
       ),
       'utf8',

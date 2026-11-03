@@ -11,7 +11,7 @@ it.each(['tone', 'silence', 'reaction-control'])(
   async (kind) => {
     const config = JSON.parse(
       readFileSync(
-        'public/models/whisper-tiny.en/preprocessor_config.json',
+        'public/models/whisper-base/preprocessor_config.json',
         'utf8',
       ),
     );

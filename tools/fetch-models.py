@@ -19,7 +19,8 @@ SOURCES = [
  ('licenses/Whisper-MIT.txt', 'https://raw.githubusercontent.com/openai/whisper/main/LICENSE', 'MIT'),
  ('licenses/Whisper-model-card.md', 'https://huggingface.co/openai/whisper-tiny.en/raw/main/README.md', 'Apache-2.0'),
 ]
-for file in ['config.json', 'generation_config.json', 'preprocessor_config.json', 'tokenizer.json', 'tokenizer_config.json', 'special_tokens_map.json', 'onnx/encoder_model_quantized.onnx', 'onnx/decoder_model_merged_quantized.onnx']:
+# v0.10.3: whisper-tiny.en and Moonshine Tiny are no longer bundled (accents, 100 MB download budget).
+for file in []:
     SOURCES.append(('whisper-tiny.en/' + file, f'https://huggingface.co/onnx-community/whisper-tiny.en/resolve/{REVISION}/{file}', 'Apache-2.0'))
 
 BASE_REVISION = '27a07b4b52b3a4c5886134bb4320e93e1a4bbc7c'
@@ -28,7 +29,7 @@ for file in ['config.json', 'generation_config.json', 'preprocessor_config.json'
 SOURCES.append(('licenses/Whisper-base-model-card.md', 'https://huggingface.co/openai/whisper-base/raw/main/README.md', 'Apache-2.0'))
 
 MOONSHINE_REVISION = 'a6da1241cd305dcd64eab1edbd615f2bb9aabb95'
-for file in ['config.json', 'generation_config.json', 'preprocessor_config.json', 'tokenizer.json', 'tokenizer_config.json', 'special_tokens_map.json', 'onnx/encoder_model_quantized.onnx', 'onnx/decoder_model_merged_quantized.onnx']:
+for file in []:
     SOURCES.append(('moonshine-tiny/' + file, f'https://huggingface.co/onnx-community/moonshine-tiny-ONNX/resolve/{MOONSHINE_REVISION}/{file}', 'MIT'))
 SOURCES.append(('licenses/Moonshine-MIT.txt', 'https://raw.githubusercontent.com/usefulsensors/moonshine/main/LICENSE', 'MIT'))
 
