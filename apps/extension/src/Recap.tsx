@@ -1,4 +1,3 @@
-import { RatingSlide } from './RatingSlide';
 import {
   type MySession,
   PRODUCT,
@@ -6,16 +5,17 @@ import {
   RecapSchema,
   ratingId,
 } from '@laughline/shared';
-import { Share2 } from 'lucide-react';
 import { liveQuery } from 'dexie';
+import { Share2 } from 'lucide-react';
 import { type CSSProperties, useCallback, useEffect, useState } from 'react';
+import { AppIcon } from './AppIcon';
 import { CountUp, formatTime, Mark, useReducedMotion } from './components';
 import { db } from './db';
 import { HistoryView, StreamerAvatar } from './HistoryView';
 import { completeRecaps, groupHistory, type StreamerProfile } from './history';
-import { ShareSheet } from './ShareSheet';
-import { AppIcon } from './AppIcon';
+import { RatingSlide } from './RatingSlide';
 import { duration, momentLink, STORY_COLORS, storyData } from './recap-story';
+import { ShareSheet } from './ShareSheet';
 export function Recap() {
   const reduce = useReducedMotion();
   const [view, setView] = useState(
@@ -411,6 +411,11 @@ export function Recap() {
                   </div>
                 )}
                 <div className="story-chips">
+                  {data.words.slice(1).map((w) => (
+                    <span key={`w-${w.word}`}>
+                      “{w.word}” ×{w.count}
+                    </span>
+                  ))}
                   {data.chips.map(([n, label]) => (
                     <span key={label}>
                       {n} {label}

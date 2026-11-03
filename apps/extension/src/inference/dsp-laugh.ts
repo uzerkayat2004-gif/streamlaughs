@@ -71,8 +71,8 @@ export class DspLaughDetector {
     if (
       recent.at(-1)! - recent[0]! >= 600 &&
       mean >= 1000 / 8 &&
-      mean <= 1000 / 2.5 &&
-      intervals.every((i) => i >= 110 && i <= 500) &&
+      mean <= 1000 / 3 &&
+      intervals.every((i) => i >= 110 && i <= 440) &&
       variation < 0.4
     ) {
       this.evidence = {

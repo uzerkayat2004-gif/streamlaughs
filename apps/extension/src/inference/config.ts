@@ -4,7 +4,9 @@ export const INFERENCE_CONFIG = {
   frameSize: 320,
   vadWindow: 512,
   vadThreshold: 0.5,
-  minimumSpeechMs: 250,
+  // A quick "bro" is ~200 ms of sound and Silero marks only its vowel voiced
+  // (one to three 32 ms chunks). 250 ms silently dropped them.
+  minimumSpeechMs: 64,
   mergeGapMs: 300,
   maximumSpeechMs: 4000,
   soundWindow: 15600,

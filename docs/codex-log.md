@@ -331,3 +331,15 @@ Owner's 0.9.9 report: laughs now work (9 saved, recap 14). Words 0 of 9: Moonshi
 - "brother" no longer aliases to bro.
 - DSP laugh rhythm: pulses at voicing ≥0.3 (was 0.4), slower chuckles up to 2.5 Hz / 500 ms gaps, for soft laughs.
 Unit tests: inference/audio 164 + 4 new pass, 3 pre-existing mock failures. Not hardware-tested.
+
+## 2026-11-03 · v0.10.1 · quick "bro"s never reached the word model; Whisper second opinion (Hark)
+
+Owner's 0.10.0 report (Headset Z1, micLevel 0.009): 0 words, only 5 voice clips in the session; spot scores −9 to −12. Some laughs counted while he was just talking.
+Root causes, found by running the real pipeline (real Silero VAD) on synthetic Piper clips in Node:
+1. Segmenter `minimumSpeechMs` 250 dropped quick reactions: Silero marks only the vowel of a ~200 ms "bro" as voiced, so 6 of 30 test reactions never became a clip. Now 64 ms (one 32 ms chunk is still dropped). After: 30/30 segmented, clip timing correct (150 ms pre/post roll).
+2. Moonshine Tiny cannot hear a lone "bro": on the pipeline's own clips it wrote "Brand", "Throw.", "Well", "Bo", "Pro pro"; spotting accepted 0 of 13 lone bro/bro-bro clips. Whisper tiny.en (already bundled, q8) wrote "Bro"/"Bro Bro" on 7 of 12 and "Pro" on 3 more ("Let's go" fine on both).
+- Short clips (≤2.2 s) with no reaction from Moonshine now get Whisper tiny.en as a second opinion (loaded after Moonshine, kept only if it passes the selftest.pcm self-test), then the spotter. A short transcript of only "pro" → "bro" (known false hit: a lone "throw" also reads "Pro").
+- Laugh false positives on speech: rhythm boost now needs laughter ≥ 0.03 or speech < 0.25 (was < 0.5); "voiced, no words" laugh now needs laughter ≥ 0.15, or rhythm with speech < 0.5 and laughter ≥ 0.03 (an empty transcript is often a missed word); DSP rhythm back to 0.9.9 timing (≥3 Hz mean, gaps ≤ 440 ms). `laughInTranscript` only matches tagged [laugh]/(chuckle), not the word "laugh" in speech.
+- Recap "your words" slide shows the 2nd and 3rd words as chips.
+- Correction to the v0.10.0 entry: the reconciled spotting figure is 45/66 with 0/83 false hits; 57/78 was from an earlier, different code path.
+Unit tests: rules 13/13 (segmenter test updated), pipeline/dsp/keyword-spot/judge/accuracy pass. Whisper-in-worker and load time not browser-tested; speed on his PC unknown (Node CPU ~0.45 s per short clip).

@@ -458,11 +458,13 @@ export class InferencePipeline {
               // plain speech with rhythm scores about 0.
               (rhythm
                 ? 0.15 +
-                  (scores.laugh >= 0.03 || scores.speech < 0.5
+                  // Normal talk also has syllable rhythm: boost only with a
+                  // trace of laughter, or when the sound is clearly not speech.
+                  (scores.laugh >= 0.03 || scores.speech < 0.25
                     ? 0.4 * Math.min(1, job.dsp.score)
                     : 0)
                 : 0) -
-              (rhythm && (scores.laugh >= 0.03 || scores.speech < 0.5)
+              (rhythm && (scores.laugh >= 0.03 || scores.speech < 0.25)
                 ? 0.05
                 : 0.2) *
                 Math.max(0, scores.speech - scores.laugh - 0.4) +
@@ -748,8 +750,12 @@ export class InferencePipeline {
         const wordlessLaugh =
           typeof value !== 'string' &&
           !!value.noWords &&
+          // An empty transcript is often a missed word, not a laugh: require
+          // the sound model to lean laugh, or rhythm while it is NOT speech.
           (laughScore >= 0.15 ||
-            (this.dsp.evidence.at >= classification.start - 300 &&
+            (speechScore < 0.5 &&
+              laughScore >= 0.03 &&
+              this.dsp.evidence.at >= classification.start - 300 &&
               this.dsp.evidence.at <= classification.end + 300));
         if (typeof value !== 'string' && (value.laughed || wordlessLaugh)) {
           const counted = this.event({

@@ -231,6 +231,41 @@ export class LocalModels implements ModelRunner {
       ms: this.loadMs.whisper,
     };
   }
+  /**
+   * Second opinion for short clips. On real "bro"s Moonshine Tiny hears
+   * "Throw", "Brand", "Well"; Whisper tiny.en writes "Bro" for most of them.
+   * Loaded after Moonshine and kept only if it passes the same self-test.
+   */
+  private checker?: AutomaticSpeechRecognitionPipeline;
+  checkerState: 'off' | 'loading' | 'ready' | 'failed' = 'off';
+  async loadChecker(base: string) {
+    if (this.speechModel !== 'moonshine' || this.checkerState !== 'off') return;
+    this.checkerState = 'loading';
+    try {
+      const checker = await makeWhisper('wasm');
+      const samples = await loadSelfTestClip(base);
+      if (samples) {
+        const out = await checker(samples, { max_new_tokens: 24 });
+        const text = (Array.isArray(out) ? out[0]?.text : out.text) ?? '';
+        if (!/\b(meet|tuesday|think)\b/i.test(text)) {
+          await checker.dispose().catch(() => {});
+          throw new Error(`checker self-test heard "${text.slice(0, 60)}"`);
+        }
+      }
+      this.checker = checker;
+      this.checkerState = 'ready';
+    } catch (error) {
+      this.checkerState = 'failed';
+      logAudioError('short-word checker unavailable', error);
+    }
+  }
+  async check(samples: Float32Array) {
+    if (!this.checker) return null;
+    const start = performance.now();
+    const out = await this.checker(samples, { max_new_tokens: 8 });
+    this.times.whisper += performance.now() - start;
+    return ((Array.isArray(out) ? out[0]?.text : out.text) ?? '').trim();
+  }
   speechSelfTestText = '';
   // Runs a known 3 s English clip through the loaded model. A model that runs
   // but prints the wrong words on this CPU is treated as a failed load.
@@ -456,6 +491,8 @@ export class LocalModels implements ModelRunner {
     return decideSpot(entries, scores);
   }
   async close() {
+    await this.checker?.dispose().catch(() => {});
+    this.checker = undefined;
     this.context.fill(0);
     this.state.fill(0);
     this.yamnet?.close();

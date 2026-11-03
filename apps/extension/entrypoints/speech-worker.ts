@@ -47,10 +47,19 @@ export default defineUnlistedScript(() => {
     const t = text.toLowerCase();
     return (
       /\b(?:a?ha|he|hah|heh)(?:[\s,.!?'-]*(?:ha|he|hah|heh))+\b/.test(t) ||
-      /\b(?:ha){2,}h?\b|\b(?:he){2,}\b|\blo+l\b|\blmf?ao+\b|laugh|chuckl|giggl/.test(
+      /\b(?:ha){2,}h?\b|\b(?:he){2,}\b|\blo+l\b|\blmf?ao+\b|[[(*](?:laugh|chuckl|giggl)/.test(
         t,
       )
     );
+  }
+  // In a short clip, a transcript made only of "pro" is a misheard "bro".
+  function broSound(text: string) {
+    const tokens = text.toLowerCase().match(/[a-z]+/g) ?? [];
+    return tokens.length &&
+      tokens.length <= 3 &&
+      tokens.every((t) => t === 'pro' || t === 'pros')
+      ? tokens.map(() => 'Bro').join(' ')
+      : text;
   }
   function padClip(samples: Float32Array, pad: number) {
     const out = new Float32Array(samples.length + pad * 2);
@@ -65,6 +74,8 @@ export default defineUnlistedScript(() => {
       try {
         await models.loadSpeech(data.base, INFERENCE_CONFIG.preferredBackend);
         ready = true;
+        // Not awaited: words work with Moonshine alone while it loads.
+        void models.loadChecker(data.base).then(status);
       } catch (error) {
         models.loadFailed(error);
       }
@@ -93,11 +104,22 @@ export default defineUnlistedScript(() => {
         );
         const isShort = samples.length <= 16000 * 2.2;
         let spotted: Awaited<ReturnType<typeof models.spot>> = null;
-        if (isShort && !extractWords(text, { short: true }).phrases.length) {
-          // Free transcription missed it: ask "was it one of the reactions?"
+        let checked: string | null = null;
+        const hasReaction = (t: string) =>
+          !!extractWords(broSound(t), { short: true }).phrases.length;
+        if (isShort && !hasReaction(text)) {
+          // Moonshine Tiny mishears lone short reactions; Whisper gets most.
+          checked = await models
+            .check(padClip(samples, 2400))
+            .catch(() => null);
+          if (checked && hasReaction(checked)) text = checked;
+        }
+        if (isShort && !hasReaction(text)) {
+          // Still nothing: ask "was it one of the reactions?"
           spotted = await models.spot(padClip(samples, 2400)).catch(() => null);
           if (spotted?.accepted) text = spotted.text;
         }
+        if (isShort) text = broSound(text);
 
         const confidence = models.lastSpeechConfidence;
         const rejection = text.trim()
@@ -116,9 +138,13 @@ export default defineUnlistedScript(() => {
             (extracted.phrases.length ? '' : 'no standalone approved reaction'),
           // Local-only: shown in this device's diagnostics, never saved or sent.
           heard: (
+            (checked !== null
+              ? `check "${redactDebugTranscript(checked).slice(0, 40)}" · `
+              : '') +
             (spotted
               ? `spot ${spotted.word || '-'} ${spotted.logp.toFixed(1)}/${spotted.margin.toFixed(1)}${spotted.accepted ? ' ✓' : ''} · `
-              : '') + redactDebugTranscript(text)
+              : '') +
+            redactDebugTranscript(text)
           ).slice(0, 160),
           laughed: laughInTranscript(text),
           noWords: !/[a-z]/i.test(text),

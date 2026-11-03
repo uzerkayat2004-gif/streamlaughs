@@ -1,4 +1,4 @@
-# StreamLaughs v0.10.0
+# StreamLaughs v0.10.1
 
 see who's laughing with you.
 
