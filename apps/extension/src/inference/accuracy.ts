@@ -46,6 +46,7 @@ export class AcousticFloor {
   private elapsed = 0;
   private retryQuiet = false;
   private quietRetry: { rms: number; hf: number }[] = [];
+  private openingVoice = 0;
   ingest(frame: Float32Array, ts: number, speech = false) {
     this.began ??= ts;
     this.elapsed = Math.max(0, ts - this.began);
@@ -58,6 +59,7 @@ export class AcousticFloor {
     const rms = Math.sqrt(square / Math.max(1, frame.length)),
       hf = difference / Math.max(1e-12, 4 * square);
     if (this.elapsed < 3000) {
+      if (speech) this.openingVoice++;
       this.levels.push(rms);
       this.hfs.push(hf);
       this.floor = Math.max(0.00003, quantile(this.levels, 0.8));
@@ -73,14 +75,17 @@ export class AcousticFloor {
       // Continuous foreground speech has no quiet quantile to use. Keep the
       // countdown visible until one real quiet second replaces that invalid
       // startup reference. Ordinary room/speaker floors are never reset.
-      this.retryQuiet = this.floor >= 0.02;
+      this.retryQuiet =
+        this.floor >= 0.02 || this.openingVoice > this.levels.length / 2;
       // Speaker-fixture calibration is ~0.0055 RMS; 0.006 missed it.
       this.bleed = this.floor >= 0.004;
       this.levels = [];
       this.hfs = [];
     }
     if (this.retryQuiet) {
-      if (!speech && rms < this.floor * 0.1) this.quietRetry.push({ rms, hf });
+      // VAD-confirmed quiet is the room reference. Requiring an arbitrary
+      // 20 dB drop from the opening voice stranded ordinary noisy laptop mics.
+      if (!speech) this.quietRetry.push({ rms, hf });
       else this.quietRetry = [];
       if (this.quietRetry.length >= 50) {
         this.floor = this.calibratedFloor = Math.max(
@@ -127,7 +132,7 @@ export class AcousticFloor {
     while (this.records.length > 600) this.records.shift();
     return result;
   }
-  window(start: number, end: number): AcousticEvidence {
+  window(start: number, end: number, modelRms?: number): AcousticEvidence {
     const rows = this.records.filter((r) => r.ts >= start && r.ts <= end);
     const rms = Math.sqrt(
       rows.reduce((n, r) => n + r.rms * r.rms, 0) / Math.max(1, rows.length),
@@ -145,7 +150,9 @@ export class AcousticFloor {
       highFrequencyRatio: hf,
       near:
         db >= profile.aboveFloorDb &&
-        rms >= profile.minimumRms &&
+        // Absolute audibility belongs to the conditioned signal fed to the
+        // models. SNR/HF evidence must stay raw: gain must never promote noise.
+        (modelRms ?? rms) >= profile.minimumRms &&
         (!this.bleed || hf >= this.calibrationHf * 0.7 || db >= 20),
       calibrated: this.elapsed >= 3000 && !this.retryQuiet,
       bleed: this.bleed,

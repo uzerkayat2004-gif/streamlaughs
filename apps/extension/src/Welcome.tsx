@@ -8,6 +8,8 @@ import { command, connectSurface, surface } from './bridge';
 import { Backdrop, Mark, Toggle, Wave } from './components';
 import { AppIcon } from './AppIcon';
 import { friendlyError } from './ui-status';
+import { MicDevicePicker } from './MicDevicePicker';
+import { safeError } from './diagnostics';
 
 export function Welcome() {
   const params = new URLSearchParams(location.search);
@@ -69,6 +71,7 @@ export function Welcome() {
                   audio stays on your pc. never saved or sent.
                 </p>
                 <div className="welcome-mic-check">
+                  {!busy && <MicDevicePicker />}
                   <p>
                     {busy
                       ? 'say something'
@@ -192,11 +195,26 @@ export function Welcome() {
                     setMicPeak(peak);
                     // Permission belongs to this extension origin. Welcome never retains live tracks.
                     for (const track of stream.getTracks()) track.stop();
+                    // A prior "watch without mic" choice survives ZIP updates.
+                    // Explicitly allowing the mic must also re-enable detection.
+                    await command({
+                      type: 'SETTINGS',
+                      settings: { listen: true },
+                    });
                     if (params.get('retry') === snapshot.session?.id)
                       await command({ type: 'RETRY_MIC' });
                     setSlide(2);
-                  } catch {
-                    setError(permissionHelp);
+                  } catch (error) {
+                    console.error(
+                      'StreamLaughs: welcome mic check',
+                      safeError(error),
+                    );
+                    setError(
+                      error instanceof DOMException &&
+                        error.name === 'NotAllowedError'
+                        ? permissionHelp
+                        : `mic could not open · ${safeError(error)}`,
+                    );
                   } finally {
                     permissionStream.current = null;
                     micCheck.current = null;

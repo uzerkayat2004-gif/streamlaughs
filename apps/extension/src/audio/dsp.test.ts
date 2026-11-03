@@ -18,6 +18,25 @@ function resample(rate: number, frequency = 1000, channels = 1, block = 128) {
   return Float32Array.from(output);
 }
 describe('streaming resampler', () => {
+  it('preserves a physical mic channel when stereo inputs have opposite polarity or only the second channel is connected', () => {
+    for (const rate of [44100, 48000]) {
+      for (const firstSilent of [false, true]) {
+        const input = Float32Array.from(
+          { length: rate / 10 },
+          (_, i) => Math.sin((2 * Math.PI * 440 * i) / rate) * 0.02,
+        );
+        const output: number[] = [];
+        const resampler = new MonoResampler(rate, 16000, 'microphone');
+        resampler.push(
+          [firstSilent ? input.map(() => 0) : input, input.map((n) => -n)],
+          (n) => output.push(n),
+        );
+        expect(
+          frameLevels(Float32Array.from(output).slice(320)).rms,
+        ).toBeGreaterThan(0.01);
+      }
+    }
+  });
   it('also upsamples narrowband devices without changing pitch', () => {
     const output = resample(8000);
     expect(output.length).toBeGreaterThan(15960);

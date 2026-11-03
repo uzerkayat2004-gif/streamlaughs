@@ -6,11 +6,19 @@ import { AccuracyLog, micProblem, usePipelineReport } from './PipelinePanel';
 
 import { copyableReport } from './diagnostics';
 import { verifyVisibleMicrophone } from './audio/microphone';
+import { PipelineStages } from './PipelineStages';
+import { MicDevicePicker } from './MicDevicePicker';
+import { command } from './bridge';
 
 export function Diagnostics() {
-  const { report, phrase, word } = usePipelineReport(true, true, true);
+  const { report, phrase, word, pollError } = usePipelineReport(
+    true,
+    true,
+    true,
+  );
 
   const [message, setMessage] = useState('');
+  const [checking, setChecking] = useState(false);
 
   const audio = report?.audio,
     ai = report?.inference;
@@ -24,65 +32,64 @@ export function Diagnostics() {
         aria-label="quick microphone readout"
       >
         <h2>v{chrome.runtime.getManifest().version} · mic check</h2>
-        <label>
-          mic level{' '}
-          <meter
-            aria-label="quick mic level"
-            min={0}
-            max={1}
-            value={Math.min(1, (audio?.metrics.micLevel ?? 0) * 12)}
-          />
-        </label>
         <p>
-          {audio?.mic.name ?? 'no microphone open'} ·{' '}
-          {audio?.mic.state ?? 'none'} · {Math.round(ai?.micFps ?? 0)} frames/s
+          Green means this stage has worked. Detection lights turn green after
+          you react.
         </p>
-        <ul>
-          {(['vad', 'yamnet', 'whisper'] as const).map((name) => (
-            <li key={name}>
-              {name === 'yamnet'
-                ? 'laugh model'
-                : name === 'whisper'
-                  ? 'word model'
-                  : 'VAD'}
-              : {ai?.models[name].phase ?? 'idle'}
-              {ai?.models[name].error ? ` · ${ai.models[name].error}` : ''}
-            </li>
-          ))}
-        </ul>
-        <p>
-          last laugh score: <b>{(ai?.laughScore ?? 0).toFixed(3)}</b>
-        </p>
-        <p>
-          last heard word: <b>{word || 'none yet'}</b>
-        </p>
+        <PipelineStages report={report} word={word} error={pollError} />
+        <MicDevicePicker
+          changed={() => {
+            if (
+              report?.listening &&
+              report.sessionId &&
+              !report.sessionId.startsWith('mic-test-')
+            )
+              void command({ type: 'RETRY_MIC' }).catch((error) =>
+                setMessage(String(error)),
+              );
+          }}
+        />
         <p role="status">
           {(ai?.health.calibrationRemainingMs ?? 0) > 0
             ? 'stay quiet for 3 sec, then laugh or say “W” or “let’s go”.'
             : micProblem(report) || 'ready · laugh or say “W” or “let’s go”.'}
         </p>
-        {!report?.listening && (
-          <button
-            type="button"
-            className="textbtn"
-            onClick={async () => {
-              try {
-                await verifyVisibleMicrophone();
-                await chrome.runtime.sendMessage({
-                  type: 'SETTINGS',
-                  settings: { listen: true },
-                });
-                if (report?.sessionId)
-                  await chrome.runtime.sendMessage({ type: 'RETRY_MIC' });
-                setMessage('mic on · return to Twitch and press start');
-              } catch {
-                setMessage('mic needs permission · open Welcome and allow it');
-              }
-            }}
-          >
-            turn on my mic
-          </button>
-        )}
+        <button
+          type="button"
+          className="btn"
+          disabled={checking}
+          onClick={async () => {
+            if (checking) return;
+            setChecking(true);
+            try {
+              await verifyVisibleMicrophone();
+              await command({ type: 'SETTINGS', settings: { listen: true } });
+              await command({
+                type:
+                  report?.sessionId && !report.sessionId.startsWith('mic-test-')
+                    ? 'RETRY_MIC'
+                    : 'MIC_TEST_START',
+              });
+              setMessage(
+                'mic restarted · stay quiet for three seconds, then react',
+              );
+            } catch (error) {
+              setMessage(
+                error instanceof Error
+                  ? error.message
+                  : 'mic could not start · allow permission and retry',
+              );
+            } finally {
+              setChecking(false);
+            }
+          }}
+        >
+          {checking
+            ? 'opening microphone…'
+            : report?.listening
+              ? 'retry microphone and models'
+              : 'enable microphone'}
+        </button>
         {(ai?.stages.speechRequests ?? 0) > (ai?.stages.speechResults ?? 0) && (
           <p role="status">
             word model processing · keeping Twitch audio smooth

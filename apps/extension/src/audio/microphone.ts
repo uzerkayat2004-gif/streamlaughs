@@ -26,13 +26,23 @@ export async function openSelectedMicrophone(
       (d) => alias?.groupId && d.groupId === alias.groupId,
     );
     // Do not open Windows' communications alias. Pin the resolved physical endpoint.
-    return match?.deviceId ?? real[0]?.deviceId;
+    const label = alias?.label
+      ?.replace(/^default\s*[-–:]\s*/i, '')
+      .trim()
+      .toLowerCase();
+    const named = label
+      ? real.find((d) => d.label?.trim().toLowerCase() === label)
+      : undefined;
+    // Enumeration order is NOT the Windows default. The first device can be
+    // an unused virtual cable. If identity is hidden, let getUserMedia resolve
+    // the browser's actual default instead of guessing a different input.
+    return match?.deviceId ?? named?.deviceId;
   };
   if (id === 'default' || id === 'communications')
     id = (await concreteDefault()) ?? 'default';
   const remember = async () => {
     if (deviceOverride === undefined)
-      await chrome.storage.local.set({ [MIC_DEVICE_KEY]: 'default' });
+      await chrome.storage?.local?.set({ [MIC_DEVICE_KEY]: 'default' });
   };
   // Enumeration can hide identities before a capture opens, even after a grant.
   // Only an actual missing-device capture error justifies changing the input.

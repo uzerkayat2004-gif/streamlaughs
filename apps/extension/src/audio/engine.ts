@@ -3,7 +3,7 @@ import {
   type AudioReport,
   emptyAudioMetrics,
 } from '@laughline/shared';
-import { safeError } from '../diagnostics';
+import { safeError, logAudioError } from '../diagnostics';
 import {
   bluetoothHint,
   defaultLab,
@@ -22,6 +22,9 @@ type SourceStats = {
   dropped: number;
   cpuMsPerSecond: number;
   cpuMsPerFrame: number;
+  lastFrameAt: number;
+  inputChannels: number;
+  selectedChannel: number;
 };
 const emptyStats = (): SourceStats => ({
   rms: 0,
@@ -31,6 +34,9 @@ const emptyStats = (): SourceStats => ({
   dropped: 0,
   cpuMsPerSecond: 0,
   cpuMsPerFrame: 0,
+  lastFrameAt: 0,
+  inputChannels: 0,
+  selectedChannel: 0,
 });
 const stopTracks = (stream: MediaStream | null) => {
   for (const track of stream?.getTracks() ?? []) {
@@ -83,7 +89,9 @@ export class AudioEngine {
   private lastError = '';
   private errors: string[] = [];
   private recordError(error: unknown) {
-    this.lastError = safeError(error);
+    const message = safeError(error);
+    if (message !== this.lastError) logAudioError('microphone capture', error);
+    this.lastError = message;
     this.errors.push(this.lastError);
     this.errors = this.errors.slice(-10);
   }
@@ -106,6 +114,16 @@ export class AudioEngine {
       if (generation !== this.generation || signature === this.deviceSignature)
         return;
       this.deviceSignature = signature;
+      const active = this.mic?.getAudioTracks()[0];
+      const id = active?.getSettings?.().deviceId;
+      // Plugging in a camera or a second mic is not loss of the active device.
+      if (
+        active?.readyState === 'live' &&
+        !active.muted &&
+        id &&
+        signature.split('|').some((device) => device.startsWith(`${id}:`))
+      )
+        return;
       this.changingDevice = true;
       try {
         this.loseMic();
@@ -160,6 +178,11 @@ export class AudioEngine {
       mic: describe(this.mic, this.lastMicTrack),
       tab: describe(this.tab),
       metrics: { ...this.metrics },
+      micWorklet: {
+        lastFrameAt: this.stats.mic.lastFrameAt,
+        inputChannels: this.stats.mic.inputChannels,
+        selectedChannel: this.stats.mic.selectedChannel,
+      },
       error: this.lastError,
       permission: this.micPermission,
       micAttempts: this.micAttempts,
@@ -379,13 +402,19 @@ export class AudioEngine {
     const worklet = new AudioWorkletNode(context, 'laughline-frames', {
       numberOfInputs: 1,
       numberOfOutputs: 0,
-      processorOptions: { epochMs: Date.now() - context.currentTime * 1000 },
+      processorOptions: {
+        source,
+        epochMs: Date.now() - context.currentTime * 1000,
+      },
     });
     // A zero-output worklet is an active capture sink. It never opens a speaker route.
     node.connect(worklet);
     this.nodes.set(source, { source: node, worklet });
     worklet.onprocessorerror = () => {
       if (generation !== this.generation) return;
+      this.recordError(
+        new Error(`${source} AudioWorklet processor failed · retry microphone`),
+      );
       if (source === 'mic') this.loseMic();
       else if (this.sessionId) {
         this.emit({
@@ -403,19 +432,29 @@ export class AudioEngine {
         return;
       }
       if (data.type === 'frame') {
-        if (
-          !this.paused &&
-          !this.micLost &&
-          data.frame instanceof Float32Array &&
-          data.frame.length === 320
-        )
-          this.frames.onFrame(source, data.frame, data.ts);
-        worklet.port.postMessage({ type: 'ack' });
+        this.stats[source].lastFrameAt = Date.now();
+        try {
+          if (
+            !this.paused &&
+            !this.micLost &&
+            data.frame instanceof Float32Array &&
+            data.frame.length === 320
+          )
+            this.frames.onFrame(source, data.frame, data.ts);
+        } catch (error) {
+          this.recordError(error);
+        } finally {
+          // A failed subscriber must not strand the worklet's eight-frame
+          // backpressure allowance and silence every later microphone packet.
+          worklet.port.postMessage({ type: 'ack' });
+        }
       }
       if (data.type === 'metrics') {
         const stat = this.stats[source],
           newFrames = Math.max(0, data.frames - stat.frames);
         stat.rms = data.rms;
+        stat.inputChannels = data.inputChannels ?? 0;
+        stat.selectedChannel = data.selectedChannel ?? 0;
         stat.peak = data.peak;
         stat.frames = data.frames;
         stat.dropped = data.dropped;
@@ -432,6 +471,12 @@ export class AudioEngine {
       (c) => this.acquire(c, generation),
       this.micDeviceId,
     );
+    if (!mic.getAudioTracks().some((track) => track.readyState === 'live')) {
+      stopTracks(mic);
+      throw new Error(
+        'selected input has no live microphone track · choose another microphone',
+      );
+    }
     this.mic = mic;
     this.micOpened++;
     this.micPermission = 'granted';
@@ -512,9 +557,8 @@ export class AudioEngine {
     if (!this.sessionId || !this.context) return this.status();
     const generation = this.generation;
     try {
-      this.disconnect('mic');
-      stopTracks(this.mic);
-      this.mic = null;
+      // Publish loss first so failed/stale model workers are also restarted.
+      this.loseMic();
       this.stats.mic = emptyStats();
       await this.openMic(generation);
       await this.resumeContext();
@@ -566,7 +610,7 @@ export class AudioEngine {
         (this.mic || this.tab)
       )
         void this.resumeContext(audioContext).catch((error) => {
-          this.lastError = safeError(error);
+          this.recordError(error);
         });
     const now = performance.now(),
       elapsed = Math.max(1, now - this.lastReport);

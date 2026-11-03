@@ -3,12 +3,38 @@ import { AudioEngine, microphonePermission } from '../../src/audio/engine';
 import { OwnerCommandSchema } from '../../src/audio/protocol';
 import { InferenceBridge } from '../../src/inference/bridge';
 import { defaultLab, TaskProbe } from '../../src/stutter';
+import { safeError } from '../../src/diagnostics';
 
 const deliveries = new Set<Promise<unknown>>();
 let lab = defaultLab();
 let noticeSent = false;
 const tasks = new TaskProbe();
 let observedTasks = 0;
+let deliveryError = '';
+let runtimeError = '';
+const rememberRuntimeError = (error: unknown) => {
+  runtimeError = safeError(error);
+  console.error('StreamLaughs: offscreen runtime', runtimeError);
+};
+window.addEventListener('error', (event) =>
+  rememberRuntimeError(event.error ?? new Error(event.message)),
+);
+window.addEventListener('unhandledrejection', (event) =>
+  rememberRuntimeError(event.reason),
+);
+async function deliver(message: unknown) {
+  try {
+    const result = await chrome.runtime.sendMessage(message);
+    if (result?.ok === false)
+      throw new Error(result.error || 'background rejected the audio update');
+    deliveryError = '';
+  } catch (error) {
+    const reason = safeError(error);
+    if (reason !== deliveryError)
+      console.error('StreamLaughs: audio status/event delivery', reason);
+    deliveryError = reason;
+  }
+}
 const engine = new AudioEngine((message) => {
   if (message.type === 'AUDIO_REPORT') {
     tasks.tick();
@@ -36,10 +62,10 @@ const engine = new AudioEngine((message) => {
         .catch(() => {});
     }
   }
-  void chrome.runtime.sendMessage(message).catch(() => {});
+  void deliver(message);
 });
 const inference = new InferenceBridge(engine.frames, (message) => {
-  const sent = chrome.runtime.sendMessage(message).catch(() => {});
+  const sent = deliver(message);
   if ((message as { type?: string }).type === 'PERSONAL_EVENTS') {
     deliveries.add(sent);
     void sent.finally(() => deliveries.delete(sent));
@@ -62,19 +88,23 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, reply) => {
   if (!parsed.success) return;
   const run = async () => {
     switch (parsed.data.type) {
-      case 'AUDIO_DIAGNOSTICS':
+      case 'AUDIO_DIAGNOSTICS': {
+        const audio = engine.diagnostics();
         return {
           sessionId: engine.status()?.sessionId ?? null,
-          audio: engine.diagnostics(),
+          audio: { ...audio, error: audio.error || runtimeError },
           inference: inference.diagnostics(),
           lab: { ...lab },
           offscreenTasks: tasks.snapshot(),
+          deliveryError,
         };
+      }
       case 'AUDIO_PREVIEW':
         return parsed.data.speech
           ? inference.speechPreview()
           : inference.preview();
       case 'AUDIO_START':
+        runtimeError = '';
         inference.setSensitivity(parsed.data.sensitivity ?? 'normal');
         lab = defaultLab();
         tasks.reset();
@@ -114,12 +144,19 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, reply) => {
   };
   void run().then(
     (value) => reply({ ok: true, value }),
-    () =>
+    (error) => {
+      const diagnostic = safeError(error);
+      console.error(
+        'StreamLaughs: offscreen command failed',
+        parsed.data.type,
+        diagnostic,
+      );
       reply({
         ok: false,
         error: 'capture',
-        diagnostic: engine.diagnostics().error,
-      }),
+        diagnostic: engine.diagnostics().error || diagnostic,
+      });
+    },
   );
   return true;
 });

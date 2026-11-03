@@ -39,6 +39,7 @@ import { TabEndedSchema } from '../src/audio/protocol';
 import { captureTransition } from '../src/audio/state-machine';
 import { type CrowdSource, makeCrowdSource } from '../src/crowd-source';
 import { db, deleteSavedStreams } from '../src/db';
+import { safeError } from '../src/diagnostics';
 import { getInstallKind } from '../src/install-type';
 import { LabSwitchesSchema } from '../src/stutter';
 import { clearToolbar } from '../src/toolbar';
@@ -80,6 +81,12 @@ export default defineBackground(() => {
     };
   }
   let activeOwnerId: string | null = null;
+  const delivery = { received: 0, applied: 0, error: '' };
+  function deliveryFailed(message: string) {
+    if (message !== delivery.error)
+      console.error('StreamLaughs: count delivery', message);
+    delivery.error = message.slice(0, 400);
+  }
   const source: CrowdSource = makeCrowdSource();
   let sourceSessionId: string | null = null;
   let saveTimer: ReturnType<typeof setInterval> | undefined;
@@ -426,7 +433,8 @@ export default defineBackground(() => {
     if (
       state.session &&
       ['active', 'paused'].includes(state.capture.phase) &&
-      !state.capture.micLost
+      !state.capture.micLost &&
+      (await hasAudioOwner())
     )
       return;
     if (state.settings.listen) {
@@ -459,6 +467,7 @@ export default defineBackground(() => {
       }
     }
     const now = Date.now();
+    Object.assign(delivery, { received: 0, applied: 0, error: '' });
     if (!state.session)
       state = {
         ...state,
@@ -631,43 +640,19 @@ export default defineBackground(() => {
       case 'RETRY_MIC':
         await captureAllowed(state.session?.tabId);
         if (state.session && state.settings.listen) {
-          if (!(await hasAudioOwner())) {
-            activeOwnerId = null;
-            state.capture = captureTransition(state.capture, {
-              type: 'workerRestart',
-              owner: null,
-            });
-            await publish();
-            await welcome(state.session.tabId);
-            break;
-          }
-          const permission = await ownerCommand<PermissionState>({
-            target: 'offscreen',
-            type: 'AUDIO_PERMISSION',
+          // One explicit restart boundary, including a dead owner, failed model
+          // worker or disabled lab switch. Keep the saved session/settings and
+          // discard old-owner messages by acquiring a fresh owner nonce.
+          const tabId = state.session.tabId;
+          await closeAudioOwner();
+          activeOwnerId = null;
+          state.inference = emptyInferenceHealth();
+          state.capture = captureTransition(state.capture, {
+            type: 'start',
+            sessionId: state.session.id,
+            listen: true,
           });
-          if (
-            permission !== 'granted' &&
-            !(await chrome.storage.local.get(MIC_CONSENT_KEY))[MIC_CONSENT_KEY]
-          ) {
-            state.capture = captureTransition(state.capture, {
-              type: 'permissionRequired',
-            });
-            await publish();
-            await welcome(state.session.tabId, true);
-            break;
-          }
-          const owner = await ownerCommand({
-            target: 'offscreen',
-            type: 'AUDIO_RETRY',
-            micDeviceId: await selectedMicrophone(),
-          });
-          if (owner) {
-            state.capture = captureTransition(state.capture, {
-              type: 'workerRestart',
-              owner,
-            });
-            await publish();
-          }
+          await start(tabId);
         }
         break;
       case 'SETTINGS': {
@@ -1009,6 +994,7 @@ export default defineBackground(() => {
               inference: unknown;
               lab?: unknown;
               offscreenTasks?: unknown;
+              deliveryError?: string;
             }>({
               target: 'offscreen',
               type: 'AUDIO_DIAGNOSTICS',
@@ -1029,6 +1015,8 @@ export default defineBackground(() => {
           laughPanelLatencyMs,
           lab: owner?.lab,
           offscreenTasks: owner?.offscreenTasks,
+          delivery: { ...delivery },
+          deliveryError: owner?.deliveryError ?? '',
           savedLaughs: saved?.laughCount ?? 0,
           savedWords: saved?.topWords.reduce((n, w) => n + w.count, 0) ?? 0,
           sessionLaughs: state.session?.laughCount ?? 0,
@@ -1043,7 +1031,9 @@ export default defineBackground(() => {
             audioOwnerError() ||
             (state.capture.error === 'none' ? '' : state.capture.error),
         };
-      })().then(reply);
+      })().then(reply, (error) =>
+        reply({ ok: false, error: safeError(error) }),
+      );
       return true;
     }
     if (
@@ -1066,8 +1056,13 @@ export default defineBackground(() => {
         !ended.success &&
         !personal.success &&
         !inference.success
-      )
+      ) {
+        if ((message as { type?: string })?.type === 'PERSONAL_EVENTS')
+          deliveryFailed('invalid detection message · reopen the microphone');
+        reply({ ok: false, error: 'invalid local audio status/event message' });
         return;
+      }
+      if (personal.success) delivery.received += personal.data.events.length;
       if (endingSession) {
         if (
           personal.success &&
@@ -1103,7 +1098,13 @@ export default defineBackground(() => {
               : inference.success
                 ? inference.data.ownerId
                 : null;
-        if (!activeOwnerId || activeOwnerId !== reportOwner) return;
+        if (!activeOwnerId || activeOwnerId !== reportOwner) {
+          if (personal.success)
+            deliveryFailed(
+              'detection belongs to an old microphone owner · retry mic',
+            );
+          return false;
+        }
         if (report.success) await acceptOwner(report.data);
         else if (
           inference.success &&
@@ -1119,29 +1120,65 @@ export default defineBackground(() => {
           state.settings.listen &&
           state.capture.phase === 'active'
         ) {
+          delivery.error = '';
           for (const event of personal.data.events) {
             if (
               event.ts < state.session.startedAt ||
               event.ts > Date.now() + 1000
-            )
+            ) {
+              deliveryFailed(
+                'detection timestamp is outside this session · retry mic',
+              );
               continue;
+            }
             state.session = applySessionEvent(
               state.session,
               event,
               state.crowd?.laughingNow ?? 0,
               personal.data.tabLaughTs,
             );
+            delivery.applied++;
             if (!state.session.replay) source.addEvents?.([event]);
           }
+          // Save accepted counts at the same boundary used by the popup and
+          // panel, rather than waiting for the five-second checkpoint timer.
+          await db.sessions.put(state.session);
           await publish();
+        } else if (
+          personal.success &&
+          !state.session &&
+          state.capture.sessionId?.startsWith('mic-test-') &&
+          personal.data.sessionId === state.capture.sessionId
+        ) {
+          // The visible mic check reports detections, but deliberately creates
+          // no saved stream and never shares these events.
+          delivery.error = '';
+        } else if (personal.success) {
+          deliveryFailed(
+            !state.settings.listen
+              ? 'microphone listening is disabled · enable mic'
+              : state.status === 'paused'
+                ? 'session paused · resume to count'
+                : `no matching active session (${state.capture.phase}) · retry mic`,
+          );
+          return false;
         } else if (
           ended.success &&
           ended.data.sessionId === state.capture.sessionId
         )
           await stop();
       }).then(
-        () => reply({ ok: true }),
-        () => reply({ ok: false }),
+        (accepted) =>
+          reply({
+            ok: accepted !== false,
+            ...(accepted === false
+              ? { error: delivery.error || 'audio owner mismatch' }
+              : {}),
+          }),
+        (error) => {
+          deliveryFailed(safeError(error));
+          reply({ ok: false, error: delivery.error });
+        },
       );
       return true;
     }

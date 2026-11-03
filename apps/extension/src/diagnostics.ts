@@ -87,6 +87,10 @@ const track = z
   .strict();
 export const WorkerDiagnosticsSchema = z
   .object({
+    vadError: z.string().max(400).default(''),
+    soundError: z.string().max(400).default(''),
+    speechError: z.string().max(400).default(''),
+    inputGaps: z.number().nonnegative().default(0),
     accuracyLog: z.array(AccuracyRecordSchema).max(20).default([]),
     laughDetectors: z
       .object({ dsp: z.number(), yamnet: z.number(), both: z.number() })
@@ -190,6 +194,10 @@ export const emptyStages = () => ({
   acceptedEvents: 0,
 });
 export const emptyWorkerDiagnostics = (): WorkerDiagnostics => ({
+  vadError: '',
+  soundError: '',
+  speechError: '',
+  inputGaps: 0,
   accuracyLog: [],
   laughDetectors: { dsp: 0, yamnet: 0, both: 0 },
   speechOverruns: 0,
@@ -229,6 +237,17 @@ export const emptyWorkerDiagnostics = (): WorkerDiagnostics => ({
 });
 export const AudioDiagnosticsSchema = z
   .object({
+    micWorklet: z
+      .object({
+        lastFrameAt: z.number().nonnegative(),
+        inputChannels: z.number().nonnegative(),
+        selectedChannel: z.number().nonnegative(),
+      })
+      .default(() => ({
+        lastFrameAt: 0,
+        inputChannels: 0,
+        selectedChannel: 0,
+      })),
     permission: z.enum(['prompt', 'granted', 'denied']).default('prompt'),
     micAttempts: z.number().nonnegative().default(0),
     micOpened: z.number().nonnegative().default(0),
@@ -255,6 +274,14 @@ export const AudioDiagnosticsSchema = z
   .strict();
 export const DiagnosticsSchema = z
   .object({
+    delivery: z
+      .object({
+        received: z.number().nonnegative(),
+        applied: z.number().nonnegative(),
+        error: z.string().max(400),
+      })
+      .default(() => ({ received: 0, applied: 0, error: '' })),
+    deliveryError: z.string().max(400).default(''),
     sessionId: z.string().max(100).nullable().default(null),
     offscreenAlive: z.boolean().default(false),
     micConsent: z.boolean().default(false),
@@ -286,6 +313,13 @@ export function safeError(error: unknown) {
       '[local resource]',
     )
     .slice(0, 400);
+}
+/** Single console boundary for error text. Unknown values (including PCM) are
+ * never serialized; safeError strips resource URLs and bounds the message. */
+export function logAudioError(stage: string, error: unknown) {
+  const message = safeError(error);
+  console.error(`StreamLaughs: ${stage}`, message);
+  return message;
 }
 // The clipboard boundary is deliberately an allowlist: never serialize a worker message.
 const ClipboardReportSchema = DiagnosticsSchema.extend({

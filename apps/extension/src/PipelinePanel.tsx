@@ -7,6 +7,7 @@ import {
   copyableReport,
   type DiagnosticsReport,
   DiagnosticsSchema,
+  safeError,
 } from './diagnostics';
 
 export function usePipelineReport(
@@ -17,6 +18,7 @@ export function usePipelineReport(
   const [report, setReport] = useState<DiagnosticsReport | null>(null);
   const [phrase, setPhrase] = useState('');
   const [word, setWord] = useState('');
+  const [pollError, setPollError] = useState('');
   useEffect(() => {
     if (!enabled) return;
     let alive = true,
@@ -30,6 +32,7 @@ export function usePipelineReport(
         );
         if (alive) {
           setReport(next);
+          setPollError('');
           if (next.lab) labSurface.accept(next.lab);
         }
         if (preview) {
@@ -47,8 +50,11 @@ export function usePipelineReport(
           if (alive && typeof value === 'string')
             setPhrase(value.slice(0, speech ? 20000 : 80));
         }
-      } catch {
-        /* A restarting background is retried on the next poll. */
+      } catch (error) {
+        if (alive) {
+          setReport(null);
+          setPollError(safeError(error));
+        }
       } finally {
         busy = false;
       }
@@ -62,7 +68,7 @@ export function usePipelineReport(
       setWord('');
     };
   }, [enabled, preview, speech]);
-  return { report, phrase, word };
+  return { report, phrase, word, pollError };
 }
 export function micProblem(report: DiagnosticsReport | null) {
   if (!report) return 'connecting to the local audio owner…';

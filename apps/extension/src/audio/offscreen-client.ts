@@ -54,6 +54,14 @@ export async function ownerCommand<T = AudioReport | null>(
         );
       }),
     ]);
+  } catch (error) {
+    lastOwnerError = safeError(error);
+    console.error(
+      'StreamLaughs: offscreen command',
+      message.type,
+      lastOwnerError,
+    );
+    throw error;
   } finally {
     clearTimeout(timer);
   }

@@ -23,6 +23,7 @@ const STREAMER_PAGE = `${SITE_URL || PRODUCT.siteUrl}/dashboard?from=extension`;
 
 import { stopWithPreview } from './stop-preview';
 import { audioNotice, friendlyError } from './ui-status';
+import { verifyVisibleMicrophone, permissionHelp } from './audio/microphone';
 import { resolveWatchContext } from './watch-context';
 
 export function Popup() {
@@ -388,7 +389,21 @@ export function Popup() {
               className="audio-notice"
               disabled={busy}
               onClick={async () => {
-                if (notice.action === 'retryMic')
+                if (notice.action === 'enableMic') {
+                  setBusy(true);
+                  try {
+                    await verifyVisibleMicrophone();
+                    await command({
+                      type: 'SETTINGS',
+                      settings: { listen: true },
+                    });
+                    await command({ type: 'RETRY_MIC' });
+                  } catch {
+                    setError(permissionHelp);
+                  } finally {
+                    setBusy(false);
+                  }
+                } else if (notice.action === 'retryMic')
                   await act({ type: 'RETRY_MIC' });
                 else if (notice.action === 'startAudio')
                   await act({ type: 'START', tabId: session?.tabId ?? tabId });

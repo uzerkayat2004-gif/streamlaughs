@@ -1,10 +1,13 @@
 import { emptyInferenceHealth, type PersonalEvent } from '@laughline/shared';
 import { MicNormalizer } from '../audio/mic-normalizer';
+import { frameLevels } from '../audio/resampler';
 import { AudioRingBuffer, type AudioSource } from '../audio/ring-buffer';
 import {
   type AccuracyRecord,
   emptyStages,
   emptyWorkerDiagnostics,
+  safeError,
+  logAudioError,
 } from '../diagnostics';
 import {
   ACCURACY,
@@ -174,7 +177,11 @@ export class InferencePipeline {
       stages: { ...this.stages, dspHits: this.dsp.hits },
       laughScore: this.scores.mic.laugh,
       echo: this.models.echo ?? { removed: false, inputRms: 0, outputRms: 0 },
-      error: this.soundError,
+      error: this.vadError || this.soundError || this.speechError,
+      vadError: this.vadError,
+      soundError: this.soundError,
+      speechError: this.speechError,
+      inputGaps: this.inputGaps,
     };
   }
   constructor(
@@ -192,6 +199,15 @@ export class InferencePipeline {
   private soundGeneration = 0;
   private nextSound: AudioSource = 'tab';
   private soundError = '';
+  private vadError = '';
+  private speechError = '';
+  private inputGaps = 0;
+  private processingError(kind: 'vad' | 'sound' | 'speech', error: unknown) {
+    const key = `${kind}Error` as 'vadError' | 'soundError' | 'speechError';
+    const message = safeError(error);
+    if (message !== this[key]) logAudioError(`${kind} inference`, error);
+    this[key] = message;
+  }
   ingest(source: AudioSource, frame: Float32Array, ts: number) {
     if (!this.modes.laugh && !this.modes.speech) return;
     const ingestStart = performance.now();
@@ -216,6 +232,7 @@ export class InferencePipeline {
         delete this.sound[source];
       }
       if (source === 'mic') {
+        this.inputGaps++;
         this.rawMic.clear();
         this.normalizer.reset();
         this.dsp.reset();
@@ -254,11 +271,16 @@ export class InferencePipeline {
         // Coalescing an analysis window does not lose its underlying PCM/VAD.
         this.stages.soundJobsSkipped++;
       }
+      const samples = this.buffers[source].read(C.soundWindow);
       this.sound[source] = {
-        samples: this.buffers[source].read(C.soundWindow),
+        samples,
         ts,
         rms,
-        acoustic: this.acoustics.window(ts - 975, ts),
+        acoustic: this.acoustics.window(
+          ts - 975,
+          ts,
+          source === 'mic' ? frameLevels(samples).rms : undefined,
+        ),
         dsp: { ...this.dsp.evidence },
       };
       this.lastHop[source] = ts;
@@ -505,11 +527,7 @@ export class InferencePipeline {
           })
           .catch((error) => {
             if (generation === this.soundGeneration)
-              this.soundError = String(
-                error instanceof Error
-                  ? error.message
-                  : 'sound inference failed',
-              ).slice(0, 400);
+              this.processingError('sound', error);
           })
           .finally(() => {
             end();
@@ -522,9 +540,9 @@ export class InferencePipeline {
         this.consumeSound(source, job, result);
         end();
       }
-    } catch {
+    } catch (error) {
       end();
-      this.soundError = 'sound model could not run';
+      this.processingError('sound', error);
     }
   }
   async step() {
@@ -551,7 +569,9 @@ export class InferencePipeline {
       let probability: number;
       try {
         probability = await this.models.vad(vad.samples);
-      } catch {
+        this.vadError = '';
+      } catch (error) {
+        this.processingError('vad', error);
         probability =
           Math.sqrt(
             vad.samples.reduce((n, v) => n + v * v, 0) / vad.samples.length,
@@ -633,7 +653,8 @@ export class InferencePipeline {
     const all = this.buffers.mic.read(length + ageSamples);
     const samples = all.slice(0, Math.max(0, all.length - ageSamples));
     all.fill(0);
-    const acoustic = this.acoustics.window(segment.start, segment.end);
+    const rms = frameLevels(samples).rms;
+    const acoustic = this.acoustics.window(segment.start, segment.end, rms);
     if (!acoustic.calibrated || !acoustic.near) {
       this.log({
         kind: 'words',
@@ -660,10 +681,7 @@ export class InferencePipeline {
       samples.fill(0);
       return;
     }
-    let square = 0;
-    for (const value of samples) square += value * value;
-    const rms = Math.sqrt(square / samples.length),
-      duration = samples.length / 16;
+    const duration = samples.length / 16;
     if (rms >= C.loudSpeechRms && duration <= C.loudSpeechMaximumMs)
       this.decision('hype', 0.7, rms, segment.end, false);
     if (!this.health.lowPower)
@@ -696,6 +714,7 @@ export class InferencePipeline {
       try {
         this.stages.speechRequests++;
         const value = await this.models.words(speech.samples);
+        this.speechError = '';
         this.stages.speechResults++;
         if (generation !== this.speechGeneration) return;
         const result = typeof value === 'string' ? extractWords(value) : value;
@@ -750,8 +769,10 @@ export class InferencePipeline {
           this.event({ kind: 'words', ts: speech.ts, phrases: result.phrases });
         if (result.hype)
           this.decision('hype', 0.9, speech.rms, speech.ts, false);
-      } catch {
+      } catch (error) {
         // A slow/unavailable transcription cannot stop the reaction scheduler.
+        this.processingError('speech', error);
+        this.stages.wordsRejected++;
         this.speechQueue.clear();
       } finally {
         text = '';

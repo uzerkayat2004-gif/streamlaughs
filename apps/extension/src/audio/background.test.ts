@@ -460,6 +460,12 @@ describe('background capture integration with browser ports mocked', () => {
     expect(result.state.capture.phase).toBe('crowdOnly');
     expect(fixture.getStreamId).not.toHaveBeenCalled();
     expect(fixture.ensureOwner).not.toHaveBeenCalled();
+    // An upgraded watch-only profile must be able to explicitly enable its mic.
+    await dispatch({ type: 'SETTINGS', settings: { listen: true } });
+    const enabled = await dispatch({ type: 'RETRY_MIC' });
+    expect(enabled.state.capture.phase).toBe('active');
+    expect(enabled.state.session?.id).toBe(result.state.session?.id);
+    expect(fixture.ensureOwner).toHaveBeenCalledOnce();
   });
   it('rejects old crowd callbacks after restarting on the same channel', async () => {
     await dispatch({ type: 'SETTINGS', settings: { listen: false } });
@@ -520,20 +526,14 @@ describe('background capture integration with browser ports mocked', () => {
     expect(fixture.ensureOwner).not.toHaveBeenCalled();
     expect((await dispatch({ type: 'GET_STATE' })).state.session).toBeNull();
   });
-  it('a missing owner retry opens permission onboarding without an automatic retry loop', async () => {
-    await dispatch({ type: 'START', tabId: 1 });
+  it('a missing owner retry restores the existing session after permission was already granted', async () => {
+    const before = await dispatch({ type: 'START', tabId: 1 });
     fixture.owner = null;
     fixture.exists = false;
-    await dispatch({ type: 'RETRY_MIC' });
-    expect(chrome.tabs.create).toHaveBeenCalledWith({
-      url: expect.stringContaining('step=mic'),
-    });
-    expect(chrome.tabs.create).toHaveBeenCalledWith({
-      url: expect.not.stringContaining('retry='),
-    });
-    expect((await dispatch({ type: 'GET_STATE' })).state.capture.error).toBe(
-      'restartRequired',
-    );
+    const after = await dispatch({ type: 'RETRY_MIC' });
+    expect(chrome.tabs.create).not.toHaveBeenCalled();
+    expect(after.state.session?.id).toBe(before.state.session?.id);
+    expect(after.state.capture.phase).toBe('active');
     expect(fixture.getStreamId).not.toHaveBeenCalled();
   });
   it('enabling listening mid-session with denied permission keeps an explicit toolbar restart path', async () => {

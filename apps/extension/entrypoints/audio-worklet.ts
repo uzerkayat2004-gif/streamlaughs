@@ -1,7 +1,7 @@
 import { frameLevels, MonoResampler } from '../src/audio/resampler';
 export default defineUnlistedScript(() => {
   class FrameProcessor extends AudioWorkletProcessor {
-    private resampler = new MonoResampler(sampleRate);
+    private resampler: MonoResampler;
     private frame = new Float32Array(320);
     private cursor = 0;
     private enabled = false;
@@ -17,6 +17,11 @@ export default defineUnlistedScript(() => {
     private epoch: number;
     constructor(options: AudioWorkletNodeOptions) {
       super(options);
+      this.resampler = new MonoResampler(
+        sampleRate,
+        16000,
+        options.processorOptions?.source === 'mic' ? 'microphone' : 'average',
+      );
       this.epoch = Number(options.processorOptions?.epochMs ?? 0);
       this.port.onmessage = ({ data }) => {
         if (data.type === 'ack') this.pending = Math.max(0, this.pending - 1);
@@ -73,6 +78,8 @@ export default defineUnlistedScript(() => {
           dropped: this.dropped,
           cpuMs: this.cpuMs,
           intervalMs: (currentTime - this.lastStatus) * 1000,
+          inputChannels: inputs[0]?.length ?? 0,
+          selectedChannel: this.resampler.selectedChannel,
         });
         this.cpuMs = 0;
         this.lastStatus = currentTime;

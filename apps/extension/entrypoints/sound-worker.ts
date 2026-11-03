@@ -1,4 +1,4 @@
-import { modelState, safeError } from '../src/diagnostics';
+import { modelState, safeError, logAudioError } from '../src/diagnostics';
 import { installLocalAssetPolicy } from '../src/inference/local-assets';
 import { LocalModels } from '../src/inference/models';
 import { TaskProbe } from '../src/stutter';
@@ -44,6 +44,7 @@ export default defineUnlistedScript(() => {
           throw new Error('local sound model unavailable');
         const start = performance.now();
         const scores = models.sound(samples, reference);
+        models.status.yamnet.error = '';
         self.postMessage({
           type: 'sound_result',
           computeMs: performance.now() - start,
@@ -53,6 +54,8 @@ export default defineUnlistedScript(() => {
           topClass: models.topClass,
         });
       } catch (error) {
+        models.status.yamnet.error = safeError(error);
+        logAudioError('laugh model could not run', error);
         self.postMessage({
           type: 'sound_result',
           id: data.id,

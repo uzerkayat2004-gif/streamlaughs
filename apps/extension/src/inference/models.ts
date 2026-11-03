@@ -9,7 +9,7 @@ import {
 } from '@huggingface/transformers';
 import { AudioClassifier, FilesetResolver } from '@mediapipe/tasks-audio';
 import * as ort from 'onnxruntime-web/webgpu';
-import { modelState, safeError } from '../diagnostics';
+import { modelState, safeError, logAudioError } from '../diagnostics';
 import type { SpeechConfidence } from './accuracy';
 import {
   INFERENCE_CONFIG as C,
@@ -201,6 +201,7 @@ export class LocalModels implements ModelRunner {
     };
   }
   loadFailed(error: unknown) {
+    logAudioError('local model failed to load', error);
     for (const state of Object.values(this.status))
       if (state.phase === 'loading') {
         state.phase = 'error';
@@ -337,9 +338,8 @@ export class LocalModels implements ModelRunner {
     let result: { text: string } | { text: string }[];
     try {
       result = await transcribe();
-    } catch {
-      if (this.backend !== 'mixed')
-        throw new Error('Local transcription unavailable');
+    } catch (error) {
+      if (this.backend !== 'mixed') throw error;
       await this.whisper.dispose().catch(() => {});
       this.whisper = await makeWhisper('wasm');
       this.compactSpeech();

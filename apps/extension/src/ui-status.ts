@@ -21,7 +21,12 @@ export function audioNotice(snapshot: Snapshot) {
       text: 'audio didn’t start · try start again',
       action: 'startAudio',
     } as const;
-  if (!snapshot.session || !snapshot.settings.listen) return null;
+  if (!snapshot.session) return null;
+  if (!snapshot.settings.listen)
+    return {
+      text: 'mic is off · enable microphone',
+      action: 'enableMic',
+    } as const;
   if (snapshot.inference.phase === 'error')
     return {
       text: 'models took a breather · retry models',

@@ -1,6 +1,6 @@
 import { normalizeReaction } from '@laughline/shared';
 import { AUDIO_DEBUG } from '../src/audio/config';
-import { safeError } from '../src/diagnostics';
+import { safeError, logAudioError } from '../src/diagnostics';
 import { speechConfidenceReason } from '../src/inference/accuracy';
 import { INFERENCE_CONFIG } from '../src/inference/config';
 import { installLocalAssetPolicy } from '../src/inference/local-assets';
@@ -116,6 +116,7 @@ export default defineUnlistedScript(() => {
           });
       } catch (error) {
         models.status.whisper.error = safeError(error);
+        logAudioError('word model could not run', error);
         if (!stopped)
           self.postMessage({
             type: 'speech_result',

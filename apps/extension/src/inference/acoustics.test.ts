@@ -1,5 +1,30 @@
 import { expect, it } from 'vitest';
 import { AcousticFloor, LaughEpisodes } from './accuracy';
+import { MicNormalizer } from '../audio/mic-normalizer';
+import { frameLevels } from '../audio/resampler';
+
+it('checks the absolute level in the same gain domain as the models while preserving raw room SNR', () => {
+  const floor = new AcousticFloor(),
+    normalizer = new MicNormalizer();
+  for (let t = 0; t <= 3000; t += 20)
+    floor.ingest(new Float32Array(320).fill(0.00003), t);
+  let modelRms = 0;
+  for (let i = 0; i < 100; i++) {
+    const frame = Float32Array.from(
+      { length: 320 },
+      (_, j) => Math.sin((i * 320 + j) * 0.2) * 0.0008,
+    );
+    floor.ingest(frame, 3020 + i * 20, true);
+    modelRms = frameLevels(normalizer.process(frame, true)).rms;
+  }
+  expect(modelRms).toBeGreaterThan(0.004);
+  expect(floor.window(4000, 5000, modelRms).near).toBe(true);
+  // Gain cannot rescue audio that is actually at the calibrated room floor.
+  const noisy = new AcousticFloor();
+  for (let t = 0; t <= 3000; t += 20)
+    noisy.ingest(new Float32Array(320).fill(0.005), t);
+  expect(noisy.window(0, 3000, 0.1).near).toBe(false);
+});
 
 it('does not calibrate opening speech bursts as a permanent room floor', () => {
   const f = new AcousticFloor();
@@ -11,16 +36,18 @@ it('does not calibrate opening speech bursts as a permanent room floor', () => {
   expect(laugh.bleed).toBe(false);
 });
 it('asks for a quiet retry after continuous loud opening speech, then recovers', () => {
-  const f = new AcousticFloor();
-  for (let t = 0; t <= 3000; t += 20)
-    f.ingest(new Float32Array(320).fill(0.04), t, true);
-  expect(f.remainingMs()).toBeGreaterThan(0);
-  for (let t = 3020; t <= 4220; t += 20)
-    f.ingest(new Float32Array(320).fill(0.0002), t);
-  expect(f.remainingMs()).toBe(0);
-  expect(f.ingest(new Float32Array(320).fill(0.02), 4240, true).near).toBe(
-    true,
-  );
+  for (const amplitude of [0.0008, 0.04]) {
+    const f = new AcousticFloor();
+    for (let t = 0; t <= 3000; t += 20)
+      f.ingest(new Float32Array(320).fill(amplitude), t, true);
+    expect(f.remainingMs()).toBeGreaterThan(0);
+    for (let t = 3020; t <= 4220; t += 20)
+      f.ingest(new Float32Array(320).fill(0.0003), t);
+    expect(f.remainingMs()).toBe(0);
+    expect(f.ingest(new Float32Array(320).fill(0.02), 4240, true).near).toBe(
+      true,
+    );
+  }
 });
 
 it('calibrates raw speaker/room level for three seconds, then requires a clear near-voice level step', () => {

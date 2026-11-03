@@ -137,4 +137,18 @@ it('resolves the Windows default/communications alias to a physical input withou
   expect(x.getUserMedia.mock.calls[0]![0].audio).not.toHaveProperty(
     'sampleRate',
   );
+  Object.assign(navigator.mediaDevices, {
+    enumerateDevices: async () => [
+      {
+        kind: 'audioinput',
+        deviceId: 'virtual-silent-input',
+        label: 'Virtual Cable',
+      },
+      { kind: 'audioinput', deviceId: 'real-mic', label: 'Laptop mic' },
+    ],
+  });
+  await openSelectedMicrophone();
+  expect(x.getUserMedia.mock.calls.at(-1)![0].audio).not.toHaveProperty(
+    'deviceId',
+  );
 });

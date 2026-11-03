@@ -63,6 +63,7 @@ export class InferenceBridge {
   private health: InferenceHealth = emptyInferenceHealth();
   private debug: unknown = null;
   private failed = false;
+  private statusError = '';
   private lastPhrase = '';
   private previewUntil = 0;
   private speechText = '';
@@ -140,6 +141,7 @@ export class InferenceBridge {
       },
       ...(stale ? { micFps: 0, tabFps: 0 } : {}),
       health: { ...this.health },
+      error: this.statusError || this.productionDiagnostics.error,
     };
   }
   private modes = { laugh: true, speech: true };
@@ -242,6 +244,12 @@ export class InferenceBridge {
       worker.postMessage({ type: 'sound_status', model: this.soundState });
       this.forwardSound();
     };
+    soundWorker.onmessageerror = () =>
+      soundWorker.onerror?.(
+        new ErrorEvent('error', {
+          message: 'laugh worker message could not be decoded',
+        }),
+      );
     soundWorker.postMessage({
       type: 'init',
       base: chrome.runtime.getURL('').replace(/\/$/, ''),
@@ -335,6 +343,12 @@ export class InferenceBridge {
       worker.postMessage({ type: 'speech_status', model: this.speechState });
       this.forwardSpeech();
     };
+    speechWorker.onmessageerror = () =>
+      speechWorker.onerror?.(
+        new ErrorEvent('error', {
+          message: 'word worker message could not be decoded',
+        }),
+      );
     speechWorker.postMessage({
       type: 'init',
       base: chrome.runtime.getURL('').replace(/\/$/, ''),
@@ -435,13 +449,25 @@ export class InferenceBridge {
         this.lastWorkerReport = performance.now();
         const diagnostic = WorkerDiagnosticsSchema.safeParse(data.diagnostics);
         if (diagnostic.success) {
+          this.statusError = '';
           const work = diagnostic.data.vadWorkTotalMs;
           this.recordCost('vad', Math.max(0, work - this.previousVadWork));
           this.previousVadWork = work;
           this.productionDiagnostics = diagnostic.data;
+        } else {
+          const message = `invalid inference diagnostics: ${diagnostic.error.issues
+            .map((issue) => issue.path.join('.') || 'missing report')
+            .slice(0, 4)
+            .join(', ')}`;
+          if (this.statusError !== message)
+            console.error('StreamLaughs:', message);
+          this.statusError = message.slice(0, 400);
         }
         const parsed = InferenceHealthSchema.safeParse(data.health);
-        if (!parsed.success) return;
+        if (!parsed.success) {
+          this.fail('invalid local inference health message');
+          return;
+        }
         this.health = parsed.data;
         if (AUDIO_DEBUG && data.debug && typeof data.debug === 'object')
           this.debug = {
@@ -502,6 +528,10 @@ export class InferenceBridge {
       if (worker === this.worker)
         this.fail(safeError(new Error(event.message)));
     };
+    worker.onmessageerror = () => {
+      if (worker === this.worker)
+        this.fail('microphone worker message could not be decoded');
+    };
     worker.postMessage({
       type: 'init',
       externalSound: true,
@@ -511,6 +541,7 @@ export class InferenceBridge {
     });
   }
   private fail(error = 'inference worker failed') {
+    console.error('StreamLaughs: inference worker', error);
     const diagnostics = this.productionDiagnostics;
     this.close();
     this.productionDiagnostics = diagnostics;
@@ -602,6 +633,7 @@ export class InferenceBridge {
     this.previewLines = [];
     clearTimeout(this.previewTimer);
     this.health = emptyInferenceHealth();
+    this.statusError = '';
     this.productionDiagnostics = emptyWorkerDiagnostics();
     this.speechState = modelState();
     this.soundState = modelState();
