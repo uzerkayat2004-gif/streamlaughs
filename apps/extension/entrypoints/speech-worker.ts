@@ -36,10 +36,9 @@ export default defineUnlistedScript(() => {
   const timer = setInterval(() => {
     tasks.tick();
     const snapshot = tasks.snapshot();
-    if (snapshot.count > observedStalls) {
-      observedStalls = snapshot.count;
-      budget.backoff();
-    }
+    // The worker's own long WASM kernel shows up as a "stall" here; it is not
+    // a Twitch audio stall, so it must never pause transcription (it did, for minutes).
+    if (snapshot.count > observedStalls) observedStalls = snapshot.count;
     status();
   }, 250);
   self.onmessage = async ({ data }) => {
@@ -67,6 +66,7 @@ export default defineUnlistedScript(() => {
           throw new Error('local speech model unavailable');
         busy = true;
         const includePreview = previewUntil > Date.now();
+        budget.beginJob();
         text = await models.words(samples, false, budget);
 
         const confidence = models.lastSpeechConfidence;

@@ -265,3 +265,11 @@ Owner's real-PC test of 0.9.1: laughs counted (3 of about 6), words none.
 - Words: a swear or private word no longer drops the whole phrase ("what the hell bro" → bro). Everyday words (what, love, great, w…) count only as short standalone reactions. Repeated "bro bro bro" is no longer treated as an ASR loop below 8 repeats. Added "oh my gosh" → omg.
 - Laughs: an episode now ends on a dip below 45% of its own peak (so back-to-back laughs count separately), refractory 1.5 s, and sustained laughing counts again every 3.5 s.
 Sandbox anti-phase fake mic, full clip: "let's go"×3 + 16 s laughter → 7 laughs, 5 words; "you know what"×3 + laughter → 8 laughs, 5 words. Fake device only. Three pre-existing mock failures (models-backend ×2, bootstrap) unchanged.
+
+## 2026-11-03 · v0.9.3 · words unblocked on slow PCs (Hark)
+
+Owner's 0.9.2 diagnostics recording: voice detected (650+ voiced chunks), YAMNet working, but "Word heard · CPU pacing waited 127.6 sec": Moonshine never finished a phrase.
+- Root cause: the speech worker's own long WASM kernel registered as a task "stall" and called budget.backoff() on itself (3 s pauses), plus a 1.6 s-per-10 s cap and offscreen stall backoffs. On a slow laptop that starved transcription forever.
+- Fix: no self-backoff in the speech worker; speech budget 5 s per 10 s (own thread); backoff max 0.5 s; any one phrase is paced at most 1.2 s in total, then runs.
+- Laugh: speech penalty softened to 0.2 × max(0, speech − laugh − 0.4) so laughs YAMNet hears as "speech + laughter" still count.
+Unit tests (inference, speech-budget) pass except 3 pre-existing mock failures; typecheck and build pass. Sandbox browser run not possible this time (Chromium missing after a sandbox reset).

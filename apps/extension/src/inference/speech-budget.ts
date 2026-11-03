@@ -13,12 +13,18 @@ export function yieldModelTask() {
     channel.port2.postMessage(0);
   });
 }
+const MAX_JOB_WAIT_MS = 1200;
 export class SpeechBudget {
   private history: { at: number; ms: number }[] = [];
   private pauseUntil = 0;
   private longest = new Map<string, number>();
   workMs = 0;
   waitedMs = 0;
+  /** Pacing wait spent on the current transcription; capped so a phrase always finishes. */
+  jobWaitedMs = 0;
+  beginJob() {
+    this.jobWaitedMs = 0;
+  }
   constructor(
     private now = () => performance.now(),
     private sleep = (ms: number) =>
@@ -32,22 +38,36 @@ export class SpeechBudget {
   backoff(ms = 1000) {
     this.pauseUntil = Math.max(
       this.pauseUntil,
-      this.now() + Math.min(3000, Math.max(0, ms)),
+      this.now() + Math.min(500, Math.max(0, ms)),
     );
   }
   private async wait(ms: number) {
     if (ms <= 0) return;
     const at = this.now();
     await this.sleep(ms);
-    this.waitedMs += Math.max(0, this.now() - at);
+    const waited = Math.max(0, this.now() - at);
+    this.waitedMs += waited;
+    this.jobWaitedMs += waited;
   }
   async run<T>(task: () => Promise<T>, key = 'model'): Promise<T> {
+    // Speech runs in its own worker thread, so it may use up to half of one
+    // core. A phrase is never paced for more than MAX_JOB_WAIT in total: on
+    // slow laptops the old 1.6 s/10 s cap starved Moonshine for minutes.
     while (
-      this.recent() + Math.min(1400, this.longest.get(key) ?? 100) > 1600 &&
+      this.jobWaitedMs < MAX_JOB_WAIT_MS &&
+      this.recent() + Math.min(1400, this.longest.get(key) ?? 100) > 5000 &&
       this.history.length
     )
-      await this.wait(Math.max(1, this.history[0]!.at + 10_000 - this.now()));
-    await this.wait(this.pauseUntil - this.now());
+      await this.wait(
+        Math.min(
+          MAX_JOB_WAIT_MS - this.jobWaitedMs,
+          Math.max(1, this.history[0]!.at + 10_000 - this.now()),
+        ),
+      );
+    if (this.jobWaitedMs < MAX_JOB_WAIT_MS)
+      await this.wait(
+        Math.min(MAX_JOB_WAIT_MS - this.jobWaitedMs, this.pauseUntil - this.now()),
+      );
     const at = this.now();
     try {
       return await task();

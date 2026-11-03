@@ -1,7 +1,7 @@
 import { expect, it, vi } from 'vitest';
 import { SpeechBudget } from './speech-budget';
 
-it('limits work in every rolling ten-second window and yields between inference calls', async () => {
+it('limits work in every rolling ten-second window, never pacing one phrase past 1.2 s, and yields', async () => {
   let now = 0;
   let yields = 0;
   const sleeps: number[] = [],
@@ -17,19 +17,22 @@ it('limits work in every rolling ten-second window and yields between inference 
       now += 2;
     },
   );
-  for (let i = 0; i < 300; i++)
+  for (let i = 0; i < 300; i++) {
+    if (i % 10 === 0) budget.beginJob();
     await budget.run(async () => {
       now += 30;
       events.push({ at: now, ms: 30 });
     });
+    expect(budget.jobWaitedMs).toBeLessThanOrEqual(1200);
+  }
   for (const event of events)
     expect(
       events
         .filter((e) => e.at <= event.at && e.at > event.at - 10000)
         .reduce((n, e) => n + e.ms, 0),
-    ).toBeLessThanOrEqual(1600);
+    ).toBeLessThanOrEqual(5000 + 1200);
   expect(yields).toBe(300);
-  expect(sleeps.some((ms) => ms > 1000)).toBe(true);
+  expect(sleeps.length).toBeGreaterThan(0);
 });
 it('does not delay a cheap decoder by reserving the much larger encoder estimate', async () => {
   let now = 0;
@@ -65,7 +68,7 @@ it('backs off without cancelling the in-flight result or disabling laughter', as
       return 'bro';
     }),
   ).toBe('bro');
-  expect(now).toBeGreaterThanOrEqual(1020);
+  expect(now).toBeGreaterThanOrEqual(520);
   expect(budget.diagnostics().backoffMs).toBe(0);
 });
 
