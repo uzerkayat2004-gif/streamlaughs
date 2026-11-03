@@ -10,19 +10,19 @@ import { useEffect, useState } from 'react';
 import { useStore } from 'zustand';
 import { AppIcon } from './AppIcon';
 import { command, connectSurface, surface } from './bridge';
+import { CompactSettings } from './CompactSettings';
 import { Backdrop, crowdLabel, Mark, Sheet, Timer } from './components';
 import { db } from './db';
-import { CompactSettings } from './CompactSettings';
-import { VersionButton } from './VersionButton';
 import { StreamerAvatar } from './HistoryView';
 import type { StreamerProfile } from './history';
 import { SITE_URL } from './site';
+import { VersionButton } from './VersionButton';
 
 const STREAMER_PAGE = `${SITE_URL || PRODUCT.siteUrl}/dashboard?from=extension`;
 
+import { permissionHelp, verifyVisibleMicrophone } from './audio/microphone';
 import { stopWithPreview } from './stop-preview';
 import { audioNotice, friendlyError } from './ui-status';
-import { verifyVisibleMicrophone, permissionHelp } from './audio/microphone';
 import { resolveWatchContext } from './watch-context';
 
 export function Popup() {
@@ -361,6 +361,18 @@ export function Popup() {
             }
           >
             test my mic
+          </button>
+          <span>·</span>
+          <button
+            type="button"
+            className="textbtn"
+            onClick={() =>
+              void chrome.tabs.create({
+                url: chrome.runtime.getURL('/mic-test.html#teach'),
+              })
+            }
+          >
+            teach my words
           </button>
         </nav>
         <a

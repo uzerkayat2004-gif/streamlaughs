@@ -2962,3 +2962,29 @@ svg {
 @media(prefers-reduced-motion:reduce) { .rating-slide * {animation:none!important;transition:none!important;} }
 
 .rating-numbers,.rating-reasons {border:0;padding:0;margin:0;min-width:0;}
+
+.teach-words {
+  margin-top: 36px;
+  border-top: 1px solid #ffffff1a;
+}
+.teach-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 4px;
+}
+.teach-chip {
+  font: 600 13px var(--ui);
+  color: #fff;
+  background: #ffffff0f;
+  border: 1px solid #ffffff2a;
+  border-radius: 999px;
+  padding: 7px 14px;
+  cursor: pointer;
+}
+.teach-chip.is-on {
+  color: #111;
+  background: #2ee6c5;
+  border-color: #2ee6c5;
+}
+.teach-chips { border: 0; padding: 0; min-width: 0; }

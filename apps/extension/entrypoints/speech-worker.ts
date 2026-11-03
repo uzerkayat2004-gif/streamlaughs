@@ -2,6 +2,7 @@ import { normalizeReaction } from '@laughline/shared';
 import { AUDIO_DEBUG } from '../src/audio/config';
 import { logAudioError, safeError } from '../src/diagnostics';
 import { INFERENCE_CONFIG } from '../src/inference/config';
+import { SPOT_FORMS } from '../src/inference/keyword-spot';
 import { installLocalAssetPolicy } from '../src/inference/local-assets';
 import { LocalModels } from '../src/inference/models';
 import {
@@ -10,6 +11,18 @@ import {
   redactDebugTranscript,
 } from '../src/inference/rules';
 import { SpeechBudget } from '../src/inference/speech-budget';
+import {
+  addTemplate,
+  dtwDistance,
+  loadTemplates,
+  MATCH_MAX,
+  MAX_CLIP_SECONDS,
+  matchVoice,
+  OTHER,
+  usableTemplates,
+  type VoiceTemplate,
+  features as voiceFeatures,
+} from '../src/inference/voice-match';
 import { TaskProbe } from '../src/stutter';
 
 // Slow transcription has its own event loop; it cannot hold microphone frame ACKs.
@@ -61,6 +74,24 @@ export default defineUnlistedScript(() => {
       ? tokens.map(() => 'Bro').join(' ')
       : text;
   }
+  // Personal voice examples (taught on the mic page, or learned when a model
+  // heard a word clearly). Reloaded every 15 s so teaching applies mid-session.
+  let voice: { all: VoiceTemplate[]; usable: VoiceTemplate[]; at: number } = {
+    all: [],
+    usable: [],
+    at: 0,
+  };
+  async function voiceTemplates() {
+    if (Date.now() - voice.at > 15000) {
+      const all = await loadTemplates().catch(() => voice.all);
+      voice = { all, usable: usableTemplates(all), at: Date.now() };
+    }
+    return voice;
+  }
+  function learnVoice(t: VoiceTemplate) {
+    voice.at = 0;
+    void addTemplate(t).catch(() => {});
+  }
   function padClip(samples: Float32Array, pad: number) {
     const out = new Float32Array(samples.length + pad * 2);
     out.set(samples, pad);
@@ -107,6 +138,17 @@ export default defineUnlistedScript(() => {
         let checked: string | null = null;
         const hasReaction = (t: string) =>
           !!extractWords(broSound(t), { short: true }).phrases.length;
+        const fromModel = text;
+        const voiceClip = samples.length <= 16000 * MAX_CLIP_SECONDS;
+        const feats = voiceClip ? voiceFeatures(samples) : [];
+        let voiced: ReturnType<typeof matchVoice> = null;
+        if (feats.length && !hasReaction(text)) {
+          // Generic models mishear how many people shout a reaction ("bro"
+          // came out as "No", "Oh", "The"); compare with this user's own voice.
+          voiced = matchVoice(feats, (await voiceTemplates()).usable);
+          if (voiced?.accepted)
+            text = SPOT_FORMS[voiced.word]?.[0] ?? voiced.word;
+        }
         if (isShort && !hasReaction(text)) {
           // Moonshine Tiny mishears lone short reactions; Whisper gets most.
           checked = await models
@@ -120,6 +162,42 @@ export default defineUnlistedScript(() => {
           if (spotted?.accepted) text = spotted.text;
         }
         if (isShort) text = broSound(text);
+        if (feats.length && !voiced?.accepted && !spotted?.accepted) {
+          // Learn this user's voice from clips a model heard plainly.
+          const heardText = hasReaction(fromModel)
+            ? fromModel
+            : checked && hasReaction(checked)
+              ? checked
+              : '';
+          const plain = (heardText.match(/[a-z']+/gi) ?? []).length;
+          const words = heardText
+            ? extractWords(heardText, { short: true }).phrases
+            : [];
+          const known = (await voiceTemplates()).all;
+          const nearReaction = known.some(
+            (t) =>
+              t.word !== OTHER && dtwDistance(feats, t.feats) < MATCH_MAX + 0.1,
+          );
+          if (
+            words.length === 1 &&
+            plain <= 3 &&
+            !/\bpro\b/i.test(heardText) &&
+            SPOT_FORMS[words[0]!.text]
+          )
+            learnVoice({
+              word: words[0]!.text,
+              source: 'auto',
+              feats,
+              at: Date.now(),
+            });
+          else if (
+            !heardText &&
+            !nearReaction &&
+            /[a-z]{2,}/i.test(fromModel) &&
+            !laughInTranscript(fromModel)
+          )
+            learnVoice({ word: OTHER, source: 'auto', feats, at: Date.now() });
+        }
 
         const confidence = models.lastSpeechConfidence;
         const rejection = text.trim()
@@ -140,6 +218,9 @@ export default defineUnlistedScript(() => {
           heard: (
             (checked !== null
               ? `check "${redactDebugTranscript(checked).slice(0, 40)}" · `
+              : '') +
+            (voiced
+              ? `voice ${voiced.word} ${voiced.distance.toFixed(2)}/${Number.isFinite(voiced.margin) ? voiced.margin.toFixed(2) : '-'}${voiced.accepted ? ' ✓' : ''} · `
               : '') +
             (spotted
               ? `spot ${spotted.word || '-'} ${spotted.logp.toFixed(1)}/${spotted.margin.toFixed(1)}${spotted.accepted ? ' ✓' : ''} · `

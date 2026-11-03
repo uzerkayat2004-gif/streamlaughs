@@ -332,6 +332,13 @@ Owner's 0.9.9 report: laughs now work (9 saved, recap 14). Words 0 of 9: Moonshi
 - DSP laugh rhythm: pulses at voicing ≥0.3 (was 0.4), slower chuckles up to 2.5 Hz / 500 ms gaps, for soft laughs.
 Unit tests: inference/audio 164 + 4 new pass, 3 pre-existing mock failures. Not hardware-tested.
 
+## 2026-11-04 · v0.10.2 · personal voice match ("teach your words") (Hark)
+
+- Evidence: owner's real recording (10x "bro" + sentences + laughs). Whisper tiny heard his "bro" as No/Oh, Moonshine as Pro/The/blank; Whisper base 3/10, Whisper small ~4/10. A bigger generic model is not the fix.
+- Added src/inference/voice-match.ts: MFCC (12 coeffs, 10 ms) + DTW against the user's own examples, with everyday-word competitors and a margin. Offline on the owner's audio: 21/21 bro hits over 3 teach sets, 0 false hits on his sentences/laughs; Piper same-voice 0 false hits on Go/Right/The/Throw/Okay so.
+- Teach UI on the mic page (popup "teach my words"); auto-learning from plainly heard short reactions (used only once two agree) and everyday short clips as competitors. IndexedDB, numbers only.
+- Limits: not run in a real browser here; tested offline in Node only.
+
 ## 2026-11-03 · v0.10.1 · quick "bro"s never reached the word model; Whisper second opinion (Hark)
 
 Owner's 0.10.0 report (Headset Z1, micLevel 0.009): 0 words, only 5 voice clips in the session; spot scores −9 to −12. Some laughs counted while he was just talking.
