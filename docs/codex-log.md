@@ -332,6 +332,12 @@ Owner's 0.9.9 report: laughs now work (9 saved, recap 14). Words 0 of 9: Moonshi
 - DSP laugh rhythm: pulses at voicing ≥0.3 (was 0.4), slower chuckles up to 2.5 Hz / 500 ms gaps, for soft laughs.
 Unit tests: inference/audio 164 + 4 new pass, 3 pre-existing mock failures. Not hardware-tested.
 
+## 2026-11-04 · v0.10.4 · no sound tags, words beat hype (Hark)
+
+- His 0.10.3 report: Whisper base loaded (29 s) but wrote loud shouts as tags ([B·4] = likely [Bang], [M·5] = [Music]); both loud clips became hype shouts instead of words.
+- Fix: begin_suppress_tokens bans tag-opening tokens ([ ( * ♪) as first token. On his recording "*mimics*" -> "Man", "*laughs*" -> "ha ha ha" (still a laugh); every other clip unchanged.
+- Hype is now decided after transcription and only when no word and no laugh was found.
+
 ## 2026-11-04 · v0.10.3 · multilingual Whisper base checker, invisible voice learning (Hark)
 
 - Owner rejected the teach screen (feels cheap); removed it. Voice match stays, auto-learning only.

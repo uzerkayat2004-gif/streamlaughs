@@ -124,6 +124,33 @@ export class LocalModels implements ModelRunner {
     if (extractor instanceof WhisperFeatureExtractor)
       compactWhisperFeatures(extractor, () => this.currentSpeechBudget);
   }
+  /**
+   * Whisper base wrote loud shouted words as sound tags ("[Bang]", "*mimics*",
+   * "[Music]") and laughs as "*laughs*". Banning tag-opening tokens as the
+   * first token makes it write the word ("Man") or "ha ha ha" instead.
+   */
+  private tagTokens?: number[];
+  private noTags(pipe = this.whisper) {
+    if (!pipe || this.speechModel !== 'whisper') return {};
+    if (!this.tagTokens) {
+      const raw = (pipe.tokenizer as unknown as { model?: { vocab?: unknown } })
+        .model?.vocab;
+      const entries: [string, number][] = Array.isArray(raw)
+        ? raw.map((w, i): [string, number] => [String(w), i])
+        : raw instanceof Map
+          ? [...raw.entries()]
+          : Object.entries((raw ?? {}) as Record<string, number>);
+      this.tagTokens = entries
+        .filter(([w]) => /^(Ġ)?[[(*♪]/.test(w))
+        .map(([, i]) => i);
+    }
+    // Keep Whisper's own begin suppression: space (220) and end of text.
+    const eot = Number(
+      (pipe.model.generation_config as { eos_token_id?: number } | undefined)
+        ?.eos_token_id ?? 50257,
+    );
+    return { begin_suppress_tokens: [220, eot, ...this.tagTokens] };
+  }
   lastSpeechConfidence: SpeechConfidence = {
     avgLogprob: null,
     noSpeechProbability: null,
@@ -384,6 +411,7 @@ export class LocalModels implements ModelRunner {
     // Transformers forwards generation options to model.generate; its ASR convenience type omits stopping_criteria.
     const options = {
       ...CHECK_OPTIONS,
+      ...this.noTags(),
       // Fewer tokens for short clips: a 1 s reaction is 1 to 3 words, and the
       // extra room only filled with invented sentences.
       max_new_tokens: Math.max(5, Math.ceil((samples.length / 16000) * 4) + 2),

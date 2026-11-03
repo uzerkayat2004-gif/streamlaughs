@@ -686,8 +686,8 @@ export class InferencePipeline {
       for (let i = 0; i < samples.length; i++) samples[i]! *= k;
     }
     const duration = samples.length / 16;
-    if (rms >= C.loudSpeechRms && duration <= C.loudSpeechMaximumMs)
-      this.decision('hype', 0.7, rms, segment.end, false);
+    // A loud short shout counts as hype only after the word model found no
+    // reaction word in it (see startSpeech); words win over hype.
     this.speechQueue.push({
       start: segment.start,
       samples,
@@ -792,6 +792,12 @@ export class InferencePipeline {
         if (this.debug) this.lastTranscript = redactDebugTranscript(text);
         if (result.phrases.length)
           this.event({ kind: 'words', ts: speech.ts, phrases: result.phrases });
+        else if (
+          !(typeof value !== 'string' && (value.laughed || wordlessLaugh)) &&
+          speech.rms >= C.loudSpeechRms &&
+          speech.duration <= C.loudSpeechMaximumMs
+        )
+          this.decision('hype', 0.7, speech.rms, speech.ts, false);
         if (result.hype)
           this.decision('hype', 0.9, speech.rms, speech.ts, false);
       } catch (error) {

@@ -1,7 +1,8 @@
-# StreamLaughs v0.10.3
+# StreamLaughs v0.10.4
 
 see who's laughing with you.
 
+- Loud shouted words now count as words: the speech model used to write them as sound tags like "[Bang]" or "[Music]". A loud shout only counts as a hype shout when no reaction word was in it.
 - Better word catching for accents: words now use multilingual Whisper base instead of Moonshine (heard a real Indian-English "bro" 8/10 times, English-only tiny 0/10). StreamLaughs also quietly learns each person's own way of saying a reaction once it hears it clearly, then matches it. No setup; only voice numbers stay on your PC, never audio.
 
 - Reaction Engine v2: immediate listening, a continuous soft noise floor, smoothed laughter confidence and one count per episode. Normal speech reduces laugh confidence.
