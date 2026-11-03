@@ -39,7 +39,8 @@ afterEach(() => {
   vi.unstubAllGlobals();
   WorkerFake.instances = [];
 });
-it('terminates the speech worker for the safety pause, keeps the laugh worker, and recreates speech on recovery', () => {
+// v0.9.4: the automatic speech safety pause was removed (it starved words).
+it.skip('terminates the speech worker for the safety pause, keeps the laugh worker, and recreates speech on recovery', () => {
   vi.stubGlobal('Worker', WorkerFake);
   vi.stubGlobal('chrome', {
     runtime: { getURL: (p: string) => `chrome-extension://test${p}` },

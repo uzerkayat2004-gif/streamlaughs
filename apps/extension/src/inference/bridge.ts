@@ -158,7 +158,11 @@ export class InferenceBridge {
       laugh: switches.laughModel,
       // Only measured playback trouble pauses this worker. Wall time includes
       // cold WASM work and browser scheduling; it does not prove audio trouble.
-      speech: switches.speechModel && !automaticSpeechPause,
+      // v0.9.4: never auto-pause words. The "underrun" signal came from our own
+      // mic AudioContext, not Twitch (Twitch plays natively), and each pause
+      // killed the in-flight phrase and reloaded Moonshine, so on busy laptops
+      // words were off almost all the time.
+      speech: switches.speechModel && automaticSpeechPause !== undefined,
     };
     if (next.laugh === this.modes.laugh && next.speech === this.modes.speech)
       return;

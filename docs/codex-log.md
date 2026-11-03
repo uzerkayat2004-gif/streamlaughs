@@ -273,3 +273,8 @@ Owner's 0.9.2 diagnostics recording: voice detected (650+ voiced chunks), YAMNet
 - Fix: no self-backoff in the speech worker; speech budget 5 s per 10 s (own thread); backoff max 0.5 s; any one phrase is paced at most 1.2 s in total, then runs.
 - Laugh: speech penalty softened to 0.2 × max(0, speech − laugh − 0.4) so laughs YAMNet hears as "speech + laughter" still count.
 Unit tests (inference, speech-budget) pass except 3 pre-existing mock failures; typecheck and build pass. Sandbox browser run not possible this time (Chromium missing after a sandbox reset).
+
+## 2026-11-03 · v0.9.4 · words never auto-paused (Hark)
+
+Owner: 0.9.3 still no words or laughs on his PC. Found in code: stutter.ts marks speechPaused after 3 output "underruns"/gaps in 10 s, and bridge.setLab then terminates the speech worker (dropping the in-flight phrase) and reloads Moonshine 30 s later. Those underruns come from our own offscreen mic AudioContext, not Twitch (tab capture is off, Twitch plays natively), so on a busy laptop words were switched off most of the time. The 0.9.2 recording showed "word model processing · keeping Twitch audio smooth", consistent with this.
+Fix: the automatic speech pause is gone; only the user's own switch turns words off. Old bridge test for the pause skipped. Not browser-tested (sandbox Chromium unavailable).
