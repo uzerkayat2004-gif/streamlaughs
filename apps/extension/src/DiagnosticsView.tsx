@@ -50,9 +50,7 @@ export function Diagnostics() {
           }}
         />
         <p role="status">
-          {(ai?.health.calibrationRemainingMs ?? 0) > 0
-            ? 'stay quiet for 3 sec, then laugh or say “W” or “let’s go”.'
-            : micProblem(report) || 'ready · laugh or say “W” or “let’s go”.'}
+          {micProblem(report) || 'ready · laugh or say “W” or “let’s go”.'}
         </p>
         <button
           type="button"
@@ -70,9 +68,7 @@ export function Diagnostics() {
                     ? 'RETRY_MIC'
                     : 'MIC_TEST_START',
               });
-              setMessage(
-                'mic restarted · stay quiet for three seconds, then react',
-              );
+              setMessage('mic restarted · react as soon as the levels move');
             } catch (error) {
               setMessage(
                 error instanceof Error
@@ -181,7 +177,10 @@ export function Diagnostics() {
       {(['vad', 'yamnet', 'whisper'] as const).map((name) => (
         <section key={name}>
           <h3>
-            {name} ·{' '}
+            {name === 'whisper'
+              ? ai?.models.whisper.name || 'word model'
+              : name}{' '}
+            ·{' '}
             <span data-testid={`${name}-model-state`}>
               {ai?.models[name].phase ?? 'idle'}
             </span>
@@ -209,6 +208,28 @@ export function Diagnostics() {
         {ai?.guard.reason ?? 'waiting for audio'} · match:{' '}
         {(ai?.guard.correlation ?? 0).toFixed(3)}
       </p>
+      <p>
+        capture recovery: {audio?.recoveryAttempts ?? 0}/3 ·{' '}
+        {audio?.recoveryReason || 'no restart needed'}
+      </p>
+      {ai?.basicMode && (
+        <p role="status">
+          basic mode · YAMNet unavailable; local energy + rhythm fallback active
+        </p>
+      )}
+      <p>laugh confidence: {(ai?.laughConfidence ?? 0).toFixed(3)}</p>
+      <h2>last 10 decisions</h2>
+      <ul>
+        {ai?.accuracyLog.slice(-10).map((e, i) => (
+          <li key={`${e.ts}-${i}`}>
+            {new Date(e.ts).toLocaleTimeString()} · {e.kind} ·{' '}
+            {e.kind === 'laugh'
+              ? `confidence ${e.laughter.toFixed(3)}`
+              : e.canonical || 'no canonical reaction'}{' '}
+            · {e.accepted ? 'counted' : e.reason}
+          </li>
+        ))}
+      </ul>
       <h2>last detection events</h2>
       <ul>
         {ai?.events.map((event, index) => (
@@ -220,7 +241,7 @@ export function Diagnostics() {
       </ul>
       {!ai?.events.length && <p>none yet</p>}
       <AccuracyLog inference={ai} />
-      <h2>last 20 speech decisions · this view only</h2>
+      <h2>last 10 speech decisions · this view only</h2>
       <p>transcripts below are temporary and excluded from copy report.</p>
       <pre>{phrase || 'say a reaction while this view is open'}</pre>
       <h2>report details</h2>

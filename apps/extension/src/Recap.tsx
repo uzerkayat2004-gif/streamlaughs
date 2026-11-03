@@ -300,12 +300,19 @@ export function Recap() {
               <>
                 <AppIcon size={96} />
                 <h1 className="x-ln story-title">
-                  we didn’t hear anything this time
+                  {(session?.heardAudio ?? recap.heardAudio) === false
+                    ? 'your mic didn’t send audio'
+                    : 'heard you · no reactions this time'}
                 </h1>
                 <p className="x-ln x-sub">
-                  let’s check your mic before the next stream.
+                  {(session?.heardAudio ?? recap.heardAudio) === false
+                    ? 'choose your input and test the moving level bar.'
+                    : 'some nights are just for watching.'}
                 </p>
-                <div className="x-ln">{micCheck}</div>
+                <div className="x-ln">
+                  {(session?.heardAudio ?? recap.heardAudio) === false &&
+                    micCheck}
+                </div>
               </>
             )}
             {slide === 'rating' && (
@@ -500,7 +507,12 @@ export function Recap() {
                     see all my streamers
                   </button>
                 </div>
-                {!recap.totalLaughs && <div className="x-ln">{micCheck}</div>}
+                {!recap.totalLaughs && (
+                  <div className="x-ln">
+                    {(session?.heardAudio ?? recap.heardAudio) === false &&
+                      micCheck}
+                  </div>
+                )}
                 <button type="button" className="textbtn" onClick={() => go(0)}>
                   replay
                 </button>

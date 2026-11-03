@@ -37,11 +37,11 @@ it('never counts speech-like syllable rhythm when the classifier says speech, no
   expect(
     pipeline
       .diagnostics()
-      .accuracyLog.some((e) => e.reason === 'laughter score too low'),
+      .accuracyLog.some((e) => e.reason === 'speech / low laugh confidence'),
   ).toBe(true);
   pipeline.clear();
 });
-it('rejects confident ASR reaction text from a laughter-class segment', async () => {
+it('keeps a VAD-approved reaction without an extra YAMNet speech admission gate', async () => {
   const events: { kind: string }[] = [],
     floor = new AcousticFloor();
   floor.ingest(new Float32Array(320), -4000);
@@ -73,12 +73,10 @@ it('rejects confident ASR reaction text from a laughter-class segment', async ()
   }
   await p.finish();
   expect(p.diagnostics().stages.speechResults).toBeGreaterThan(0);
-  expect(events.some((e) => e.kind === 'words')).toBe(false);
-  expect(
-    p
-      .diagnostics()
-      .accuracyLog.some((e) => e.reason === 'not a speech-class segment'),
-  ).toBe(true);
+  expect(events.some((e) => e.kind === 'words')).toBe(true);
+  expect(p.diagnostics().accuracyLog.some((e) => e.reason === 'accepted')).toBe(
+    true,
+  );
   p.clear();
 });
 it('retains the original speech-class evidence while a valid slow ASR result outlives rolling history', async () => {

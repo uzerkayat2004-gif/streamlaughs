@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { CaptureStateSchema, initialCaptureState } from './capture';
 import { ReplaySchema, replayPosition, replayPage } from './replay';
-import { sessionWord } from './reaction-words';
+import { sessionWord, topReactionWords } from './reaction-words';
 import { isApprovedPhrase } from './privacy';
 import {
   emptyInferenceHealth,
@@ -57,6 +57,7 @@ export const MySessionSchema = z.object({
   live: z.boolean().optional(),
   streamKey: z.string().max(80).optional(),
   rating: z.number().int().min(1).max(10).optional(),
+  heardAudio: z.boolean().optional(),
   startedAt: z.number(),
   endedAt: z.number().nullable(),
   laughCount: z.number().int().nonnegative(),
@@ -130,6 +131,8 @@ export const RecapSchema = z.object({
   durationSeconds: z.number().nonnegative().optional(),
   createdAt: z.number(),
   seenAt: z.number().nullable().optional(),
+  heardAudio: z.boolean().optional(),
+  topWords: z.array(WordSchema).max(3).optional(),
   totalLaughs: z.number().int().nonnegative(),
   crowdViewers: z.number().int().nonnegative(),
   topWord: z.string(),
@@ -326,6 +329,8 @@ export function createRecap(session: MySession, now: number): Recap {
     createdAt: now,
     seenAt: null,
     totalLaughs: session.laughCount,
+    heardAudio: session.heardAudio,
+    topWords: topReactionWords(session.topWords),
     crowdViewers: session.crowdViewers,
     topWord: word?.word ?? '—',
     wordCount: word?.count ?? 0,

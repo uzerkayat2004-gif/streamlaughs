@@ -1,7 +1,6 @@
 import { normalizeReaction } from '@laughline/shared';
 import { AUDIO_DEBUG } from '../src/audio/config';
 import { safeError, logAudioError } from '../src/diagnostics';
-import { speechConfidenceReason } from '../src/inference/accuracy';
 import { INFERENCE_CONFIG } from '../src/inference/config';
 import { installLocalAssetPolicy } from '../src/inference/local-assets';
 import { LocalModels } from '../src/inference/models';
@@ -69,10 +68,11 @@ export default defineUnlistedScript(() => {
         busy = true;
         const includePreview = previewUntil > Date.now();
         text = await models.words(samples, false, budget);
-        models.status.whisper.error = '';
+
         const confidence = models.lastSpeechConfidence;
-        const rejection =
-          speechConfidenceReason(confidence) || hallucinationReason(text);
+        const rejection = text.trim()
+          ? hallucinationReason(text)
+          : 'empty transcript';
         const extracted = extractWords(text);
         const result = {
           ...(rejection
@@ -107,7 +107,7 @@ export default defineUnlistedScript(() => {
             result,
             ...(includePreview
               ? {
-                  previewText: `${result.phrases.length ? 'kept' : 'rejected'} · ${result.rejection || 'approved reaction'} · logp ${confidence.avgLogprob?.toFixed(3) ?? 'unavailable'} · no-speech ${confidence.noSpeechProbability?.toFixed(3) ?? 'unavailable'} · segment RMS ${rms.toFixed(4)} · ${text.slice(0, 400)} · rejected words: ${rejectedWords}`,
+                  previewText: `${new Date().toLocaleTimeString()} · ${result.phrases.map((p) => p.text).join(', ') || 'no canonical reaction'} · ${result.phrases.length ? 'counted' : 'rejected'} · ${result.rejection || 'approved reaction'} · logp ${confidence.avgLogprob?.toFixed(3) ?? 'unavailable'} · no-speech ${confidence.noSpeechProbability?.toFixed(3) ?? 'unavailable'} · segment RMS ${rms.toFixed(4)} · ${redactDebugTranscript(text).slice(0, 400)} · rejected words: ${redactDebugTranscript(rejectedWords)}`,
                 }
               : {}),
             ...(AUDIO_DEBUG

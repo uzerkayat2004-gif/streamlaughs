@@ -4,12 +4,13 @@ import {
   CrowdMinuteSchema,
   type CrowdPacket,
   CROWD_LIMITS as L,
+  canonicalize,
 } from '@laughline/shared';
 
 type Contributor = {
   seen: number;
   laughed: number;
-  phrases: Map<string, number>;
+  phrases: Map<string, { ts: number; count: number }[]>;
   hype: { ts: number; count: number }[];
   test: boolean;
 };
@@ -23,14 +24,19 @@ type Minute = {
   samples: number;
   lastSecond: number;
   words: Map<string, Set<string>>;
+  wordCounts: Map<string, number>;
   hype: number;
   test: boolean;
   spikes: CrowdMinute['moments'];
 };
-const sorted = (words: Map<string, Set<string>>, limit: number) =>
+const sorted = (
+  words: Map<string, Set<string>>,
+  limit: number,
+  counts?: Map<string, number>,
+) =>
   [...words]
-    .map(([text, ids]) => ({ text, count: ids.size }))
-    .filter((x) => x.count >= 3)
+    .filter(([, ids]) => ids.size >= 3)
+    .map(([text, ids]) => ({ text, count: counts?.get(text) ?? ids.size }))
     .sort((a, b) => b.count - a.count || a.text.localeCompare(b.text))
     .slice(0, limit);
 
@@ -39,6 +45,41 @@ export class ChannelAggregation {
   private minute: Minute | null = null;
   private completed: CrowdMinute[] = [];
   private lastLaughing = 0;
+  private streamAt = 0;
+  private publishedWords = new Set<string>();
+  private lastActivity = 0;
+  private streamWords = new Map<string, Set<string>>();
+  private streamCounts = new Map<string, number>();
+  restoreStreamTotals(total: {
+    startedAt: number;
+    lastAt: number;
+    words: { text: string; count: number }[];
+  }) {
+    if (Date.now() - total.lastAt > 30 * 60000) return;
+    this.streamAt = total.startedAt;
+    this.lastActivity = total.lastAt;
+    for (const w of total.words)
+      if (canonicalize(w.text) === w.text && w.count >= 3) {
+        this.streamCounts.set(w.text, w.count);
+        this.publishedWords.add(w.text);
+      }
+  }
+  streamTotals(limit = 3) {
+    return {
+      startedAt: this.streamAt,
+      lastAt: this.lastActivity,
+      words: [...this.streamCounts]
+        .filter(
+          ([word]) =>
+            this.publishedWords.has(word) ||
+            (this.streamWords.get(word)?.size ?? 0) >= 3,
+        )
+        .map(([text, count]) => ({ text, count }))
+        .sort((a, b) => b.count - a.count || a.text.localeCompare(b.text))
+        .slice(0, limit),
+    };
+  }
+
   accept(id: string, data: CrowdContribution, now: number, test = false) {
     this.advance(now);
     let c = this.contributors.get(id);
@@ -49,7 +90,40 @@ export class ChannelAggregation {
     }
     c.seen = now;
     if (data.laughing) c.laughed = now;
-    for (const phrase of data.phrases) c.phrases.set(phrase, now);
+    if (!this.streamAt || now - this.lastActivity > 30 * 60000) {
+      this.streamAt = Math.floor(now);
+      this.streamWords.clear();
+      this.streamCounts.clear();
+      this.publishedWords.clear();
+    }
+    this.lastActivity = now;
+    for (const input of data.phrases) {
+      const phrase = canonicalize(input);
+      if (!phrase) continue;
+      const count = Math.min(
+        3,
+        data.phraseCounts?.find((p) => canonicalize(p.text) === phrase)
+          ?.count ?? 1,
+      );
+      const events = c.phrases.get(phrase) ?? [];
+      events.push({ ts: now, count });
+      c.phrases.set(phrase, events.slice(-60));
+      const ids = this.streamWords.get(phrase) ?? new Set<string>();
+      if (ids.size < L.identities) ids.add(id);
+      this.streamWords.set(phrase, ids);
+      this.streamCounts.set(
+        phrase,
+        (this.streamCounts.get(phrase) ?? 0) + count,
+      );
+      const minute = this.minute!;
+      const mids = minute.words.get(phrase) ?? new Set<string>();
+      if (mids.size < L.identities) mids.add(id);
+      minute.words.set(phrase, mids);
+      minute.wordCounts.set(
+        phrase,
+        (minute.wordCounts.get(phrase) ?? 0) + count,
+      );
+    }
     if (data.hype) c.hype.push({ ts: now, count: data.hype });
     c.hype = c.hype.filter((event) => event.ts > now - L.laughMs).slice(-5);
     const packet = this.snapshot(now);
@@ -70,7 +144,7 @@ export class ChannelAggregation {
           peakLaughingNow: m.peak,
           averageLaughPercent:
             Math.round((m.percentages / m.samples) * 100) / 100,
-          phrases: sorted(m.words, 5),
+          phrases: sorted(m.words, 5, m.wordCounts),
           hype: m.hype,
           testTraffic: m.test,
           moments: [
@@ -102,6 +176,7 @@ export class ChannelAggregation {
       samples: 0,
       lastSecond: -1,
       words: new Map(),
+      wordCounts: new Map(),
       hype: 0,
       test: false,
       spikes: [],
@@ -111,8 +186,11 @@ export class ChannelAggregation {
         this.contributors.delete(id);
         continue;
       }
-      for (const [phrase, ts] of c.phrases)
-        if (ts <= now - L.phraseMs) c.phrases.delete(phrase);
+      for (const [phrase, events] of c.phrases) {
+        const live = events.filter((e) => e.ts > now - L.phraseMs);
+        if (live.length) c.phrases.set(phrase, live);
+        else c.phrases.delete(phrase);
+      }
       c.hype = c.hype.filter((e) => e.ts > now - L.laughMs);
     }
   }
@@ -123,6 +201,7 @@ export class ChannelAggregation {
     ).length;
     if (sharing < 3) return { state: 'few' };
     const words = new Map<string, Set<string>>();
+    const counts = new Map<string, number>();
     let laughingNow = 0,
       hype = 0,
       testTraffic = false;
@@ -130,13 +209,17 @@ export class ChannelAggregation {
       if (c.laughed > now - L.laughMs) laughingNow++;
       hype += c.hype.reduce((n, e) => n + e.count, 0);
       testTraffic ||= c.test;
-      for (const phrase of c.phrases.keys()) {
+      for (const [phrase, events] of c.phrases) {
+        counts.set(
+          phrase,
+          (counts.get(phrase) ?? 0) + events.reduce((n, e) => n + e.count, 0),
+        );
         const ids = words.get(phrase) ?? new Set<string>();
         ids.add(id);
         words.set(phrase, ids);
       }
     }
-    const bubbles = sorted(words, 3);
+    const bubbles = sorted(words, 3, counts);
     return {
       state: 'live',
       sharing,
@@ -156,8 +239,8 @@ export class ChannelAggregation {
       for (const [id, c] of this.contributors) {
         if (m.ids.size < L.identities && c.seen > now - L.presenceMs)
           m.ids.add(id);
-        for (const [phrase, ts] of c.phrases)
-          if (ts >= m.minute) {
+        for (const [phrase, events] of c.phrases)
+          if (events.some((e) => e.ts >= m.minute)) {
             const ids = m.words.get(phrase) ?? new Set<string>();
             if (ids.size < L.identities) ids.add(id);
             m.words.set(phrase, ids);

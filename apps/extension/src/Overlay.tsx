@@ -1,4 +1,9 @@
-import { PRODUCT, replayPage, sessionWord } from '@laughline/shared';
+import {
+  PRODUCT,
+  replayPage,
+  sessionWord,
+  topReactionWords,
+} from '@laughline/shared';
 import { ChevronDown, GripHorizontal } from 'lucide-react';
 import { type CSSProperties, useEffect, useRef, useState } from 'react';
 import { useStore } from 'zustand';
@@ -546,6 +551,7 @@ export function Overlay({
             </button>
           </div>
           <FanPanel
+            topWords={topReactionWords(snapshot.session?.topWords ?? [])}
             calibrationMs={snapshot.inference.calibrationRemainingMs}
             bleed={snapshot.inference.bleedLikely}
             onUndoLaugh={() => {

@@ -42,8 +42,8 @@ it('publishes byte-identical stable/versioned artifacts and their actual SHA-256
 });
 
 it('stops before publishing artifacts at or above the static budget', () => {
-  expect(() => assertDownloadBudget(49_999_999)).not.toThrow();
-  expect(() => assertDownloadBudget(50_000_000)).toThrow(
+  expect(() => assertDownloadBudget(99_999_999)).not.toThrow();
+  expect(() => assertDownloadBudget(100_000_000)).toThrow(
     'stop before changing hosting',
   );
 });

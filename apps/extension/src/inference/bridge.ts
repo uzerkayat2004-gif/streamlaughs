@@ -294,7 +294,7 @@ export class InferenceBridge {
           typeof data.previewText === 'string'
         ) {
           this.previewLines.push(data.previewText.slice(0, 1000));
-          this.previewLines = this.previewLines.slice(-20);
+          this.previewLines = this.previewLines.slice(-10);
           this.speechText = this.previewLines.join('\n');
         } else this.speechText = '';
         if (

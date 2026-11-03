@@ -177,6 +177,35 @@ export default defineBackground(() => {
     state = { ...state, crowd, session };
     await publish();
   }
+  let ownerRecoveries = 0;
+  async function recoverOwner() {
+    if (!state.session || !state.settings.listen || ownerRecoveries >= 3)
+      return;
+    ownerRecoveries++;
+    try {
+      await ensureAudioOwner();
+      const owner = await ownerCommand({
+        target: 'offscreen',
+        type: 'AUDIO_START',
+        sessionId: state.session.id,
+        micDeviceId: await selectedMicrophone(),
+        nativePlayback: true,
+        sensitivity: state.settings.sensitivity ?? 'normal',
+        paused: state.status === 'paused',
+      });
+      activeOwnerId = owner?.ownerId ?? null;
+      state.capture = captureTransition(state.capture, {
+        type: 'workerRestart',
+        owner,
+      });
+    } catch (error) {
+      console.error(
+        'StreamLaughs: capture owner recovery failed',
+        safeError(error),
+      );
+    }
+    await publish();
+  }
   function runSource() {
     clearInterval(saveTimer);
     if (state.session?.replay) {
@@ -211,6 +240,7 @@ export default defineBackground(() => {
               owner: null,
             });
             await publish();
+            await recoverOwner();
           }
         });
       }, 5000);
@@ -362,6 +392,7 @@ export default defineBackground(() => {
           state.status = owner.phase === 'paused' ? 'paused' : 'recording';
       }
       await publish();
+      if (state.settings.listen && !owner) await recoverOwner();
       runSource();
     } else if (
       owner?.sessionId === state.capture.sessionId &&
@@ -381,6 +412,8 @@ export default defineBackground(() => {
   })();
   async function acceptOwner(owner: AudioReport) {
     if (owner.sessionId !== state.capture.sessionId) return;
+    if (state.session && owner.metrics.micEverNonzero)
+      state.session = { ...state.session, heardAudio: true };
     // A queued report from the graph deliberately closed by the listening toggle is stale.
     if (state.session && state.capture.phase === 'crowdOnly') return;
     if (owner.phase === 'idle') {
@@ -466,6 +499,7 @@ export default defineBackground(() => {
         return;
       }
     }
+    if (!state.session) ownerRecoveries = 0;
     const now = Date.now();
     Object.assign(delivery, { received: 0, applied: 0, error: '' });
     if (!state.session)
@@ -502,6 +536,7 @@ export default defineBackground(() => {
           crowdViewers: 0,
           topWords: [],
           source: 'local',
+          heardAudio: false,
         }),
       };
     replayAnchors = state.session?.replay ? [state.session.replay] : [];

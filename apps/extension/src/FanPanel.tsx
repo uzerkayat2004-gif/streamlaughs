@@ -22,6 +22,7 @@ export function FanPanel({
   channel = 'stream',
   elapsed = 0,
   word,
+  topWords = [],
   lastLaughSeconds,
   bestMoment,
 }: {
@@ -42,6 +43,7 @@ export function FanPanel({
   channel?: string;
   elapsed?: number;
   word?: string;
+  topWords?: { word: string; count: number }[];
   lastLaughSeconds?: number;
   bestMoment?: number;
 }) {
@@ -77,21 +79,22 @@ export function FanPanel({
             <strong>{count}</strong> laughs
           </button>
         </p>
-        {calibrationMs > 0 && (
-          <small role="status">
-            stay quiet for 3 sec · {Math.ceil(calibrationMs / 1000)}
-          </small>
-        )}
-        {bleed && (
-          <small>
-            Your mic can hear the stream. Earphones make laughs much more
-            accurate.
-          </small>
-        )}
-        {word && isApprovedPhrase(word) && (
-          <div>
-            your word: <b>{word}</b>
+        {topWords.length > 0 ? (
+          <div aria-label="your top three words">
+            {topWords.slice(0, 3).map((w, i) => (
+              <span key={w.word}>
+                {i ? ' · ' : ''}
+                {w.word === 'w' ? 'W' : w.word} ×{w.count}
+              </span>
+            ))}
           </div>
+        ) : (
+          word &&
+          isApprovedPhrase(word) && (
+            <div>
+              your word: <b>{word}</b>
+            </div>
+          )
         )}
         {lastLaughSeconds !== undefined && (
           <div>
@@ -129,10 +132,15 @@ export function FanPanel({
                 />
               ))}
             </div>
-            {words[0] && (
-              <div className="fan-word">
-                <span>top fan word</span>
-                <b>{words[0].word}</b>
+            {words.length > 0 && (
+              <div className="fan-word" aria-label="top three fan words">
+                <span>fan words · last minute</span>
+                <b>
+                  {words
+                    .slice(0, 3)
+                    .map((w) => `${w.word === 'w' ? 'W' : w.word} ×${w.count}`)
+                    .join(' · ')}
+                </b>
               </div>
             )}
           </section>

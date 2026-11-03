@@ -144,7 +144,7 @@ it('draws the 1080x1920 card with a filled initials circle, white letter, four l
   expect(canvas).toMatchObject({ width: 1080, height: 1920 });
   expect(text).toContainEqual({ value: 'G', color: '#FFFFFF' });
   for (const label of [
-    'most used word',
+    'your top words',
     'funniest word',
     'biggest minute',
     'hype shouts',

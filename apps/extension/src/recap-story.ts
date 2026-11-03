@@ -2,7 +2,6 @@ import { canRateStream } from '@laughline/shared';
 import {
   isApprovedPhrase,
   funniestWord,
-  sessionWord,
   type MySession,
   type Recap,
 } from '@laughline/shared';
@@ -57,20 +56,11 @@ export function storyData(
   ratingsEnabled = true,
 ) {
   const words = (
-    session?.topWords ?? [{ word: recap.topWord, count: recap.wordCount }]
+    session?.topWords ??
+    recap.topWords ?? [{ word: recap.topWord, count: recap.wordCount }]
   )
     .filter((w) => w.count > 0 && isApprovedPhrase(w.word))
-    .sort(
-      (a, b) =>
-        Number(
-          b.word === (session ? sessionWord(session)?.word : recap.topWord),
-        ) -
-          Number(
-            a.word === (session ? sessionWord(session)?.word : recap.topWord),
-          ) ||
-        b.count - a.count ||
-        a.word.localeCompare(b.word),
-    )
+    .sort((a, b) => b.count - a.count || a.word.localeCompare(b.word))
     .slice(0, 3);
   const chips = [
     [recap.hype, 'hype shouts'],

@@ -39,7 +39,12 @@ export const EchoStateSchema = z
   })
   .strict();
 
-export const modelState = () => ({
+export const modelState = (): {
+  phase: 'idle' | 'loading' | 'ready' | 'error';
+  error: string;
+  ms: number;
+  name?: string;
+} => ({
   phase: 'idle' as 'idle' | 'loading' | 'ready' | 'error',
   error: '',
   ms: 0,
@@ -47,6 +52,7 @@ export const modelState = () => ({
 const model = z
   .object({
     phase: z.enum(['idle', 'loading', 'ready', 'error']),
+    name: z.string().max(80).optional(),
     error: z.string().max(400),
     ms: z.number().nonnegative(),
   })
@@ -54,6 +60,7 @@ const model = z
 export const ModelStateSchema = model;
 export const AccuracyRecordSchema = z
   .object({
+    canonical: z.string().max(240).optional(),
     kind: z.enum(['laugh', 'words']),
     ts: z.number(),
     accepted: z.boolean(),
@@ -113,6 +120,8 @@ export const WorkerDiagnosticsSchema = z
       })
       .strict()
       .default(() => emptyStages()),
+    laughConfidence: z.number().min(0).max(1).default(0),
+    basicMode: z.boolean().default(false),
     laughScore: z.number().min(0).max(1).default(0),
     soundCpuMsPerSecond: z.number().nonnegative().default(0),
     speechOverruns: z.number().nonnegative().default(0),
@@ -210,6 +219,8 @@ export const emptyWorkerDiagnostics = (): WorkerDiagnostics => ({
     speech: emptyTasks(),
   },
   stages: emptyStages(),
+  laughConfidence: 0,
+  basicMode: false,
   laughScore: 0,
   soundCpuMsPerSecond: 0,
   speechCpuMsPerSecond: 0,
@@ -237,6 +248,8 @@ export const emptyWorkerDiagnostics = (): WorkerDiagnostics => ({
 });
 export const AudioDiagnosticsSchema = z
   .object({
+    recoveryAttempts: z.number().nonnegative().default(0),
+    recoveryReason: z.string().max(400).default(''),
     micWorklet: z
       .object({
         lastFrameAt: z.number().nonnegative(),

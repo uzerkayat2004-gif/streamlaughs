@@ -27,7 +27,7 @@ it('renders readable fan, personal, mic and control content with the approved wo
   for (const text of [
     'fans laughing now',
     '12',
-    'top fan word',
+    'fan words · last minute',
     'lets go',
     '<strong>3</strong> laughs',
     'microphone hearing you',

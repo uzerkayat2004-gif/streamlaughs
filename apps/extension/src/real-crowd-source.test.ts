@@ -98,6 +98,7 @@ it('sends only allowlisted labels and numeric masked swear counts, then opts out
     hype: 0,
     swears: 3,
     phrases: ['bro'],
+    phraseCounts: [{ text: 'bro', count: 3 }],
   });
   s.setSharing(false);
   const count = ws.sent.length;

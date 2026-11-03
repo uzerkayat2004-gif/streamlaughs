@@ -1,36 +1,11 @@
 import { z } from 'zod';
 import { isApprovedPhrase } from './privacy';
+import { canonicalize, REACTION_WORDS } from './reaction-words';
 
-export const CROWD_PHRASES = [
-  'lmao',
-  'lol',
-  'haha',
-  'bro',
-  'bruh',
-  'yo',
-  'no way',
-  'what',
-  'lets go',
-  'oh my god',
-  'no shot',
-  'wow',
-  'clip that',
-  'hype',
-  'nice',
-  'amazing',
-  'funny',
-  'good',
-  'great',
-  'wait',
-  'yes',
-  'not good',
-  'love',
-  'laugh',
-  'laughs',
-] as const;
-const vocabulary = new Set<string>(CROWD_PHRASES);
+export const CROWD_PHRASES = REACTION_WORDS;
 export const isCrowdPhrase = (text: string) =>
-  vocabulary.has(text) && isApprovedPhrase(text);
+  (canonicalize(text) === text || text === 'oh my god') &&
+  isApprovedPhrase(text);
 export const CrowdPhraseSchema = z.string().max(80).refine(isCrowdPhrase);
 export const ChannelLoginSchema = z.string().regex(/^[a-z0-9_]{1,25}$/);
 export const CROWD_LIMITS = {
@@ -40,7 +15,7 @@ export const CROWD_LIMITS = {
   tokenMs: 2 * 60 * 60 * 1000,
   presenceMs: 6000,
   laughMs: 5000,
-  phraseMs: 20000,
+  phraseMs: 60000,
   rateMs: 1000,
   retentionMs: 30 * 24 * 60 * 60 * 1000,
   fewKeepaliveMs: 25000,
@@ -55,16 +30,44 @@ export const CrowdContributionSchema = z
     hype: count,
     swears: count,
     phrases: z.array(z.string().max(80)).max(3),
+    phraseCounts: z
+      .array(
+        z
+          .object({
+            text: z.string().max(80),
+            count: z.number().int().min(1).max(3),
+          })
+          .strict(),
+      )
+      .max(3)
+      .optional(),
   })
   .strict()
   .refine((data) => data.laughing === 1 || data.intensity === 0)
   .transform((data) => ({
     ...data,
-    phrases: [...new Set(data.phrases.filter(isCrowdPhrase))],
+    phrases: [
+      ...new Set(
+        data.phrases.map(canonicalize).filter((s): s is string => s !== null),
+      ),
+    ],
+    ...(data.phraseCounts
+      ? {
+          phraseCounts: data.phraseCounts.flatMap((p) => {
+            const text = canonicalize(p.text);
+            return text && data.phrases.some((w) => canonicalize(w) === text)
+              ? [{ text, count: p.count }]
+              : [];
+          }),
+        }
+      : {}),
   }));
 export type CrowdContribution = z.infer<typeof CrowdContributionSchema>;
 const bubble = z
-  .object({ text: CrowdPhraseSchema, count: z.number().int().min(3).max(1024) })
+  .object({
+    text: CrowdPhraseSchema,
+    count: z.number().int().min(3).max(1_000_000_000),
+  })
   .strict();
 export const CrowdPacketSchema = z
   .discriminatedUnion('state', [
@@ -148,5 +151,17 @@ export const TimelineSchema = z
   .object({
     channel: ChannelLoginSchema,
     minutes: z.array(CrowdMinuteSchema).max(1440),
+    streamWords: z
+      .array(
+        z
+          .object({
+            startedAt: z.number().nonnegative(),
+            lastAt: z.number().nonnegative(),
+            words: z.array(bubble).max(3),
+          })
+          .strict(),
+      )
+      .max(30)
+      .optional(),
   })
   .strict();

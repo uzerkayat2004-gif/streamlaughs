@@ -22,6 +22,11 @@ SOURCES = [
 for file in ['config.json', 'generation_config.json', 'preprocessor_config.json', 'tokenizer.json', 'tokenizer_config.json', 'special_tokens_map.json', 'onnx/encoder_model_quantized.onnx', 'onnx/decoder_model_merged_quantized.onnx']:
     SOURCES.append(('whisper-tiny.en/' + file, f'https://huggingface.co/onnx-community/whisper-tiny.en/resolve/{REVISION}/{file}', 'Apache-2.0'))
 
+MOONSHINE_REVISION = 'a6da1241cd305dcd64eab1edbd615f2bb9aabb95'
+for file in ['config.json', 'generation_config.json', 'preprocessor_config.json', 'tokenizer.json', 'tokenizer_config.json', 'special_tokens_map.json', 'onnx/encoder_model_quantized.onnx', 'onnx/decoder_model_merged_quantized.onnx']:
+    SOURCES.append(('moonshine-tiny/' + file, f'https://huggingface.co/onnx-community/moonshine-tiny-ONNX/resolve/{MOONSHINE_REVISION}/{file}', 'MIT'))
+SOURCES.append(('licenses/Moonshine-MIT.txt', 'https://raw.githubusercontent.com/usefulsensors/moonshine/main/LICENSE', 'MIT'))
+
 def download(item):
     name, url, license_name = item
     path = BASE / name
@@ -37,7 +42,7 @@ def download(item):
         expected = EXPECTED.get(name, {})
         if expected.get('sourceSha256') and hashlib.sha256(raw).hexdigest() != expected['sourceSha256']:
             raise ValueError(f'Upstream source changed: {name}')
-        temporary.write_bytes(transform_asset(name, raw))
+        temporary.write_bytes(transform_asset(name, raw) if name.startswith('whisper-tiny.en/') else raw)
         temporary.replace(path)
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
     expected = EXPECTED.get(name)
@@ -48,5 +53,5 @@ def download(item):
 
 if __name__ == '__main__':
     with ThreadPoolExecutor(max_workers=4) as pool: receipts = list(pool.map(download, SOURCES))
-    MANIFEST.write_text(json.dumps({'whisperRevision': REVISION, 'files': receipts}, indent=2) + '\n', encoding='utf-8', newline='\n')
+    MANIFEST.write_text(json.dumps({'whisperRevision': REVISION, 'moonshineRevision': MOONSHINE_REVISION, 'files': receipts}, indent=2) + '\n', encoding='utf-8', newline='\n')
     print(f'Models and notices: {sum(x["bytes"] for x in receipts):,} bytes; SHA-256 manifest written.', flush=True)

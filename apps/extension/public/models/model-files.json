@@ -1,5 +1,6 @@
 {
   "whisperRevision": "2575352d61be1bf7225cf8f8b268a4678025fc58",
+  "moonshineRevision": "a6da1241cd305dcd64eab1edbd615f2bb9aabb95",
   "files": [
     {
       "path": "silero-v5.onnx",
@@ -104,6 +105,69 @@
       "bytes": 30718858,
       "sha256": "c0592d0749413c960569e1c7fb806b060d5d18f3ebad4a95cbf9a77dc6e9be52",
       "license": "Apache-2.0"
+    },
+    {
+      "path": "moonshine-tiny/config.json",
+      "url": "https://huggingface.co/onnx-community/moonshine-tiny-ONNX/resolve/a6da1241cd305dcd64eab1edbd615f2bb9aabb95/config.json",
+      "bytes": 921,
+      "sha256": "558e1e02069137c796ace1e50c48d8fe451f04a295929138e6bea885517f0edb",
+      "license": "MIT"
+    },
+    {
+      "path": "moonshine-tiny/generation_config.json",
+      "url": "https://huggingface.co/onnx-community/moonshine-tiny-ONNX/resolve/a6da1241cd305dcd64eab1edbd615f2bb9aabb95/generation_config.json",
+      "bytes": 147,
+      "sha256": "f9b3f711b57be7def2e50a8942f64f36ee0a55fad5b84ff93a687b6c5bcc1d44",
+      "license": "MIT"
+    },
+    {
+      "path": "moonshine-tiny/preprocessor_config.json",
+      "url": "https://huggingface.co/onnx-community/moonshine-tiny-ONNX/resolve/a6da1241cd305dcd64eab1edbd615f2bb9aabb95/preprocessor_config.json",
+      "bytes": 128,
+      "sha256": "fa43a7017ef85cd1d0fba0d9aae77c8adb16990ae6f11115631f41ec5d8aa679",
+      "license": "MIT"
+    },
+    {
+      "path": "moonshine-tiny/tokenizer.json",
+      "url": "https://huggingface.co/onnx-community/moonshine-tiny-ONNX/resolve/a6da1241cd305dcd64eab1edbd615f2bb9aabb95/tokenizer.json",
+      "bytes": 3761754,
+      "sha256": "7b913404bdd039af4756783218af4440bc07fb7d6d8258d677e34f95b3ec416f",
+      "license": "MIT"
+    },
+    {
+      "path": "moonshine-tiny/tokenizer_config.json",
+      "url": "https://huggingface.co/onnx-community/moonshine-tiny-ONNX/resolve/a6da1241cd305dcd64eab1edbd615f2bb9aabb95/tokenizer_config.json",
+      "bytes": 135735,
+      "sha256": "edaee394565d428ea98a663ae7209cdcfeefc5585c42d7a570ff7c986df2cd15",
+      "license": "MIT"
+    },
+    {
+      "path": "moonshine-tiny/special_tokens_map.json",
+      "url": "https://huggingface.co/onnx-community/moonshine-tiny-ONNX/resolve/a6da1241cd305dcd64eab1edbd615f2bb9aabb95/special_tokens_map.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "license": "MIT"
+    },
+    {
+      "path": "moonshine-tiny/onnx/encoder_model_quantized.onnx",
+      "url": "https://huggingface.co/onnx-community/moonshine-tiny-ONNX/resolve/a6da1241cd305dcd64eab1edbd615f2bb9aabb95/onnx/encoder_model_quantized.onnx",
+      "bytes": 7937661,
+      "sha256": "c6fc4b7bc5af75c0591fd157a1f3829b533d18e9769a888fd95a62e470dd4f4a",
+      "license": "MIT"
+    },
+    {
+      "path": "moonshine-tiny/onnx/decoder_model_merged_quantized.onnx",
+      "url": "https://huggingface.co/onnx-community/moonshine-tiny-ONNX/resolve/a6da1241cd305dcd64eab1edbd615f2bb9aabb95/onnx/decoder_model_merged_quantized.onnx",
+      "bytes": 20243286,
+      "sha256": "eed87831c3a6103534aae7d47a5d485025c659a1323901513961c39fe8a1a367",
+      "license": "MIT"
+    },
+    {
+      "path": "licenses/Moonshine-MIT.txt",
+      "url": "https://raw.githubusercontent.com/usefulsensors/moonshine/main/LICENSE",
+      "bytes": 14180,
+      "sha256": "fa7d1174dd8af6a7cd280be20b80d10095ed4c19b5b20b61a7715c3ad790dc5f",
+      "license": "MIT"
     }
   ]
 }

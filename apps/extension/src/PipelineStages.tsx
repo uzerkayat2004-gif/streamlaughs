@@ -51,15 +51,17 @@ export function PipelineStages({
     const failure = state?.error || runtime;
     return {
       name,
-      ok: !blocked && state?.phase === 'ready' && !failure,
+      ok: !blocked && state?.phase === 'ready' && !runtime,
       reason: waiting(
-        failure
-          ? `model failed to load/run: ${failure}`
-          : state?.phase === 'ready'
-            ? 'ready · bundled on this PC'
-            : state?.phase === 'loading'
-              ? 'loading local model…'
-              : 'not started · retry microphone',
+        state?.phase === 'ready' && !runtime
+          ? `${state.name || 'bundled model'} ready${state.error ? ' · ' + state.error : ''}`
+          : failure
+            ? `model failed to load/run: ${failure}`
+            : state?.phase === 'ready'
+              ? 'ready · bundled on this PC'
+              : state?.phase === 'loading'
+                ? 'loading local model…'
+                : 'not started · retry microphone',
       ),
     };
   };
@@ -105,33 +107,43 @@ export function PipelineStages({
       ok: !blocked && fresh,
       reason: waiting(
         fresh
-          ? `${Math.round(audio?.metrics.micFps ?? 0)} frames/s captured · ${Math.round(ai?.micFps ?? 0)} frames/s at worker · input channel ${(audio?.micWorklet.selectedChannel ?? 0) + 1}/${audio?.micWorklet.inputChannels ?? 0}${ai?.inputGaps ? ` · ${ai.inputGaps} input gaps` : ''}`
+          ? `${Math.round(audio?.metrics.micFps ?? 0)} frames/s captured · ${Math.round(ai?.micFps ?? 0)} frames/s at worker · averaging ${audio?.micWorklet.inputChannels ?? 0} input channels${ai?.inputGaps ? ` · ${ai.inputGaps} input gaps` : ''}`
           : 'no fresh 20 ms frames · retry microphone',
       ),
     },
     model('vad', 'VAD model loaded', ai?.vadError ?? ''),
-    model('yamnet', 'Laugh model loaded', ai?.soundError ?? ''),
+    model(
+      'yamnet',
+      ai?.basicMode ? 'Laugh model · basic mode' : 'Laugh model loaded',
+      ai?.soundError ?? '',
+    ),
     model('whisper', 'Word model loaded', ai?.speechError ?? ''),
     {
       name: 'Voice detected',
       ok: !blocked && (ai?.stages.voicedChunks ?? 0) > 0,
       reason: waiting(
         ai?.vadError ||
-          ((ai?.health.calibrationRemainingMs ?? 0) > 0
-            ? 'room calibration · stay quiet for three seconds, then speak'
-            : (ai?.stages.voicedChunks ?? 0) > 0
-              ? `${ai?.stages.voicedChunks} voiced chunks · current probability ${(ai?.health.vadProbability ?? 0).toFixed(2)}`
-              : 'not yet · say “W” near your selected microphone'),
+          ((ai?.stages.voicedChunks ?? 0) > 0
+            ? `${ai?.stages.voicedChunks} voiced chunks · current probability ${(ai?.health.vadProbability ?? 0).toFixed(2)}`
+            : 'not yet · say “W” near your selected microphone'),
       ),
     },
     {
       name: 'Laugh detected',
-      ok: !blocked && (ai?.laughDetectors.both ?? 0) > 0,
+      ok:
+        !blocked &&
+        (ai?.laughDetectors.both ?? 0) +
+          (ai?.laughDetectors.yamnet ?? 0) +
+          (ai?.laughDetectors.dsp ?? 0) >
+          0,
       reason:
         waiting(
           ai?.soundError ||
-            ((ai?.laughDetectors.both ?? 0) > 0
-              ? `${ai?.laughDetectors.both} confirmed laughs`
+            ((ai?.laughDetectors.both ?? 0) +
+              (ai?.laughDetectors.yamnet ?? 0) +
+              (ai?.laughDetectors.dsp ?? 0) >
+            0
+              ? `${(ai?.laughDetectors.both ?? 0) + (ai?.laughDetectors.yamnet ?? 0) + (ai?.laughDetectors.dsp ?? 0)} confirmed laughs`
               : lastLaugh?.reason ||
                 'not yet · laugh naturally; normal talking should stay uncounted'),
         ) + ` · last laugh score ${(ai?.laughScore ?? 0).toFixed(3)}`,

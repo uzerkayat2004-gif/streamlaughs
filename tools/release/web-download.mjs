@@ -13,8 +13,8 @@ import { slug } from './config.mjs';
 
 export function assertDownloadBudget(bytes) {
   assert(
-    Number.isSafeInteger(bytes) && bytes > 0 && bytes * 2 < 100_000_000,
-    'Download copies exceed the 100 MB static asset budget; stop before changing hosting',
+    Number.isSafeInteger(bytes) && bytes > 0 && bytes < 100_000_000,
+    'Download exceeds the 100 MB per-asset budget; stop before changing hosting',
   );
 }
 
@@ -24,7 +24,9 @@ export function publishDownload({ chrome, edge, directory, product }) {
     bytes.equals(readFileSync(edge)),
     'Chrome and Edge packages differ; cannot publish a universal ZIP',
   );
-  // A conservative 100 MB budget for both generated static copies together.
+  // Guard each generated CDN asset at 100 MB. Vercel's Hobby 100 MB CLI
+  // limit is for uploaded SOURCE files, not Git-build-generated static copies.
+  // https://vercel.com/docs/limits#static-file-uploads
   // The binary is served by the CDN, never by a Vercel Function.
   assertDownloadBudget(bytes.length);
   const name = slug(product.name);

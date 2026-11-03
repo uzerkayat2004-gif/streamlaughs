@@ -17,11 +17,7 @@ export default defineUnlistedScript(() => {
     private epoch: number;
     constructor(options: AudioWorkletNodeOptions) {
       super(options);
-      this.resampler = new MonoResampler(
-        sampleRate,
-        16000,
-        options.processorOptions?.source === 'mic' ? 'microphone' : 'average',
-      );
+      this.resampler = new MonoResampler(sampleRate, 16000, 'average');
       this.epoch = Number(options.processorOptions?.epochMs ?? 0);
       this.port.onmessage = ({ data }) => {
         if (data.type === 'ack') this.pending = Math.max(0, this.pending - 1);

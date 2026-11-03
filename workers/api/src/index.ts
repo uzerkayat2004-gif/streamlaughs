@@ -222,7 +222,16 @@ app.get('/v1/channels/:login/timeline', async (c) => {
   const response = await c.env.CHANNELS.get(
     c.env.CHANNELS.idFromName(channel.data),
   ).fetch(new Request(c.req.url, { headers }));
-  const result = await response.json<{ minutes: unknown[] }>();
-  return c.json({ channel: channel.data, minutes: result.minutes });
+  const result = await response.json<{
+    minutes: unknown[];
+    streamWords?: unknown[];
+  }>();
+  return c.json({
+    channel: channel.data,
+    minutes: result.minutes,
+    ...(c.req.header('X-StreamLaughs-Words') === '2' && result.streamWords
+      ? { streamWords: result.streamWords }
+      : {}),
+  });
 });
 export default app;

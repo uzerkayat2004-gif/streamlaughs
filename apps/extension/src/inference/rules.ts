@@ -1,4 +1,8 @@
-import { normalizeReaction, REACTION_WORDS } from '@laughline/shared';
+import {
+  canonicalize,
+  normalizeReaction,
+  REACTION_WORDS,
+} from '@laughline/shared';
 import type {
   PersonalEvent,
   PrivacyClass,
@@ -284,77 +288,51 @@ export function extractWords(text: string): {
   matched: number;
   rejected: number;
 } {
-  if (hallucinationReason(text))
-    return { phrases: [], hype: false, matched: 0, rejected: 1 };
-  // Whisper may spell the spoken letter instead of emitting its glyph. Only
-  // alias a complete standalone utterance; never rewrite an ordinary sentence.
-  if (/^\s*double[\s-]+(?:u|you|yew)[.!?\s]*$/i.test(text)) text = 'w';
-  const raw =
-    text
-      .replace(/[’‘]/g, "'")
-      .match(/[A-Za-z]+(?:'[A-Za-z]+)?/g)
-      ?.slice(0, 128) ?? [];
-  const tokens = raw.map((original) => {
-    const word = normalizeReaction(original);
-    return {
-      word,
-      class: privacyClass(common.has(word) ? word : original, word),
-    };
-  });
-  const phrases = new Map<
-    string,
-    { text: string; count: number; class: 'ok' | 'swear' }
-  >();
-  const add = (text: string, privacy: 'ok' | 'swear') => {
-    if (text.length > 80) return;
-    const key = `${privacy}:${text}`;
-    const previous = phrases.get(key);
-    if (previous) previous.count++;
-    else if (phrases.size < 64)
-      phrases.set(key, { text, count: 1, class: privacy });
-  };
-  let matched = 0,
-    rejected = 0;
-  for (let i = 0; i < tokens.length; i++) {
-    const token = tokens[i]!;
-    if (token.class === 'swear') {
-      add(maskSwear(token.word), 'swear');
-      continue;
-    }
-    if (token.class !== 'ok') {
-      rejected++;
-      continue;
-    }
-    let found = false;
-    for (const length of [3, 2, 1]) {
-      if (i + length > tokens.length) continue;
-      const group = tokens.slice(i, i + length),
-        text = group.map((t) => t.word).join(' ');
-      if (
-        group.every((t) => t.class === 'ok') &&
-        (REACTION_WORDS as readonly string[]).includes(text) &&
-        (!standaloneReactions.has(text) || tokens.every((t) => t.word === text))
-      ) {
-        add(text, 'ok');
-        matched++;
-        i += length - 1;
-        found = true;
-        break;
+  const empty = { phrases: [], hype: false, matched: 0, rejected: 1 };
+  if (hallucinationReason(text)) return empty;
+  const tokens = text
+    .replace(/['’]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z ]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 128);
+  if (tokens.some((w) => privacyClass(w) !== 'ok')) return empty;
+  const words = new Map<string, number>();
+  const whole = canonicalize(text);
+  if (whole) words.set(whole, 1);
+  else
+    for (let i = 0; i < tokens.length; i++) {
+      for (const n of [3, 2, 1]) {
+        if (i + n > tokens.length) continue;
+        const candidate = tokens.slice(i, i + n).join(' '),
+          canonical = canonicalize(candidate);
+        // Fuzzy spelling repair belongs to a complete short utterance. Inside
+        // sentences accept exact reactions/aliases, never arbitrary near-matches.
+        if (
+          canonical &&
+          (normalizeReaction(candidate) === candidate ||
+            (REACTION_WORDS as readonly string[]).includes(candidate) ||
+            ['letsgo', 'noway', 'oh my god'].includes(candidate))
+        ) {
+          words.set(canonical, (words.get(canonical) ?? 0) + 1);
+          i += n - 1;
+          break;
+        }
       }
     }
-    if (!found) {
-      rejected++;
-    }
-  }
+  const phrases = [...words].map(([text, count]) => ({
+    text,
+    count,
+    class: 'ok' as const,
+  }));
   return {
-    phrases: [...phrases.values()],
-    matched,
-    rejected,
-    hype: [...phrases.values()].some(
-      (p) =>
-        p.class === 'ok' &&
-        (C.hypePhrases as readonly string[]).includes(p.text),
+    phrases,
+    hype: phrases.some((p) =>
+      (C.hypePhrases as readonly string[]).includes(p.text),
     ),
+    matched: phrases.reduce((n, p) => n + p.count, 0),
+    rejected: phrases.length ? 0 : 1,
   };
 }
 export function redactDebugTranscript(text: string) {
@@ -411,6 +389,9 @@ export function mapSoundScores(
   for (const category of categories)
     for (const key of Object.keys(scores) as (keyof ClassScores)[])
       if (classes[key].includes(category.categoryName ?? ''))
-        scores[key] = Math.max(scores[key], category.score);
+        scores[key] =
+          key === 'laugh'
+            ? Math.min(1, scores[key] + category.score)
+            : Math.max(scores[key], category.score);
   return scores;
 }

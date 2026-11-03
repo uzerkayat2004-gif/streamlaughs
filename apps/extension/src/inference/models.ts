@@ -16,7 +16,7 @@ import {
   type ClassScores,
   SOUND_CLASSES,
 } from './config';
-import { removeReferenceEcho } from './reference-echo';
+
 import { mapSoundScores } from './rules';
 import type { SpeechBudget } from './speech-budget';
 import { WhisperConfidence } from './whisper-confidence';
@@ -56,6 +56,7 @@ export type SpeechResult = {
   rejection?: string;
 };
 export interface ModelRunner {
+  soundStatus?: string;
   topClass?: { label: string; score: number };
   echo?: { removed: boolean; inputRms: number; outputRms: number };
   vad(samples: Float32Array): Promise<number>;
@@ -78,6 +79,8 @@ class Deadline extends StoppingCriteria {
   }
 }
 export class LocalModels implements ModelRunner {
+  private speechModel: 'moonshine' | 'whisper' = 'moonshine';
+  private speechFallbackReason = '';
   private currentSpeechBudget?: SpeechBudget;
   private compactSpeech() {
     const extractor = this.whisper.processor.feature_extractor;
@@ -173,30 +176,44 @@ export class LocalModels implements ModelRunner {
       ).gpu
         ?.requestAdapter()
         .catch(() => null));
-    if (gpu) {
-      try {
-        this.whisper = await makeWhisper('webgpu');
-        await this.whisper(new Float32Array(16000), { max_new_tokens: 1 });
-        this.backend = 'mixed';
-      } catch {
-        await this.whisper?.dispose().catch(() => {});
-        this.whisper = await makeWhisper('wasm');
-      }
-    } else this.whisper = await makeWhisper('wasm');
-    this.compactSpeech();
-    // Warm the WASM encoder/decoder before marking the model ready. Cold kernel
-    // compilation must not consume the first real reaction's rolling work budget.
-    if (this.backend === 'wasm')
-      // Warm the cached decoder too. One token only compiles the initial
-      // branch; a cold cached kernel can consume a whole live speech budget.
-      await this.whisper(new Float32Array(16000), {
-        min_new_tokens: 2,
-        max_new_tokens: 2,
-      });
+    const load = async (device: 'wasm' | 'webgpu') => {
+      this.whisper =
+        this.speechModel === 'moonshine'
+          ? await pipeline<'automatic-speech-recognition'>(
+              'automatic-speech-recognition',
+              'moonshine-tiny',
+              { device, dtype: 'q8', local_files_only: true },
+            )
+          : await makeWhisper(device);
+      if (this.speechModel === 'whisper') this.compactSpeech();
+      await this.whisper(new Float32Array(16000), { max_new_tokens: 2 });
+      this.backend = device === 'webgpu' ? 'mixed' : 'wasm';
+    };
+    this.speechModel = 'moonshine';
+    try {
+      if (gpu) {
+        try {
+          await load('webgpu');
+        } catch {
+          await this.whisper?.dispose().catch(() => {});
+          await load('wasm');
+        }
+      } else await load('wasm');
+    } catch (error) {
+      this.speechFallbackReason = `Moonshine failed: ${safeError(error)} · using bundled Whisper`;
+      logAudioError('Moonshine load · using bundled Whisper', error);
+      await this.whisper?.dispose().catch(() => {});
+      this.speechModel = 'whisper';
+      await load('wasm');
+    }
     this.loadMs.whisper = performance.now() - start;
     this.status.whisper = {
       phase: 'ready',
-      error: '',
+      name:
+        this.speechModel === 'moonshine'
+          ? 'Moonshine Tiny'
+          : 'Whisper fallback',
+      error: this.speechFallbackReason,
       ms: this.loadMs.whisper,
     };
   }
@@ -230,19 +247,9 @@ export class LocalModels implements ModelRunner {
   }
   sound(samples: Float32Array, reference?: Float32Array) {
     const start = performance.now();
-    const clean = reference ? removeReferenceEcho(samples, reference) : samples;
-    const rms = (values: Float32Array) =>
-      Math.sqrt(
-        values.reduce((sum, value) => sum + value * value, 0) /
-          Math.max(1, values.length),
-      );
-    this.echo = {
-      removed: clean !== samples,
-      inputRms: rms(samples),
-      outputRms: rms(clean),
-    };
+    const clean = samples;
+    this.echo = { removed: false, inputRms: 0, outputRms: 0 };
     const result = this.yamnet.classify(clean, 16000);
-    if (clean !== samples) clean.fill(0);
     const top = result[0]?.classifications[0]?.categories?.toSorted(
       (a, b) => b.score - a.score,
     )[0];
@@ -254,19 +261,6 @@ export class LocalModels implements ModelRunner {
       result[0]?.classifications[0]?.categories ?? [],
       SOUND_CLASSES,
     );
-    if (clean !== samples) {
-      // Reference cleanup is a complementary view, never a replacement that can
-      // erase evidence in the original mic. The raw-waveform guard still rejects
-      // confirmed playback after classification.
-      const original = this.yamnet.classify(samples, 16000);
-      const raw = mapSoundScores(
-        original[0]?.classifications[0]?.categories ?? [],
-        SOUND_CLASSES,
-      );
-      for (const key of Object.keys(scores) as (keyof ClassScores)[])
-        scores[key] = Math.max(scores[key], raw[key]);
-      this.calls.yamnet++;
-    }
     this.times.yamnet += performance.now() - start;
     this.calls.yamnet++;
     return scores;
@@ -277,13 +271,6 @@ export class LocalModels implements ModelRunner {
     enforceBudget = true,
     budget?: SpeechBudget,
   ) {
-    if (this.slowGpu) {
-      await this.whisper.dispose().catch(() => {});
-      this.whisper = await makeWhisper('wasm');
-      this.compactSpeech();
-      this.backend = 'wasm';
-      this.slowGpu = false;
-    }
     const start = performance.now(),
       waitedBefore = budget?.waitedMs ?? 0;
     const deadline = new Deadline(
@@ -295,7 +282,7 @@ export class LocalModels implements ModelRunner {
     stopping.push(deadline);
     // Transformers forwards generation options to model.generate; its ASR convenience type omits stopping_criteria.
     const options = {
-      max_new_tokens: 64,
+      max_new_tokens: Math.max(6, Math.ceil((samples.length / 16000) * 6) + 4),
       return_timestamps: false,
       stopping_criteria: stopping,
     };
@@ -319,12 +306,16 @@ export class LocalModels implements ModelRunner {
             session.run = original;
           });
         }
-      model.forward = async function (inputs) {
-        const output = await forward.call(this, inputs);
-        if (output.logits) confidence.capture(output.logits);
-        return output;
-      };
-      const generationOptions = { ...options, logits_processor: processors };
+      if (this.speechModel === 'whisper')
+        model.forward = async function (inputs) {
+          const output = await forward.call(this, inputs);
+          if (output.logits) confidence.capture(output.logits);
+          return output;
+        };
+      const generationOptions =
+        this.speechModel === 'whisper'
+          ? { ...options, logits_processor: processors }
+          : options;
       try {
         return await this.whisper(samples, generationOptions);
       } finally {
@@ -341,8 +332,15 @@ export class LocalModels implements ModelRunner {
     } catch (error) {
       if (this.backend !== 'mixed') throw error;
       await this.whisper.dispose().catch(() => {});
-      this.whisper = await makeWhisper('wasm');
-      this.compactSpeech();
+      this.whisper =
+        this.speechModel === 'moonshine'
+          ? await pipeline<'automatic-speech-recognition'>(
+              'automatic-speech-recognition',
+              'moonshine-tiny',
+              { device: 'wasm', dtype: 'q8', local_files_only: true },
+            )
+          : await makeWhisper('wasm');
+      if (this.speechModel === 'whisper') this.compactSpeech();
       this.backend = 'wasm';
       result = await transcribe();
     }

@@ -161,6 +161,9 @@ export default defineUnlistedScript(() => {
                 ? requestSound
                 : (samples, reference) => models!.sound(samples, reference),
               resetVad: () => models!.resetVad(),
+              get soundStatus() {
+                return models!.status.yamnet.phase;
+              },
               get topClass() {
                 return models!.topClass;
               },

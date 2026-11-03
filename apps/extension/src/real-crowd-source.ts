@@ -37,6 +37,10 @@ export class CrowdAccumulator {
       laughing,
       intensity: laughing ? this.intensity : 0,
       ...this.counts,
+      phraseCounts: [...this.phrases]
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .slice(0, 3)
+        .map(([text, count]) => ({ text, count })),
       phrases: [...this.phrases]
         .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
         .slice(0, 3)
@@ -139,7 +143,7 @@ export class RealCrowdSource implements CrowdSource {
       clearTimeout(this.deadline);
       const mode = this.sharing ? 'share' : 'watch';
       const ws = new WebSocket(
-        `${this.api.replace(/^http/, 'ws')}/v1/channels/${this.channel}/live?mode=${mode}`,
+        `${this.api.replace(/^http/, 'ws')}/v1/channels/${this.channel}/live?mode=${mode}&words=2`,
         ['laughline.v1', `auth.${this.token.token}`],
       );
       this.ws = ws;

@@ -28,19 +28,21 @@ it('enforces the exact few packet and distinct contributor/phrase windows', () =
   expect(room.tick(1000)).toEqual({ state: 'few' });
   room.accept('a', packet({ phrases: ['bro'] }), 2000);
   expect(room.tick(2000)).toEqual({ state: 'few' });
+  expect(room.streamTotals().words).toEqual([]);
   room.accept('c', packet({ phrases: ['bro'] }), 2000);
   expect(room.tick(2000)).toMatchObject({
     state: 'live',
     sharing: 3,
     laughingNow: 1,
-    bubbles: [{ text: 'bro', count: 3 }],
+    bubbles: [{ text: 'bro', count: 4 }],
   });
+  expect(room.streamTotals().words).toEqual([{ text: 'bro', count: 4 }]);
   for (const id of ['a', 'b', 'c']) room.accept(id, packet(), 6000);
   expect(room.tick(6000)).toMatchObject({ state: 'live', laughingNow: 0 });
-  for (const id of ['a', 'b', 'c']) room.accept(id, packet(), 22001);
-  expect(room.tick(22001)).toMatchObject({ state: 'live', bubbles: [] });
+  for (const id of ['a', 'b', 'c']) room.accept(id, packet(), 62001);
+  expect(room.tick(62001)).toMatchObject({ state: 'live', bubbles: [] });
   room.remove('c');
-  expect(room.tick(22001)).toEqual({ state: 'few' });
+  expect(room.tick(62001)).toEqual({ state: 'few' });
 });
 it('stores eligible minute-only summaries with phrase floors and server markers', () => {
   const room = new ChannelAggregation();

@@ -120,7 +120,7 @@ describe('offscreen audio ownership', () => {
     expect(engine.status()?.hasTab).toBe(false);
     expect(engine.diagnostics().playbackContext).toBe('closed');
   });
-  it('records a normal native-playback session without capturing or replaying the Twitch tab', async () => {
+  it('bounds a silent microphone to three automatic retries without capturing or replaying Twitch', async () => {
     await engine.start({ sessionId: 'native', nativePlayback: true });
     expect(engine.status()).toMatchObject({
       phase: 'active',
@@ -130,8 +130,11 @@ describe('offscreen audio ownership', () => {
     expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledOnce();
     expect(engine.diagnostics().playbackContext).toBe('closed');
     expect(nodes).toHaveLength(1);
-    await vi.advanceTimersByTimeAsync(120001);
-    expect(engine.status()?.phase).toBe('active');
+    await vi.advanceTimersByTimeAsync(20001);
+    expect(engine.diagnostics().recoveryAttempts).toBe(3);
+    expect(engine.status()?.phase).toBe('micLost');
+    expect(engine.diagnostics().speakerConnections).toBe(0);
+    expect(engine.diagnostics().tabCaptureTracks).toBe(0);
   });
   it('opens the mic before resuming analysis and delivers frames with tab capture off', async () => {
     requireActiveCapture = true;
@@ -294,16 +297,23 @@ describe('offscreen audio ownership', () => {
     await vi.advanceTimersByTimeAsync(250);
     expect(engine.status()).toMatchObject({ phase: 'active', hasMic: true });
   });
-  it('keeps a long-muted live track and automatically resumes when the source unmutes', async () => {
-    await engine.start({ sessionId: 'one', streamId: 'opaque' });
-    mic.item.muted = true;
-    mic.item.onmute?.();
-    await vi.advanceTimersByTimeAsync(2000);
-    expect(engine.status()?.phase).toBe('micLost');
-    expect(mic.item.stop).not.toHaveBeenCalled();
-    mic.item.muted = false;
-    mic.item.onunmute?.();
-    expect(engine.status()?.phase).toBe('active');
+  it('automatically replaces a long-muted input and reports the recovery reason', async () => {
+    await engine.start({ sessionId: 'one', nativePlayback: true });
+    const original = mic;
+    mic = stream();
+    original.item.muted = true;
+    original.item.onmute?.();
+    await vi.advanceTimersByTimeAsync(2001);
+    expect(original.item.stop).toHaveBeenCalled();
+    expect(engine.status()).toMatchObject({
+      phase: 'active',
+      hasMic: true,
+      hasTab: false,
+    });
+    expect(engine.diagnostics()).toMatchObject({
+      recoveryAttempts: 1,
+      recoveryReason: 'microphone track muted',
+    });
   });
   it('tab-ended notification stops all streams even before the worker replies', async () => {
     const emit = vi.fn();

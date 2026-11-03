@@ -3,6 +3,7 @@ import { z } from 'zod';
 const nonnegative = z.number().finite().nonnegative();
 export const AudioMetricsSchema = z
   .object({
+    micEverNonzero: z.boolean().optional(),
     micLevel: nonnegative,
     tabLevel: nonnegative,
     micPeak: nonnegative,

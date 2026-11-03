@@ -89,7 +89,7 @@ export function micProblem(report: DiagnosticsReport | null) {
       : 'microphone is not running · start a mic check';
   if (report.audio?.error) return report.audio.error;
   const failed = Object.entries(report.inference?.models ?? {}).find(
-    ([name, model]) => wanted(name) && (model.phase === 'error' || model.error),
+    ([name, model]) => wanted(name) && model.phase === 'error',
   );
   if (failed)
     return `${failed[0]} model failed to load or run · ${failed[1].error}`;
@@ -121,7 +121,7 @@ export function micProblem(report: DiagnosticsReport | null) {
   )
     return 'loading the local models…';
   if (report.inference.health.lowPower)
-    return 'low power · words are paused; laughs still run';
+    return 'keeping processing light · reactions stay on';
   return '';
 }
 export function PipelineDebug({ close }: { close: () => void }) {

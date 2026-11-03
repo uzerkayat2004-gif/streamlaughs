@@ -2,6 +2,7 @@ import qrcode from 'qrcode-generator';
 import { SITE_URL } from './site';
 import {
   isApprovedPhrase,
+  topReactionWords,
   isCrowdPhrase,
   recapShareUrl,
   PRODUCT,
@@ -30,6 +31,12 @@ export function shareCardData(recap: Recap, profile?: StreamerProfile) {
       recap.wordCount > 0 && word.length <= 40 && isApprovedPhrase(word)
         ? word
         : null,
+    topWords: topReactionWords(
+      recap.topWords ??
+        (recap.wordCount > 0
+          ? [{ word: recap.topWord, count: recap.wordCount }]
+          : []),
+    ),
     replay: recap.replay === true,
     hype: recap.hype,
     gasps: recap.gasps,
@@ -141,10 +148,12 @@ export async function renderShareCard(
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('image unavailable');
   const chips: [string, string, string][] = [];
-  if (d.word)
+  if (d.topWords.length)
     chips.push([
-      recap.wordCount >= 2 ? 'most used word' : 'latest word',
-      `“${d.word}”`,
+      d.topWords[0]!.count >= 2 ? 'your top words' : 'latest words',
+      d.topWords
+        .map((w) => `${w.word === 'w' ? 'W' : w.word} ×${w.count}`)
+        .join(' · '),
       '#FFD23F',
     ]);
   const funniest = context.funniest ?? recap.funniestWord;

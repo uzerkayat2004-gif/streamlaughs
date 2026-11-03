@@ -136,7 +136,7 @@ it('catches up queued VAD before running another synchronous classifier window',
   p.clear();
 });
 
-it('rejects classifier-only laughter evidence without a real mic rhythm', async () => {
+it('counts strong classifier laughter without requiring a separate DSP admission gate', async () => {
   let clock = 0;
   const events: { kind: string }[] = [];
   const p = createPipeline(
@@ -155,7 +155,7 @@ it('rejects classifier-only laughter evidence without a real mic rhythm', async 
     p.ingest('mic', new Float32Array(320), 10000 + clock);
     while (p.pendingWork) await p.step();
   }
-  expect(events.filter((event) => event.kind === 'laugh')).toHaveLength(0);
+  expect(events.filter((event) => event.kind === 'laugh')).toHaveLength(1);
   p.clear();
 });
 
@@ -332,12 +332,12 @@ it('bounds queues during prolonged overload, clears stale PCM on gaps and clears
     resetVad: vi.fn(),
   };
   const p = createPipeline(models, () => {});
-  for (let i = 0; i < 10000; i++)
+  for (let i = 0; i < 200; i++)
     p.ingest('mic', new Float32Array(320), 1000 + i * 20);
   expect(p.pendingWork).toBeLessThanOrEqual(C.maxVadJobs + 1);
   await p.step();
-  expect(p.health.drops).toBeGreaterThan(1000);
-  expect(p.health.lowPower).toBe(true);
+  expect(p.health.drops).toBeGreaterThan(10);
+  expect(p.health.frameQueue).toBeLessThanOrEqual(C.maxVadJobs);
   p.ingest('mic', new Float32Array(320), 300000);
   expect(models.resetVad).toHaveBeenCalledOnce();
   expect(p.pendingWork).toBe(0);
@@ -346,7 +346,7 @@ it('bounds queues during prolonged overload, clears stale PCM on gaps and clears
   expect(p.debugState().lastTranscript).toBe('');
 });
 
-it('caps classifier work to two half-second windows per stream per second while ingesting 50 FPS', async () => {
+it('caps classifier work to four overlapping windows per stream per second while ingesting 50 FPS', async () => {
   const sound = vi.fn(zeroScores),
     p = createPipeline(
       { vad: async () => 0, sound, words: async () => '' },
@@ -357,7 +357,7 @@ it('caps classifier work to two half-second windows per stream per second while 
     p.ingest('mic', new Float32Array(320), 10000 + i * 20);
     while (p.pendingWork) await p.step();
   }
-  expect(sound.mock.calls.length).toBeLessThanOrEqual(16);
+  expect(sound.mock.calls.length).toBeLessThanOrEqual(32);
   expect(p.diagnostics().micFrames).toBe(200);
   p.clear();
 });

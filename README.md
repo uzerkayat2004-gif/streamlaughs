@@ -1,6 +1,6 @@
-## For judges · latest build v0.8.9
+## For judges · latest build v0.9.0
 
-**[Download StreamLaughs v0.8.9 ZIP](https://github.com/uzerkayat2004-gif/streamlaughs/releases/download/v0.8.9/streamlaughs-v0.8.9.zip)** · [website download](https://streamlaughs.vercel.app/download/zip)
+**[Download StreamLaughs v0.9.0 ZIP](https://github.com/uzerkayat2004-gif/streamlaughs/releases/download/v0.9.0/streamlaughs-v0.9.0.zip)** · [website download](https://streamlaughs.vercel.app/download/zip)
 
 The stores may show an older version. Use this ZIP to judge the latest build.
 
@@ -9,7 +9,7 @@ The stores may show an older version. Use this ZIP to judge the latest build.
 3. Turn on **Developer mode**.
 4. Click **Load unpacked** and pick the unzipped folder containing `manifest.json`.
 
-Then open any Twitch stream and tap the smiley. Allow the mic in Welcome; stay quiet for the three-second calibration, then laugh or say “W” or “let’s go”. The popup must show **v0.8.9**. Disable any older StreamLaughs copy so only this one runs.
+Then open any Twitch stream and tap the smiley. Allow the mic in Welcome; counting starts immediately; laugh or say “W” or “let’s go”. The popup must show **v0.9.0**. Disable any older StreamLaughs copy so only this one runs.
 
 Updating an existing ZIP install: replace files in the **same folder**, click **Reload**, and refresh Twitch. **Never Remove** just to update; that keeps your history. Hold the popup version number for mic/model diagnostics.
 

@@ -12,7 +12,15 @@ import { ChannelAggregation, MemoryRateLimit } from './aggregation';
 import { socketToken, verifyToken } from './auth';
 import { type Env, enabled } from './env';
 
-type Attachment = AnonymousClaims & { mode: 'watch' | 'share' };
+type Attachment = AnonymousClaims & {
+  mode: 'watch' | 'share';
+  wordsV2?: boolean;
+};
+const legacyWords = new Set(
+  'lmao|lol|haha|bro|bruh|yo|no way|what|lets go|oh my god|no shot|wow|clip that|hype|nice|amazing|funny|good|great|wait|yes|not good|love|laugh|laughs'.split(
+    '|',
+  ),
+);
 export class ChannelCrowd extends DurableObject<Env> {
   private engine = new ChannelAggregation();
   private rate = new MemoryRateLimit();
@@ -25,6 +33,15 @@ export class ChannelCrowd extends DurableObject<Env> {
     ctx.storage.sql.exec(
       'CREATE TABLE IF NOT EXISTS minutes (minute INTEGER PRIMARY KEY, data TEXT NOT NULL)',
     );
+    ctx.storage.sql.exec(
+      'CREATE TABLE IF NOT EXISTS stream_words (startedAt INTEGER PRIMARY KEY, data TEXT NOT NULL)',
+    );
+    const latest = ctx.storage.sql
+      .exec<{ data: string }>(
+        'SELECT data FROM stream_words ORDER BY startedAt DESC LIMIT 1',
+      )
+      .toArray()[0];
+    if (latest) this.engine.restoreStreamTotals(JSON.parse(latest.data));
     for (const ws of ctx.getWebSockets()) {
       if (ws.readyState !== WebSocket.OPEN) continue;
       const a = this.attachment(ws);
@@ -42,7 +59,9 @@ export class ChannelCrowd extends DurableObject<Env> {
       expiresAt: raw.expiresAt,
       testTraffic: raw.testTraffic,
     });
-    return parsed.success ? { ...parsed.data, mode: raw.mode } : null;
+    return parsed.success
+      ? { ...parsed.data, mode: raw.mode, wordsV2: raw.wordsV2 === true }
+      : null;
   }
   async fetch(request: Request) {
     const url = new URL(request.url);
@@ -62,7 +81,16 @@ export class ChannelCrowd extends DurableObject<Env> {
         )
         .toArray()
         .map((row) => CrowdMinuteSchema.parse(JSON.parse(row.data)));
-      return Response.json({ minutes });
+      const streamWords = this.ctx.storage.sql
+        .exec<{ data: string }>(
+          'SELECT data FROM stream_words WHERE startedAt >= ? AND startedAt < ? ORDER BY startedAt DESC LIMIT 30',
+          from,
+          range.data.to,
+        )
+        .toArray()
+        .map((row) => JSON.parse(row.data))
+        .map((row) => ({ ...row, words: row.words.slice(0, 3) }));
+      return Response.json({ minutes, streamWords });
     }
     if (!enabled(this.env)) return new Response(null, { status: 503 });
     const channel = ChannelLoginSchema.safeParse(url.pathname.split('/')[3]);
@@ -91,7 +119,11 @@ export class ChannelCrowd extends DurableObject<Env> {
       client = pair[0],
       server = pair[1];
     this.ctx.acceptWebSocket(server);
-    server.serializeAttachment({ ...claims, mode });
+    server.serializeAttachment({
+      ...claims,
+      mode,
+      wordsV2: url.searchParams.get('words') === '2',
+    });
     this.sockets.set(claims.id, server);
     this.pruneExpired();
     this.send(server, this.engine.snapshot(now));
@@ -161,6 +193,26 @@ export class ChannelCrowd extends DurableObject<Env> {
     void this.scheduleAlarm();
   }
   private send(ws: WebSocket, packet: unknown) {
+    // The v1 packet shape is unchanged. Older installs also retain their vocabulary.
+    if (
+      !this.attachment(ws)?.wordsV2 &&
+      packet &&
+      typeof packet === 'object' &&
+      'state' in packet &&
+      packet.state === 'live'
+    ) {
+      const live = packet as import('@laughline/shared').CrowdPacket & {
+        state: 'live';
+      };
+      const bubbles = live.bubbles
+        .map((w) => ({
+          ...w,
+          text: w.text === 'omg' ? 'oh my god' : w.text,
+          count: Math.min(1024, w.count),
+        }))
+        .filter((w) => legacyWords.has(w.text));
+      packet = { ...live, bubbles, topWord: bubbles[0]?.text ?? null };
+    }
     try {
       ws.send(JSON.stringify(packet));
       return true;
@@ -205,6 +257,15 @@ export class ChannelCrowd extends DurableObject<Env> {
         row.minute,
         JSON.stringify(row),
       );
+    if (rows.length) {
+      const total = this.engine.streamTotals(64);
+      if (total.words.length)
+        this.ctx.storage.sql.exec(
+          'INSERT OR REPLACE INTO stream_words (startedAt,data) VALUES (?,?)',
+          total.startedAt,
+          JSON.stringify(total),
+        );
+    }
     return rows.length > 0;
   }
   private async scheduleAlarm() {
@@ -231,6 +292,10 @@ export class ChannelCrowd extends DurableObject<Env> {
   async alarm() {
     this.ctx.storage.sql.exec(
       'DELETE FROM minutes WHERE minute < ?',
+      Date.now() - L.retentionMs,
+    );
+    this.ctx.storage.sql.exec(
+      'DELETE FROM stream_words WHERE startedAt < ?',
       Date.now() - L.retentionMs,
     );
     this.broadcast();

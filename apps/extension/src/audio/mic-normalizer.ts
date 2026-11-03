@@ -54,8 +54,7 @@ export class MicNormalizer {
       this.gain,
       C.peakHeadroom / Math.max(0.00001, peak),
     );
-    for (let i = 0; i < output.length; i++)
-      output[i] = rms < C.silenceFloor ? 0 : output[i]! * effective;
+    for (let i = 0; i < output.length; i++) output[i] = output[i]! * effective;
     return output;
   }
   reset() {

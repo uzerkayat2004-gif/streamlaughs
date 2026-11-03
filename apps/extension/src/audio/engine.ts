@@ -102,6 +102,12 @@ export class AudioEngine {
   private lab = defaultLab();
   private watchdog = new PlaybackWatchdog();
   private playback = this.watchdog.sample(null);
+  private recoveryAttempts = 0;
+  private recoveryReason = '';
+  private recovering = false;
+  private nextRecoveryAt = 0;
+  private lastNonzeroAt = 0;
+  private everHeard = false;
   private micAttempts = 0;
   private micOpened = 0;
   private micDeviceId = 'default';
@@ -165,6 +171,8 @@ export class AudioEngine {
       };
     };
     return {
+      recoveryAttempts: this.recoveryAttempts,
+      recoveryReason: this.recoveryReason,
       phase: this.phase,
       context: this.context?.state ?? 'closed',
       playbackContext: this.playbackContext?.state ?? 'closed',
@@ -303,9 +311,15 @@ export class AudioEngine {
     if (!streamId && !micOnly && !nativePlayback) throw new Error('capture');
     const generation = ++this.generation;
     this.sessionId = sessionId;
+    this.recoveryAttempts = 0;
+    this.recoveryReason = '';
+    this.lastNonzeroAt = Date.now();
+    this.everHeard = false;
+    this.nextRecoveryAt = 0;
     this.micDeviceId = micDeviceId;
     this.phase = 'starting';
     this.paused = paused;
+    this.lastNonzeroAt = Date.now();
     this.micLost = false;
     this.lab = { ...defaultLab(), tabCapture: !!streamId };
     this.watchdog = new PlaybackWatchdog();
@@ -433,6 +447,14 @@ export class AudioEngine {
       }
       if (data.type === 'frame') {
         this.stats[source].lastFrameAt = Date.now();
+        if (
+          source === 'mic' &&
+          data.frame instanceof Float32Array &&
+          data.frame.some((x: number) => x !== 0)
+        ) {
+          this.lastNonzeroAt = Date.now();
+          this.everHeard = true;
+        }
         try {
           if (
             !this.paused &&
@@ -479,6 +501,7 @@ export class AudioEngine {
     }
     this.mic = mic;
     this.micOpened++;
+    this.lastNonzeroAt = Date.now();
     this.micPermission = 'granted';
     this.lastError = '';
     this.mutedSince = null;
@@ -545,6 +568,7 @@ export class AudioEngine {
   }
   pause(paused: boolean) {
     this.paused = paused;
+    this.lastNonzeroAt = Date.now();
     if (this.sessionId) {
       this.phase = paused ? 'paused' : this.micLost ? 'micLost' : 'active';
       this.setProcessing();
@@ -552,7 +576,12 @@ export class AudioEngine {
     }
     return this.status();
   }
-  async retryMic(micDeviceId?: string) {
+  async retryMic(micDeviceId?: string, automatic = false) {
+    if (!automatic) {
+      this.recoveryAttempts = 0;
+      this.nextRecoveryAt = 0;
+    }
+
     if (micDeviceId) this.micDeviceId = micDeviceId;
     if (!this.sessionId || !this.context) return this.status();
     const generation = this.generation;
@@ -560,6 +589,19 @@ export class AudioEngine {
       // Publish loss first so failed/stale model workers are also restarted.
       this.loseMic();
       this.stats.mic = emptyStats();
+      if (this.context.state !== 'running') {
+        this.disconnect('mic');
+        this.disconnect('tab');
+        const previous = this.context;
+        this.context = null;
+        if (previous.state !== 'closed') await previous.close();
+        if (generation !== this.generation) return this.status();
+        this.context = new AudioContext({ latencyHint: 'balanced' });
+        await this.context.audioWorklet.addModule(
+          chrome.runtime.getURL('/audio-worklet.js'),
+        );
+        if (this.tab) this.attach('tab', this.tab, generation);
+      }
       await this.openMic(generation);
       await this.resumeContext();
       if (generation !== this.generation || !this.context) return this.status();
@@ -572,7 +614,46 @@ export class AudioEngine {
     }
     return this.status();
   }
+  private healCapture() {
+    if (
+      !this.sessionId ||
+      this.paused ||
+      !this.lab.micCapture ||
+      this.recovering
+    )
+      return;
+    const track = this.mic?.getAudioTracks()[0];
+    const age = Date.now() - this.lastNonzeroAt;
+    const reason =
+      !track || track.readyState !== 'live'
+        ? 'microphone track ended'
+        : track.muted
+          ? 'microphone track muted'
+          : this.context?.state !== 'running'
+            ? 'AudioContext is not running'
+            : age >= 2000
+              ? 'no non-zero microphone frames for 2 seconds'
+              : '';
+    if (!reason || age < 2000 || Date.now() < this.nextRecoveryAt) return;
+    this.recoveryReason = reason;
+    if (this.recoveryAttempts >= 3) {
+      this.lastError = `${reason} · 3 automatic retries used · choose input and retry`;
+      return;
+    }
+    this.recoveryAttempts++;
+    this.recovering = true;
+    this.recordError(
+      new Error(`${reason} · automatic retry ${this.recoveryAttempts}/3`),
+    );
+    const generation = this.generation;
+    void this.retryMic(undefined, true).finally(() => {
+      if (generation !== this.generation) return;
+      this.recovering = false;
+      this.nextRecoveryAt = Date.now() + 1000 * 2 ** this.recoveryAttempts;
+    });
+  }
   private tick() {
+    this.healCapture();
     this.playback = this.watchdog.sample(this.playbackContext);
     if (
       this.mic
@@ -621,6 +702,7 @@ export class AudioEngine {
     const micDelta = Math.max(0, mic.frames - mic.previousFrames),
       tabDelta = Math.max(0, tab.frames - tab.previousFrames);
     this.metrics = {
+      micEverNonzero: this.everHeard,
       micLevel: processing && micDelta ? mic.rms : 0,
       tabLevel: processing && tabDelta ? tab.rms : 0,
       micPeak: processing ? mic.peak : 0,

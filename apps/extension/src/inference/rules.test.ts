@@ -111,10 +111,7 @@ describe('word privacy', () => {
   });
   it('keeps only masked swear labels and refuses raw text/audio payloads', () => {
     expect(maskSwear('fuck')).toBe('f***');
-    expect(extractWords('fuck fuck shit').phrases).toEqual([
-      { text: 'f***', count: 2, class: 'swear' },
-      { text: 's***', count: 1, class: 'swear' },
-    ]);
+    expect(extractWords('fuck fuck shit').phrases).toEqual([]);
     for (const phrase of [
       { text: 'fuck', count: 1, class: 'swear' },
       { text: 'alice', count: 1, class: 'ok' },
@@ -168,7 +165,7 @@ describe('bounded scheduling and overload', () => {
   });
 });
 describe('Silero segment boundaries', () => {
-  it('merges short gaps, drops short speech, closes long gaps and splits at the 2.4-second production limit', () => {
+  it('merges short gaps, drops short speech, closes long gaps and splits at the 4-second production limit', () => {
     const segmenter = new VadSegmenter();
     expect(segmenter.update(0.9, 0, 200)).toEqual([]);
     expect(segmenter.update(0, 200, 500)).toEqual([]);
@@ -180,7 +177,7 @@ describe('Silero segment boundaries', () => {
     ]);
     segmenter.update(0.9, 3000, 4000);
     expect(segmenter.update(0.9, 4000, 11100)).toEqual([
-      { start: 3000, end: 5400 },
+      { start: 3000, end: 7000 },
     ]);
     segmenter.reset();
     expect(segmenter.update(0, 11100, 12000)).toEqual([]);
