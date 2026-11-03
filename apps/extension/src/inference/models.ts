@@ -51,6 +51,32 @@ const makeWhisper = (device: 'wasm' | 'webgpu') =>
     },
   );
 
+/**
+ * Second opinion for short clips: multilingual Whisper base (20 s context).
+ * English-only tiny/base models heard a real Indian-English "bro" as "No",
+ * "Oh" or "The" (tiny.en 0/10, base.en 3/10); multilingual base wrote
+ * "bro"/"Pro" for 8/10 of the same clips. Accents are why.
+ */
+const CHECK_OPTIONS = { language: 'english', task: 'transcribe' } as const;
+const makeChecker = () =>
+  pipeline<'automatic-speech-recognition'>(
+    'automatic-speech-recognition',
+    'whisper-base',
+    {
+      device: 'wasm',
+      dtype: 'q8',
+      local_files_only: true,
+      session_options: {
+        graphOptimizationLevel: 'all',
+        freeDimensionOverrides: {
+          batch_size: 1,
+          feature_size: 80,
+          encoder_sequence_length: 2000,
+        },
+      },
+    },
+  );
+
 export type SpeechResult = {
   phrases: Extract<
     import('@laughline/shared').PersonalEvent,
@@ -233,7 +259,7 @@ export class LocalModels implements ModelRunner {
   }
   /**
    * Second opinion for short clips. On real "bro"s Moonshine Tiny hears
-   * "Throw", "Brand", "Well"; Whisper tiny.en writes "Bro" for most of them.
+   * "Throw", "Brand", "Well"; multilingual Whisper base hears most of them.
    * Loaded after Moonshine and kept only if it passes the same self-test.
    */
   private checker?: AutomaticSpeechRecognitionPipeline;
@@ -242,10 +268,13 @@ export class LocalModels implements ModelRunner {
     if (this.speechModel !== 'moonshine' || this.checkerState !== 'off') return;
     this.checkerState = 'loading';
     try {
-      const checker = await makeWhisper('wasm');
+      const checker = await makeChecker();
       const samples = await loadSelfTestClip(base);
       if (samples) {
-        const out = await checker(samples, { max_new_tokens: 24 });
+        const out = await checker(samples, {
+          ...CHECK_OPTIONS,
+          max_new_tokens: 24,
+        });
         const text = (Array.isArray(out) ? out[0]?.text : out.text) ?? '';
         if (!/\b(meet|tuesday|think)\b/i.test(text)) {
           await checker.dispose().catch(() => {});
@@ -262,7 +291,13 @@ export class LocalModels implements ModelRunner {
   async check(samples: Float32Array) {
     if (!this.checker) return null;
     const start = performance.now();
-    const out = await this.checker(samples, { max_new_tokens: 8 });
+    let peak = 0;
+    for (const v of samples) peak = Math.max(peak, Math.abs(v));
+    const input = peak > 0 ? samples.map((v) => (v / peak) * 0.5) : samples;
+    const out = await this.checker(input, {
+      ...CHECK_OPTIONS,
+      max_new_tokens: 8,
+    });
     this.times.whisper += performance.now() - start;
     return ((Array.isArray(out) ? out[0]?.text : out.text) ?? '').trim();
   }

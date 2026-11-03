@@ -175,6 +175,74 @@
       "bytes": 96000,
       "sha256": "5a0ea4f372a81d03880fd9a795fbe0e50f18846539e63fcb7739b0a2648fa43e",
       "license": "MIT"
+    },
+    {
+      "path": "whisper-base/config.json",
+      "url": "https://huggingface.co/onnx-community/whisper-base/resolve/27a07b4b52b3a4c5886134bb4320e93e1a4bbc7c/config.json",
+      "bytes": 2243,
+      "sha256": "2f7d722cede4bf032adb39487d1ece0212c30cab348b5a0bd8f526221b4ad740",
+      "license": "Apache-2.0",
+      "transform": "whisper-20s-v1"
+    },
+    {
+      "path": "whisper-base/generation_config.json",
+      "url": "https://huggingface.co/onnx-community/whisper-base/resolve/27a07b4b52b3a4c5886134bb4320e93e1a4bbc7c/generation_config.json",
+      "bytes": 3832,
+      "sha256": "61070cf8de25b1e9256e8e102ded49d8d24a8369ed36ef84fdf21549e68125a0",
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "whisper-base/preprocessor_config.json",
+      "url": "https://huggingface.co/onnx-community/whisper-base/resolve/27a07b4b52b3a4c5886134bb4320e93e1a4bbc7c/preprocessor_config.json",
+      "bytes": 339,
+      "sha256": "0b76ab6b960c03fcb87ab7649d07bd04ddcd7c7dea9d4615d6e468f01e6ccf75",
+      "license": "Apache-2.0",
+      "transform": "whisper-20s-v1"
+    },
+    {
+      "path": "whisper-base/tokenizer.json",
+      "url": "https://huggingface.co/onnx-community/whisper-base/resolve/27a07b4b52b3a4c5886134bb4320e93e1a4bbc7c/tokenizer.json",
+      "bytes": 2480466,
+      "sha256": "27fc476bfe7f17299480be2273fc0608e4d5a99aba2ab5dec5374b4482d1a566",
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "whisper-base/tokenizer_config.json",
+      "url": "https://huggingface.co/onnx-community/whisper-base/resolve/27a07b4b52b3a4c5886134bb4320e93e1a4bbc7c/tokenizer_config.json",
+      "bytes": 282682,
+      "sha256": "2e036e4dbacfdeb7242c7d4ec4149f4a16e86026048f94d1637e3a8ee9c6a573",
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "whisper-base/special_tokens_map.json",
+      "url": "https://huggingface.co/onnx-community/whisper-base/resolve/27a07b4b52b3a4c5886134bb4320e93e1a4bbc7c/special_tokens_map.json",
+      "bytes": 2194,
+      "sha256": "e67ae3a0aaa99abcd9f187138e12db1f65c16a14761c50ef10eef2c174a7a691",
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "whisper-base/onnx/encoder_model_quantized.onnx",
+      "url": "https://huggingface.co/onnx-community/whisper-base/resolve/27a07b4b52b3a4c5886134bb4320e93e1a4bbc7c/onnx/encoder_model_quantized.onnx",
+      "bytes": 22177312,
+      "sha256": "0a95917390198288595ec49b092a7abe45bb0c71792a4e68e68fac3024b9887c",
+      "license": "Apache-2.0",
+      "transform": "whisper-20s-v1",
+      "sourceSha256": "5862993336bf33acd23736071aae2b32261d3b1b2f37780194460d4ef974dd46"
+    },
+    {
+      "path": "whisper-base/onnx/decoder_model_merged_quantized.onnx",
+      "url": "https://huggingface.co/onnx-community/whisper-base/resolve/27a07b4b52b3a4c5886134bb4320e93e1a4bbc7c/onnx/decoder_model_merged_quantized.onnx",
+      "bytes": 53693315,
+      "sha256": "fa3ef9902734ce5ae6f9ef2bdb2ba9a6c4b5785b09f4f420ce036573dc9d090b",
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "licenses/Whisper-base-model-card.md",
+      "url": "https://huggingface.co/openai/whisper-base/raw/main/README.md",
+      "bytes": 19811,
+      "sha256": "72895b74a093b6a84ded3eecb5d9c8ebaa2d271d16d37ee0fb0115b6fe62c36c",
+      "license": "Apache-2.0"
     }
-  ]
+  ],
+  "whisperBaseRevision": "27a07b4b52b3a4c5886134bb4320e93e1a4bbc7c"
 }

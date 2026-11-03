@@ -3,14 +3,14 @@
  *
  * Generic speech models (Moonshine, Whisper, even Whisper small) mishear how
  * many people actually shout a short reaction: a real player's "bro" came out
- * as "No", "Oh", "Pro" or "The". So each user can teach a word a few times
- * (or the extension learns it when a model hears it clearly), and short
- * clips are compared against those examples with MFCC + DTW.
+ * as "No", "Oh", "Pro" or "The". No setup: when a model hears a short
+ * reaction plainly, its sound is kept as an example of this user's voice, and
+ * later short clips are compared against those examples with MFCC + DTW.
  *
  * Only MFCC numbers are kept (on this device, in IndexedDB). Never raw audio.
  *
- * Offline check (v0.10.2, one real player's recording, 10 "bro" + sentences
- * + laughs, 2 taught examples): all 10 "bro" <= 1.94, every non-bro >= 2.34.
+ * Offline check (one real player's recording, 10 "bro" + sentences + laughs):
+ * full chain caught 6/10 on the first pass and 9/10 once it had learned.
  */
 export const SAMPLE_RATE = 16000;
 const FRAME = 400,

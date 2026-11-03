@@ -332,6 +332,13 @@ Owner's 0.9.9 report: laughs now work (9 saved, recap 14). Words 0 of 9: Moonshi
 - DSP laugh rhythm: pulses at voicing ≥0.3 (was 0.4), slower chuckles up to 2.5 Hz / 500 ms gaps, for soft laughs.
 Unit tests: inference/audio 164 + 4 new pass, 3 pre-existing mock failures. Not hardware-tested.
 
+## 2026-11-04 · v0.10.3 · multilingual Whisper base checker, invisible voice learning (Hark)
+
+- Owner rejected the teach screen (feels cheap); removed it. Voice match stays, auto-learning only.
+- Tested on his real recording: Whisper tiny.en scoring prefers "No"/"Oh" over "Bro" on 9/10; sherpa-onnx open-vocab KWS (gigaspeech 3.3M) caught 0 of his bros (fine on Piper); multilingual tiny bad; multilingual Whisper base 8/10 (incl. "Pro" alias), base.en 3/10, large-v3-turbo 5/10 at ~20 s/clip.
+- Checker is now whisper-base (multilingual, q8, 20 s context via tools/whisper_context.py, forced English), peak-normalised input. ~650 ms per short clip on sandbox CPU. ZIP grows ~75 MB.
+- Full chain sim (Moonshine -> voice -> checker -> learning) with real 150 ms context: 6/10 first pass, 9/10 after learning. Known false: "Love" -> love, Moonshine "One." -> oye (pre-existing).
+
 ## 2026-11-04 · v0.10.2 · personal voice match ("teach your words") (Hark)
 
 - Evidence: owner's real recording (10x "bro" + sentences + laughs). Whisper tiny heard his "bro" as No/Oh, Moonshine as Pro/The/blank; Whisper base 3/10, Whisper small ~4/10. A bigger generic model is not the fix.

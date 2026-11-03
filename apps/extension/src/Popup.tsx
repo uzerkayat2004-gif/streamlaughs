@@ -362,18 +362,6 @@ export function Popup() {
           >
             test my mic
           </button>
-          <span>·</span>
-          <button
-            type="button"
-            className="textbtn"
-            onClick={() =>
-              void chrome.tabs.create({
-                url: chrome.runtime.getURL('/mic-test.html#teach'),
-              })
-            }
-          >
-            teach my words
-          </button>
         </nav>
         <a
           className="streamer-link"

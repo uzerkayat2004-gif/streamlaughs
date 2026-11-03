@@ -7,6 +7,8 @@ import hashlib
 import json
 
 ENCODER_SOURCE_SHA = 'e93ec822f16a8fd264e7de972ad17d615ea7334b75a52d54c50c2e18dd503a25'
+# whisper-base (multilingual) q8, onnx-community revision 27a07b4b52b3a4c5886134bb4320e93e1a4bbc7c
+ENCODER_SOURCE_SHAS = {ENCODER_SOURCE_SHA: 384, '5862993336bf33acd23736071aae2b32261d3b1b2f37780194460d4ef974dd46': 512}
 
 def varint(s,i=0):
  n=0;k=0
@@ -36,19 +38,22 @@ def encode(f):
   out+=vint(n*8+w)
   out+=vint(v) if w==0 else vint(len(v))+v if w==2 else v
  return bytes(out)
+WIDTH=[384]
 def tensor(v):
- f=list(fields(v));dims=[x for n,w,x in f if n==1 and w==0]
- if dims!=[1500,384]:return v
+ f=list(fields(v));dims=[x for n,w,x in f if n==1 and w==0];d=WIDTH[0]
+ if dims!=[1500,d]:return v
  assert next(x for n,w,x in f if n==8)==b'embed_positions.weight'
- return encode((n,w,1000 if n==1 and w==0 and x==1500 else x[:1000*384*4] if n==9 else x) for n,w,x in f)
+ return encode((n,w,1000 if n==1 and w==0 and x==1500 else x[:1000*d*4] if n==9 else x) for n,w,x in f)
 def nested(v,path):
  if not path:return encode((n,w,1000 if n==1 and w==0 and x==1500 else x) for n,w,x in fields(v))
  return encode((n,w,nested(x,path[1:]) if n==path[0] and w==2 else x) for n,w,x in fields(v))
 def graph(v):return encode((n,w,tensor(x) if n==5 else nested(x,[2,1,2,1]) if n in [11,12,13] else x) for n,w,x in fields(v))
 
 def specialize_encoder(data):
-    if hashlib.sha256(data).hexdigest() != ENCODER_SOURCE_SHA:
+    width = ENCODER_SOURCE_SHAS.get(hashlib.sha256(data).hexdigest())
+    if not width:
         raise ValueError('Whisper encoder source differs from the pinned upstream export')
+    WIDTH[0] = width
     return encode((n,w,graph(x) if n==7 else x) for n,w,x in fields(data))
 
 def transform_asset(name, data):

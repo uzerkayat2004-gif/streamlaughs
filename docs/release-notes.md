@@ -1,8 +1,8 @@
-# StreamLaughs v0.10.2
+# StreamLaughs v0.10.3
 
 see who's laughing with you.
 
-- New: teach your words. Popup → "teach my words": say a reaction 3 times (plus 4 normal words once) and StreamLaughs matches your own voice when the speech models mishear it. It also learns words it hears clearly. Only voice numbers (MFCC) stay on your PC; no audio is saved. "forget my voice" deletes them.
+- Better word catching for accents: short reactions get a second opinion from multilingual Whisper base (heard a real Indian-English "bro" 8/10 times, English-only tiny 0/10). StreamLaughs also quietly learns each person's own way of saying a reaction once it hears it clearly, then matches it. No setup; only voice numbers stay on your PC, never audio.
 
 - Reaction Engine v2: immediate listening, a continuous soft noise floor, smoothed laughter confidence and one count per episode. Normal speech reduces laugh confidence.
 - Bundled Moonshine Tiny for short reaction words, with automatic local Whisper fallback on load failure. VAD segments wait in a bounded newest-three queue; spelling variants share one private vocabulary with the server.
