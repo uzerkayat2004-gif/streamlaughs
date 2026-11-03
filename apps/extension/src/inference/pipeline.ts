@@ -6,8 +6,8 @@ import {
   type AccuracyRecord,
   emptyStages,
   emptyWorkerDiagnostics,
-  safeError,
   logAudioError,
+  safeError,
 } from '../diagnostics';
 import {
   type AcousticEvidence,
@@ -67,7 +67,9 @@ export class InferencePipeline {
     this.audit.push(record);
     const words = this.audit.filter((r) => r.kind === 'words').slice(-10),
       laughs = this.audit.filter((r) => r.kind !== 'words').slice(-10);
-    this.audit = this.audit.filter((r) => words.includes(r) || laughs.includes(r));
+    this.audit = this.audit.filter(
+      (r) => words.includes(r) || laughs.includes(r),
+    );
   }
   private modes = { laugh: true, speech: true };
   setModes(modes: { laugh: boolean; speech: boolean }) {
@@ -450,8 +452,16 @@ export class InferencePipeline {
             ? Math.min(1, job.dsp.score)
             : 0
           : smooth +
-              (rhythm ? 0.15 : 0) -
-              0.2 * Math.max(0, scores.speech - scores.laugh - 0.4) +
+              // YAMNet hears many real laughs as Speech; the rhythm detector
+              // is the second opinion, weighted by its own score.
+              // Needs a trace of laughter (his laughs score 0.03 to 0.08);
+              // plain speech with rhythm scores about 0.
+              (rhythm
+                ? 0.15 +
+                  (scores.laugh >= 0.03 ? 0.35 * Math.min(1, job.dsp.score) : 0)
+                : 0) -
+              (rhythm && scores.laugh >= 0.03 ? 0.05 : 0.2) *
+                Math.max(0, scores.speech - scores.laugh - 0.4) +
               (job.acoustic.aboveFloorDb > 6 ? 0.03 : 0),
       ),
     );
@@ -730,7 +740,14 @@ export class InferencePipeline {
             ? { heard: value.heard }
             : {}),
         });
-        if (typeof value !== 'string' && value.laughed) {
+        // Voiced, laugh-like and no words at all: the word model heard a laugh.
+        const wordlessLaugh =
+          typeof value !== 'string' &&
+          !!value.noWords &&
+          (laughScore >= 0.15 ||
+            (this.dsp.evidence.at >= classification.start - 300 &&
+              this.dsp.evidence.at <= classification.end + 300));
+        if (typeof value !== 'string' && (value.laughed || wordlessLaugh)) {
           const counted = this.event({
             kind: 'laugh',
             ts: speech.ts,
@@ -743,9 +760,7 @@ export class InferencePipeline {
             ts: speech.ts,
             accepted: counted,
             detector: 'whisper',
-            reason: counted
-              ? 'laugh heard in words'
-              : 'laugh heard in words · same laugh',
+            reason: `${value.laughed ? 'laugh heard in words' : 'voiced, no words, laugh rhythm'}${counted ? '' : ' · same laugh'}`,
             laughter: 0.6,
             speech: speechScore,
             dsp: 0,

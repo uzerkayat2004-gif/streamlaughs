@@ -1,6 +1,6 @@
 import { normalizeReaction } from '@laughline/shared';
 import { AUDIO_DEBUG } from '../src/audio/config';
-import { safeError, logAudioError } from '../src/diagnostics';
+import { logAudioError, safeError } from '../src/diagnostics';
 import { INFERENCE_CONFIG } from '../src/inference/config';
 import { installLocalAssetPolicy } from '../src/inference/local-assets';
 import { LocalModels } from '../src/inference/models';
@@ -42,15 +42,17 @@ export default defineUnlistedScript(() => {
     status();
   }, 250);
   // Laughing out loud often reaches the word model as "ha ha ha", "hehe" or a
-// [laughs] tag while the sound model calls the same audio speech.
-function laughInTranscript(text: string) {
-  const t = text.toLowerCase();
-  return (
-    /\b(?:a?ha|he|hah|heh)(?:[\s,.!?'-]*(?:ha|he|hah|heh))+\b/.test(t) ||
-    /\b(?:ha){2,}h?\b|\b(?:he){2,}\b|\blo+l\b|\blmf?ao+\b|laugh|chuckl|giggl/.test(t)
-  );
-}
-self.onmessage = async ({ data }) => {
+  // [laughs] tag while the sound model calls the same audio speech.
+  function laughInTranscript(text: string) {
+    const t = text.toLowerCase();
+    return (
+      /\b(?:a?ha|he|hah|heh)(?:[\s,.!?'-]*(?:ha|he|hah|heh))+\b/.test(t) ||
+      /\b(?:ha){2,}h?\b|\b(?:he){2,}\b|\blo+l\b|\blmf?ao+\b|laugh|chuckl|giggl/.test(
+        t,
+      )
+    );
+  }
+  self.onmessage = async ({ data }) => {
     if (data.type === 'backoff') budget.backoff();
     else if (data.type === 'preview') {
       previewUntil = Math.min(Date.now() + 1200, Number(data.until) || 0);
@@ -82,7 +84,9 @@ self.onmessage = async ({ data }) => {
         const rejection = text.trim()
           ? hallucinationReason(text)
           : 'empty transcript';
-        const extracted = extractWords(text);
+        const extracted = extractWords(text, {
+          short: samples.length <= 16000 * 2.2,
+        });
         const result = {
           ...(rejection
             ? { phrases: [], hype: false, matched: 0, rejected: 1 }
@@ -94,6 +98,7 @@ self.onmessage = async ({ data }) => {
           // Local-only: shown in this device's diagnostics, never saved or sent.
           heard: redactDebugTranscript(text).slice(0, 160),
           laughed: laughInTranscript(text),
+          noWords: !/[a-z]/i.test(text),
         };
         const rms = Math.sqrt(
           samples.reduce((n, x) => n + x * x, 0) / Math.max(1, samples.length),

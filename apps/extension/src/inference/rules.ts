@@ -1,12 +1,12 @@
-import {
-  canonicalize,
-  normalizeReaction,
-  REACTION_WORDS,
-} from '@laughline/shared';
 import type {
   PersonalEvent,
   PrivacyClass,
   ReactionKind,
+} from '@laughline/shared';
+import {
+  canonicalize,
+  normalizeReaction,
+  REACTION_WORDS,
 } from '@laughline/shared';
 import { INFERENCE_CONFIG as C, type ClassScores } from './config';
 export class BoundedQueue<T> {
@@ -257,7 +257,7 @@ export function hallucinationReason(text: string) {
     .replace(/\s+/g, ' ')
     .trim();
   // English-only model: non-ASCII letters mean garbled decoder output.
-  if (/[^\x00-\x7F♪♫♬’‘“”…–—]/.test(text)) return 'garbled transcript';
+  if (/[^ -~\s♪♫♬’‘“”…–—]/.test(text)) return 'garbled transcript';
   if (
     /[♪♫♬]/.test(text) ||
     /\b(thank you|thanks for watching|thank you for watching|subtitles|subscribe to)\b/.test(
@@ -284,7 +284,10 @@ export function privacyClass(
     return 'possible-name';
   return 'ok';
 }
-export function extractWords(text: string): {
+export function extractWords(
+  text: string,
+  opts: { short?: boolean } = {},
+): {
   phrases: Extract<PersonalEvent, { kind: 'words' }>['phrases'];
   hype: boolean;
   matched: number;
@@ -307,7 +310,11 @@ export function extractWords(text: string): {
   if (blockedAt.size === tokens.length) return empty;
   const words = new Map<string, number>();
   const whole = blockedAt.size ? null : canonicalize(text);
+  // A short clip is one reaction. Moonshine tends to keep writing after it
+  // ("bro, sorry it's not by the"), so read the reaction from its first words.
+  const head = opts.short && !whole ? shortHead(tokens, blockedAt) : null;
   if (whole) words.set(whole, 1);
+  else if (head) words.set(head.text, head.count);
   else
     for (let i = 0; i < tokens.length; i++) {
       for (const n of [3, 2, 1]) {
@@ -320,7 +327,11 @@ export function extractWords(text: string): {
         // sentences accept exact reactions/aliases, never arbitrary near-matches.
         // Everyday words (what, love, great, w) count only as a short
         // standalone reaction, never as filler inside a longer sentence.
-        if (canonical && standaloneReactions.has(canonical) && tokens.length > 3)
+        if (
+          canonical &&
+          standaloneReactions.has(canonical) &&
+          tokens.length > 3
+        )
           continue;
         if (
           canonical &&
@@ -348,6 +359,24 @@ export function extractWords(text: string): {
     rejected: phrases.length ? 0 : 1,
   };
 }
+function shortHead(tokens: string[], blockedAt: Set<number>) {
+  const first: string[] = [];
+  for (let i = 0; i < Math.min(3, tokens.length) && !blockedAt.has(i); i++)
+    first.push(tokens[i]!);
+  for (const n of [3, 2, 1]) {
+    if (n > first.length) continue;
+    const canonical = canonicalize(first.slice(0, n).join(' '));
+    if (!canonical) continue;
+    if (standaloneReactions.has(canonical) && tokens.length > 3) continue;
+    // "bro bro bro" at the start counts each one.
+    let count = 1;
+    if (n === 1)
+      while (count < first.length && canonicalize(first[count]!) === canonical)
+        count++;
+    return { text: canonical, count };
+  }
+  return null;
+}
 export function redactDebugTranscript(text: string) {
   return text
     .slice(0, 1000)
@@ -355,7 +384,7 @@ export function redactDebugTranscript(text: string) {
       const normalized = original.toLowerCase().replace(/['’]/g, ''),
         privacy = privacyClass(original, normalized);
       return privacy === 'blocked' || privacy === 'possible-name'
-        ? '[private]'
+        ? `[${original[0]}·${original.length}]`
         : privacy === 'swear'
           ? maskSwear(normalized)
           : original;

@@ -303,3 +303,14 @@ Owner's 0.9.6 report: 18 Moonshine results, every one the same garbled text ("qu
 - Load-time self-test: a bundled 3 s English clip (models/selftest.pcm) must transcribe to meet/tuesday/think, else Moonshine counts as failed (falls back to Whisper, which gets the same test).
 - Transcripts with non-ASCII letters are rejected as "garbled transcript".
 Unit tests: 164 passed, 3 pre-existing mock failures. check-assets verified. Not browser-tested.
+
+## 2026-11-03 · v0.9.8 · real transcripts arrive, but reactions were thrown away (Hark)
+
+Owner's 0.9.7 report: Moonshine now prints real English ("… sorry, it's not by the.", "… said to her,", "it was a bee.") for 1–2.5 s reactions, so the q4 fix worked. But Moonshine keeps writing after a one-word reaction, and the rules only counted everyday reactions in clips of ≤3 words, so nothing matched. Laughs: YAMNet calls his laughs Speech 0.99 / laughter 0.06 while the rhythm detector scores 0.68–0.83; that rhythm only added +0.15, so confidence stayed ~0.13.
+- Clips ≤2.2 s read the reaction from the first 1–3 words ("Bro, sorry…" → bro; "bro bro bro" → 3).
+- Spellings Moonshine uses for a shouted bro (brother, brah, broh, bros, broo, brow, brough) map to bro, only as a standalone/leading word.
+- Fewer decoder tokens for short clips (max(5, 4/s + 2)).
+- Laugh: rhythm adds up to +0.35 more, scaled by its score, and softens the speech penalty, only when YAMNet laughter ≥ 0.03 (pure speech rhythm still never counts; test kept).
+- A voiced segment that transcribes to no words and overlaps a rhythm hit (or laughter ≥ 0.15) counts one laugh.
+- Local diagnostics show a private word as first letter + length (e.g. [B·7]) instead of [private].
+Unit tests: 164 passed, 3 pre-existing mock failures. Not hardware-tested.

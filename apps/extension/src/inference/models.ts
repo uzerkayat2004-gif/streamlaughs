@@ -9,7 +9,7 @@ import {
 } from '@huggingface/transformers';
 import { AudioClassifier, FilesetResolver } from '@mediapipe/tasks-audio';
 import * as ort from 'onnxruntime-web/webgpu';
-import { modelState, safeError, logAudioError } from '../diagnostics';
+import { logAudioError, modelState, safeError } from '../diagnostics';
 import type { SpeechConfidence } from './accuracy';
 import {
   INFERENCE_CONFIG as C,
@@ -18,10 +18,10 @@ import {
 } from './config';
 
 import { mapSoundScores } from './rules';
+import { loadSelfTestClip } from './selftest-fixture';
 import type { SpeechBudget } from './speech-budget';
 import { WhisperConfidence } from './whisper-confidence';
 import { compactWhisperFeatures } from './whisper-features';
-import { loadSelfTestClip } from './selftest-fixture';
 
 const makeWhisper = (device: 'wasm' | 'webgpu') =>
   pipeline<'automatic-speech-recognition'>(
@@ -57,6 +57,7 @@ export type SpeechResult = {
   rejection?: string;
   heard?: string;
   laughed?: boolean;
+  noWords?: boolean;
 };
 export interface ModelRunner {
   soundStatus?: string;
@@ -293,14 +294,17 @@ export class LocalModels implements ModelRunner {
       waitedBefore = budget?.waitedMs ?? 0;
     const deadline = new Deadline(
       enforceBudget
-        ? start + Math.max(12000, (samples.length / 16) * C.whisperBudgetRtf * 3)
+        ? start +
+            Math.max(12000, (samples.length / 16) * C.whisperBudgetRtf * 3)
         : Infinity,
     );
     const stopping = new StoppingCriteriaList();
     stopping.push(deadline);
     // Transformers forwards generation options to model.generate; its ASR convenience type omits stopping_criteria.
     const options = {
-      max_new_tokens: Math.max(6, Math.ceil((samples.length / 16000) * 6) + 4),
+      // Fewer tokens for short clips: a 1 s reaction is 1 to 3 words, and the
+      // extra room only filled with invented sentences.
+      max_new_tokens: Math.max(5, Math.ceil((samples.length / 16000) * 4) + 2),
       return_timestamps: false,
       stopping_criteria: stopping,
     };

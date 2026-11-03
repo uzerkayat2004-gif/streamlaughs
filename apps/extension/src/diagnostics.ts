@@ -23,6 +23,7 @@ export const SpeechResultSchema = z
     rejection: z.string().max(200).optional(),
     heard: z.string().max(200).optional(),
     laughed: z.boolean().optional(),
+    noWords: z.boolean().optional(),
   })
   .strict();
 export const ClassScoresSchema = z

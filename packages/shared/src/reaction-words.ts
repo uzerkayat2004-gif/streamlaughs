@@ -1,4 +1,4 @@
-import { PRIVATE_NAMES, SWEARS, BLOCKED_WORDS } from './privacy';
+import { BLOCKED_WORDS, PRIVATE_NAMES, SWEARS } from './privacy';
 /** Local reaction aliases. Network crowd vocabulary remains a separate, stricter list. */
 export const REACTION_WORDS = [
   'w',
@@ -88,6 +88,14 @@ const alias: Record<string, string> = {
   bhaiyya: 'bhaiya',
   shesh: 'sheesh',
   bruhh: 'bruh',
+  // Moonshine often writes a shouted "bro" as one of these.
+  bros: 'bro',
+  broo: 'bro',
+  brah: 'bro',
+  broh: 'bro',
+  brow: 'bro',
+  brough: 'bro',
+  brother: 'bro',
 };
 function editDistance(a: string, b: string) {
   let row = Array.from({ length: b.length + 1 }, (_, i) => i);
