@@ -321,3 +321,13 @@ Owner's 0.9.8 report (Headset Z1): 5 of 8 voice clips came back as an empty tran
 - Clips ≤1.5 s padded with 150 ms silence each side before Moonshine; clips ≤2.2 s still empty retry once played twice (counts halved).
 - Rhythm boost now applies when laughter ≥ 0.03 OR YAMNet speech < 0.5; weight 0.4 × rhythm score. Speech-rhythm test (speech 0.95) still rejects.
 Unit tests: 164 passed, 3 pre-existing mock failures. Not hardware-tested.
+
+## 2026-11-03 · v0.10.0 · keyword spotting for words, softer laughs (Hark)
+
+Owner's 0.9.9 report: laughs now work (9 saved, recap 14). Words 0 of 9: Moonshine free transcription returns "" or unrelated text for a lone "bro".
+- New keyword spotter (src/inference/keyword-spot.ts + Models.spot): for clips ≤2.2 s that free transcription missed, one batched Moonshine decoder pass scores every reaction said alone ("Bro.", "Bro bro.", "No way!", …) against 20 everyday competitors ("The", "Go", "Broke", …). Accept when best total log-prob ≥ −6 and it beats every competitor.
+- Offline check, 168 synthetic Piper TTS clips (3 voices × 2 speeds): free transcription 33/78 reactions; spotting 57/78 with 0/90 false hits (decision-only rerun 45/66, 0/83). Synthetic voices, not real players.
+- Diagnostics `heard` shows "spot <word> <logp>/<margin> ✓".
+- "brother" no longer aliases to bro.
+- DSP laugh rhythm: pulses at voicing ≥0.3 (was 0.4), slower chuckles up to 2.5 Hz / 500 ms gaps, for soft laughs.
+Unit tests: inference/audio 164 + 4 new pass, 3 pre-existing mock failures. Not hardware-tested.

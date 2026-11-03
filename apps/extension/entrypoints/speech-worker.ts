@@ -57,13 +57,6 @@ export default defineUnlistedScript(() => {
     out.set(samples, pad);
     return out;
   }
-  function doubleClip(samples: Float32Array) {
-    const gap = 3200,
-      out = new Float32Array(samples.length * 2 + gap);
-    out.set(samples, 0);
-    out.set(samples, samples.length + gap);
-    return out;
-  }
   self.onmessage = async ({ data }) => {
     if (data.type === 'backoff') budget.backoff();
     else if (data.type === 'preview') {
@@ -91,18 +84,19 @@ export default defineUnlistedScript(() => {
         const includePreview = previewUntil > Date.now();
         budget.beginJob();
         // Moonshine drops many sub-second clips to "" when the word starts
-        // right at the cut. 150 ms of silence each side fixes most; a clip
-        // still empty gets one retry played twice ("bro" -> "bro bro").
+        // right at the cut; 150 ms of silence each side fixes most.
         const shortClip = samples.length <= 16000 * 1.5;
         text = await models.words(
           shortClip ? padClip(samples, 2400) : samples,
           false,
           budget,
         );
-        let doubled = false;
-        if (!text.trim() && samples.length <= 16000 * 2.2) {
-          text = await models.words(doubleClip(samples), false, budget);
-          doubled = !!text.trim();
+        const isShort = samples.length <= 16000 * 2.2;
+        let spotted: Awaited<ReturnType<typeof models.spot>> = null;
+        if (isShort && !extractWords(text, { short: true }).phrases.length) {
+          // Free transcription missed it: ask "was it one of the reactions?"
+          spotted = await models.spot(padClip(samples, 2400)).catch(() => null);
+          if (spotted?.accepted) text = spotted.text;
         }
 
         const confidence = models.lastSpeechConfidence;
@@ -112,14 +106,6 @@ export default defineUnlistedScript(() => {
         const extracted = extractWords(text, {
           short: samples.length <= 16000 * 2.2,
         });
-        if (doubled) {
-          for (const phrase of extracted.phrases)
-            phrase.count = Math.max(1, Math.round(phrase.count / 2));
-          extracted.matched = extracted.phrases.reduce(
-            (n, p) => n + p.count,
-            0,
-          );
-        }
         const result = {
           ...(rejection
             ? { phrases: [], hype: false, matched: 0, rejected: 1 }
@@ -129,7 +115,11 @@ export default defineUnlistedScript(() => {
             rejection ||
             (extracted.phrases.length ? '' : 'no standalone approved reaction'),
           // Local-only: shown in this device's diagnostics, never saved or sent.
-          heard: redactDebugTranscript(text).slice(0, 160),
+          heard: (
+            (spotted
+              ? `spot ${spotted.word || '-'} ${spotted.logp.toFixed(1)}/${spotted.margin.toFixed(1)}${spotted.accepted ? ' ✓' : ''} · `
+              : '') + redactDebugTranscript(text)
+          ).slice(0, 160),
           laughed: laughInTranscript(text),
           noWords: !/[a-z]/i.test(text),
         };

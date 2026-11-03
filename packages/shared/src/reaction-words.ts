@@ -95,7 +95,6 @@ const alias: Record<string, string> = {
   broh: 'bro',
   brow: 'bro',
   brough: 'bro',
-  brother: 'bro',
 };
 function editDistance(a: string, b: string) {
   let row = Array.from({ length: b.length + 1 }, (_, i) => i);

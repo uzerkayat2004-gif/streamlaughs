@@ -5,6 +5,7 @@ import {
   pipeline,
   StoppingCriteria,
   StoppingCriteriaList,
+  Tensor,
   WhisperFeatureExtractor,
 } from '@huggingface/transformers';
 import { AudioClassifier, FilesetResolver } from '@mediapipe/tasks-audio';
@@ -16,6 +17,12 @@ import {
   type ClassScores,
   SOUND_CLASSES,
 } from './config';
+import {
+  decideSpot,
+  type SpotEntry,
+  type SpotResult,
+  spotEntries,
+} from './keyword-spot';
 
 import { mapSoundScores } from './rules';
 import { loadSelfTestClip } from './selftest-fixture';
@@ -377,6 +384,76 @@ export class LocalModels implements ModelRunner {
       throw new Error('Transcription budget exceeded');
     }
     return (Array.isArray(result) ? result[0]?.text : result.text) ?? '';
+  }
+  private spotCache?: {
+    entries: SpotEntry[];
+    seqs: number[][];
+    ids: Tensor;
+    L: number;
+  };
+  /** Score every reaction (said alone) against a short clip. Moonshine only. */
+  async spot(samples: Float32Array): Promise<SpotResult | null> {
+    if (this.speechModel !== 'moonshine' || !this.whisper) return null;
+    const start = performance.now();
+    // biome-ignore lint/suspicious/noExplicitAny: raw transformers.js internals (encoder session, batched decoder)
+    type Raw = any;
+    const { model, tokenizer, processor } = this.whisper as unknown as {
+      model: Raw;
+      tokenizer: Raw;
+      processor: Raw;
+    };
+    if (!this.spotCache) {
+      const entries = spotEntries();
+      const seqs = entries.map((e) => [
+        1,
+        ...(tokenizer.encode(e.text, {
+          add_special_tokens: false,
+        }) as number[]),
+        2,
+      ]);
+      const L = Math.max(...seqs.map((q) => q.length)) - 1;
+      const ids = new BigInt64Array(seqs.length * L);
+      seqs.forEach((q, n) => {
+        for (let i = 0; i < L; i++) ids[n * L + i] = BigInt(q[i] ?? 2);
+      });
+      this.spotCache = {
+        entries,
+        seqs,
+        L,
+        ids: new Tensor('int64', ids, [seqs.length, L]),
+      };
+    }
+    const { entries, seqs, L, ids } = this.spotCache;
+    const inputs = await processor(samples);
+    const raw = Object.values(
+      await model.sessions.model.run({ input_values: inputs.input_values }),
+    )[0] as { data: Float32Array; dims: number[] };
+    const [, T, D] = raw.dims as [number, number, number];
+    const N = seqs.length,
+      rep = new Float32Array(N * T * D);
+    for (let n = 0; n < N; n++) rep.set(raw.data, n * T * D);
+    if (!model.forward_params.includes('encoder_outputs'))
+      model.forward_params = [...model.forward_params, 'encoder_outputs'];
+    const out = await model({
+      encoder_outputs: new Tensor('float32', rep, [N, T, D]),
+      decoder_input_ids: ids,
+    });
+    const V = out.logits.dims[2] as number,
+      d = out.logits.data as Float32Array;
+    const scores = seqs.map((q, n) => {
+      let lp = 0;
+      for (let i = 0; i < q.length - 1; i++) {
+        const row = d.subarray((n * L + i) * V, (n * L + i + 1) * V);
+        let m = -Infinity;
+        for (const v of row) m = Math.max(m, v);
+        let z = 0;
+        for (const v of row) z += Math.exp(v - m);
+        lp += row[q[i + 1]!]! - m - Math.log(z);
+      }
+      return lp;
+    });
+    this.times.whisper += performance.now() - start;
+    return decideSpot(entries, scores);
   }
   async close() {
     this.context.fill(0);

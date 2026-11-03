@@ -47,10 +47,11 @@ export class DspLaughDetector {
       }
     }
     this.lastPitch = voiced >= 0.4 ? pitch : 0;
+    // Soft, breathy chuckles are only weakly periodic; 0.3 lets them pulse.
     samples.fill(0);
     if (
       rms >= high &&
-      voiced >= 0.4 &&
+      voiced >= 0.3 &&
       !this.active &&
       ts - this.lastPulse >= 110
     ) {
@@ -70,8 +71,8 @@ export class DspLaughDetector {
     if (
       recent.at(-1)! - recent[0]! >= 600 &&
       mean >= 1000 / 8 &&
-      mean <= 1000 / 3 &&
-      intervals.every((i) => i >= 110 && i <= 440) &&
+      mean <= 1000 / 2.5 &&
+      intervals.every((i) => i >= 110 && i <= 500) &&
       variation < 0.4
     ) {
       this.evidence = {
