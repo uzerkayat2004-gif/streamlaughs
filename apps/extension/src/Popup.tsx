@@ -16,7 +16,6 @@ import { CompactSettings } from './CompactSettings';
 import { VersionButton } from './VersionButton';
 import { StreamerAvatar } from './HistoryView';
 import type { StreamerProfile } from './history';
-import { StopSaved } from './StopSaved';
 import { SITE_URL } from './site';
 
 const STREAMER_PAGE = `${SITE_URL || PRODUCT.siteUrl}/dashboard?from=extension`;
@@ -37,7 +36,7 @@ export function Popup() {
     [tabId, setTabId] = useState<number>();
   const [settingsOpen, setSettingsOpen] = useState(false),
     [confirmDelete, setConfirmDelete] = useState(false);
-  const [ended, setEnded] = useState<MySession | null>(null),
+  const [, setEnded] = useState<MySession | null>(null),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -482,24 +481,7 @@ export function Popup() {
           )}
         </Sheet>
       )}
-      {ended && (
-        <Sheet title="saved for you" close={() => setEnded(null)}>
-          <StopSaved
-            id={ended.id}
-            seconds={
-              snapshot.lastSaved?.id === ended.id
-                ? snapshot.lastSaved.durationSeconds
-                : ((ended.endedAt ?? Date.now()) - ended.startedAt) / 1000
-            }
-            laughs={
-              snapshot.lastSaved?.id === ended.id
-                ? snapshot.lastSaved.laughs
-                : ended.laughCount
-            }
-            close={() => setEnded(null)}
-          />
-        </Sheet>
-      )}
+      {/* v0.9.5: the stop/saved prompt lives only on the Twitch page overlay. */}
     </main>
   );
 }

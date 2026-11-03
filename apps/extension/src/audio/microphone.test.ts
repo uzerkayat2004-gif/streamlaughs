@@ -46,7 +46,7 @@ it('releases the visible permission probe before the offscreen opener is invoked
     audio: {
       echoCancellation: false,
       noiseSuppression: false,
-      autoGainControl: false,
+      autoGainControl: true,
     },
     video: false,
   });

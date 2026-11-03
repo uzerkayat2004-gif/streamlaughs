@@ -4,7 +4,10 @@ export const MICROPHONE_CONSTRAINTS = {
   // regression. Keep detector input intact; local reference matching owns echo.
   echoCancellation: false,
   noiseSuppression: false,
-  autoGainControl: false,
+  // v0.9.5: AGC on. Laptop mic arrays with AGC off arrived at about -89 dBFS
+  // (owner's Realtek array: RMS 3.5e-5), i.e. a few bits of real signal that no
+  // digital boost can repair. AGC raises the level before quantisation.
+  autoGainControl: true,
 } satisfies MediaTrackConstraints;
 export const MICROPHONE_NORMALIZATION = {
   targetRms: 0.075,

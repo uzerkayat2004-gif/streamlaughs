@@ -62,8 +62,12 @@ export class InferencePipeline {
     this.acoustics.sensitivity = value;
   }
   private log(record: AccuracyRecord) {
+    // Laugh hops arrive every 250 ms and used to push every word decision out
+    // of the report. Keep the last 12 laugh and last 10 word decisions.
     this.audit.push(record);
-    if (this.audit.length > 20) this.audit.shift();
+    const words = this.audit.filter((r) => r.kind === 'words').slice(-10),
+      laughs = this.audit.filter((r) => r.kind !== 'words').slice(-12);
+    this.audit = this.audit.filter((r) => words.includes(r) || laughs.includes(r));
   }
   private modes = { laugh: true, speech: true };
   setModes(modes: { laugh: boolean; speech: boolean }) {
@@ -507,6 +511,15 @@ export class InferencePipeline {
       wipe(job);
     };
     try {
+      // A real sound well above the room floor is brought to a normal level for
+      // YAMNet; quiet mics left laughs at -40 dBFS where it scores them ~0.1.
+      if (source === 'mic' && job.acoustic.aboveFloorDb > 15) {
+        const r = frameLevels(job.samples).rms;
+        if (r > 0 && r < 0.05) {
+          const k = Math.min(10, 0.05 / r);
+          for (let i = 0; i < job.samples.length; i++) job.samples[i]! *= k;
+        }
+      }
       const result = this.models.sound(job.samples);
       if (result instanceof Promise) {
         this.soundBusy = true;
@@ -647,6 +660,14 @@ export class InferencePipeline {
     if (samples.length < 4000) {
       samples.fill(0);
       return;
+    }
+    // Speech models need a normal level; quiet laptop mics reached Moonshine at
+    // about -45 dBFS. Peak-normalise each phrase (never above 0.6).
+    let peak = 0;
+    for (const v of samples) peak = Math.max(peak, Math.abs(v));
+    if (peak > 1e-5 && peak < 0.6) {
+      const k = Math.min(200, 0.6 / peak);
+      for (let i = 0; i < samples.length; i++) samples[i]! *= k;
     }
     const duration = samples.length / 16;
     if (rms >= C.loudSpeechRms && duration <= C.loudSpeechMaximumMs)

@@ -278,3 +278,12 @@ Unit tests (inference, speech-budget) pass except 3 pre-existing mock failures; 
 
 Owner: 0.9.3 still no words or laughs on his PC. Found in code: stutter.ts marks speechPaused after 3 output "underruns"/gaps in 10 s, and bridge.setLab then terminates the speech worker (dropping the in-flight phrase) and reloads Moonshine 30 s later. Those underruns come from our own offscreen mic AudioContext, not Twitch (tab capture is off, Twitch plays natively), so on a busy laptop words were switched off most of the time. The 0.9.2 recording showed "word model processing · keeping Twitch audio smooth", consistent with this.
 Fix: the automatic speech pause is gone; only the user's own switch turns words off. Old bridge test for the pause skipped. Not browser-tested (sandbox Chromium unavailable).
+
+## 2026-11-03 · v0.9.5 · quiet-mic fix from the owner's real report (Hark)
+
+Owner's live 0.9.4 report (Realtek array, Chrome 156): raw mic RMS 3.5e-5, peak 1.8e-4 (about -89 dBFS, a few bits of signal) with AGC off. 5 speech segments → 5 Moonshine results → 0 matched / 5 rejected. Laugh hops: YAMNet laughter 0.03–0.12 while he laughed (rms after gain ~0.03); top class "Cough". Only 1 laugh counted. Word decision reasons were pushed out of the 20-entry log by 250 ms laugh hops.
+- getUserMedia autoGainControl now true (NS and EC stay off), so the level is raised before quantisation.
+- Each speech phrase is peak-normalised to 0.6 before Moonshine; each YAMNet mic window with a real sound (>15 dB above floor) is brought to RMS 0.05 (max ×10).
+- Report keeps the last 12 laugh and last 10 word decisions.
+- Popup no longer shows the "saved for you" stop sheet; the on-page overlay keeps it (owner request).
+Unit tests: audio 83/83; inference unchanged (3 pre-existing mock failures). Not browser-tested.
