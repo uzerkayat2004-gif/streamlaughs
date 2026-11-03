@@ -63,10 +63,10 @@ export class InferencePipeline {
   }
   private log(record: AccuracyRecord) {
     // Laugh hops arrive every 250 ms and used to push every word decision out
-    // of the report. Keep the last 12 laugh and last 10 word decisions.
+    // of the report. Keep the last 10 laugh and last 10 word decisions.
     this.audit.push(record);
     const words = this.audit.filter((r) => r.kind === 'words').slice(-10),
-      laughs = this.audit.filter((r) => r.kind !== 'words').slice(-12);
+      laughs = this.audit.filter((r) => r.kind !== 'words').slice(-10);
     this.audit = this.audit.filter((r) => words.includes(r) || laughs.includes(r));
   }
   private modes = { laugh: true, speech: true };
@@ -726,7 +726,37 @@ export class InferencePipeline {
           highFrequencyRatio: speech.acoustic.highFrequencyRatio,
           avgLogprob: confidence?.avgLogprob ?? null,
           noSpeechProbability: confidence?.noSpeechProbability ?? null,
+          ...(typeof value !== 'string' && value.heard
+            ? { heard: value.heard }
+            : {}),
         });
+        if (typeof value !== 'string' && value.laughed) {
+          const counted = this.event({
+            kind: 'laugh',
+            ts: speech.ts,
+            confidence: 0.6,
+            intensity: 1,
+          });
+          if (counted) this.detectors.yamnet++;
+          this.log({
+            kind: 'laugh',
+            ts: speech.ts,
+            accepted: counted,
+            detector: 'whisper',
+            reason: counted
+              ? 'laugh heard in words'
+              : 'laugh heard in words · same laugh',
+            laughter: 0.6,
+            speech: speechScore,
+            dsp: 0,
+            durationMs: speech.duration,
+            aboveFloorDb: speech.acoustic.aboveFloorDb,
+            rms: speech.acoustic.rms,
+            highFrequencyRatio: speech.acoustic.highFrequencyRatio,
+            avgLogprob: null,
+            noSpeechProbability: null,
+          });
+        }
         if (typeof value === 'string') text = value;
         this.stages.wordsMatched +=
           result.matched ??

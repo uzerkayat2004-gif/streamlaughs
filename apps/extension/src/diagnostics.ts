@@ -21,6 +21,8 @@ export const SpeechResultSchema = z
     avgLogprob: z.number().finite().nullable().optional(),
     noSpeechProbability: z.number().min(0).max(1).nullable().optional(),
     rejection: z.string().max(200).optional(),
+    heard: z.string().max(200).optional(),
+    laughed: z.boolean().optional(),
   })
   .strict();
 export const ClassScoresSchema = z
@@ -75,6 +77,7 @@ export const AccuracyRecordSchema = z
     highFrequencyRatio: z.number(),
     avgLogprob: z.number().finite().nullable(),
     noSpeechProbability: z.number().nullable(),
+    heard: z.string().max(200).optional(),
   })
   .strict();
 export type AccuracyRecord = z.infer<typeof AccuracyRecordSchema>;

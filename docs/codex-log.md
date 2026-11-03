@@ -287,3 +287,11 @@ Owner's live 0.9.4 report (Realtek array, Chrome 156): raw mic RMS 3.5e-5, peak 
 - Report keeps the last 12 laugh and last 10 word decisions.
 - Popup no longer shows the "saved for you" stop sheet; the on-page overlay keeps it (owner request).
 Unit tests: audio 83/83; inference unchanged (3 pre-existing mock failures). Not browser-tested.
+
+## 2026-11-03 · v0.9.6 · laughs heard as words + transcript in report (Hark)
+
+Owner's 0.9.5 report: level fixed (mic RMS 0.039, peak 0.17, AGC on). YAMNet scored his loud sounds Speech 0.67–0.99 with laughter 0.00, so laughs were rejected; 2 phrases, 1 result, rejected as "no standalone approved reaction". The report did not show what Moonshine heard.
+- Speech result carries `heard` (privacy-redacted, local diagnostics only, never saved or sent) and `laughed`.
+- A phrase whose transcript is a laugh ("ha ha ha", "hehe", "lol", "lmao", "[laughs]") now counts a laugh (2 s lockout shared with YAMNet laughs).
+- Audit log 10 laugh + 10 word decisions (schema max 20; 0.9.5's 12+10 could exceed it).
+Unit tests: inference/audio 164 passed, 3 pre-existing mock failures. Not browser-tested.

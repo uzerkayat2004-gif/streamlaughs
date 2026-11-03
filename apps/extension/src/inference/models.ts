@@ -54,6 +54,8 @@ export type SpeechResult = {
   avgLogprob?: number | null;
   noSpeechProbability?: number | null;
   rejection?: string;
+  heard?: string;
+  laughed?: boolean;
 };
 export interface ModelRunner {
   soundStatus?: string;

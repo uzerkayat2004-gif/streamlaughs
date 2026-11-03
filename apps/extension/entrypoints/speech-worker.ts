@@ -41,7 +41,16 @@ export default defineUnlistedScript(() => {
     if (snapshot.count > observedStalls) observedStalls = snapshot.count;
     status();
   }, 250);
-  self.onmessage = async ({ data }) => {
+  // Laughing out loud often reaches the word model as "ha ha ha", "hehe" or a
+// [laughs] tag while the sound model calls the same audio speech.
+function laughInTranscript(text: string) {
+  const t = text.toLowerCase();
+  return (
+    /\b(?:a?ha|he|hah|heh)(?:[\s,.!?'-]*(?:ha|he|hah|heh))+\b/.test(t) ||
+    /\b(?:ha){2,}h?\b|\b(?:he){2,}\b|\blo+l\b|\blmf?ao+\b|laugh|chuckl|giggl/.test(t)
+  );
+}
+self.onmessage = async ({ data }) => {
     if (data.type === 'backoff') budget.backoff();
     else if (data.type === 'preview') {
       previewUntil = Math.min(Date.now() + 1200, Number(data.until) || 0);
@@ -82,6 +91,9 @@ export default defineUnlistedScript(() => {
           rejection:
             rejection ||
             (extracted.phrases.length ? '' : 'no standalone approved reaction'),
+          // Local-only: shown in this device's diagnostics, never saved or sent.
+          heard: redactDebugTranscript(text).slice(0, 160),
+          laughed: laughInTranscript(text),
         };
         const rms = Math.sqrt(
           samples.reduce((n, x) => n + x * x, 0) / Math.max(1, samples.length),
