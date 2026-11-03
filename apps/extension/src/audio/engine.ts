@@ -312,6 +312,7 @@ export class AudioEngine {
     const generation = ++this.generation;
     this.sessionId = sessionId;
     this.recoveryAttempts = 0;
+    this.recovering = false;
     this.recoveryReason = '';
     this.lastNonzeroAt = Date.now();
     this.everHeard = false;
@@ -609,6 +610,7 @@ export class AudioEngine {
       this.setProcessing();
       this.report();
     } catch (error) {
+      if (generation !== this.generation) return this.status();
       this.recordError(error);
       this.loseMic();
     }
@@ -691,7 +693,11 @@ export class AudioEngine {
         (this.mic || this.tab)
       )
         void this.resumeContext(audioContext).catch((error) => {
-          this.recordError(error);
+          if (
+            audioContext === this.context ||
+            audioContext === this.playbackContext
+          )
+            this.recordError(error);
         });
     const now = performance.now(),
       elapsed = Math.max(1, now - this.lastReport);
@@ -725,6 +731,7 @@ export class AudioEngine {
   }
   async stop() {
     ++this.generation;
+    this.recovering = false;
     navigator.mediaDevices.removeEventListener?.(
       'devicechange',
       this.deviceHandler,

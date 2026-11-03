@@ -315,6 +315,29 @@ describe('offscreen audio ownership', () => {
       recoveryReason: 'microphone track muted',
     });
   });
+  it('ignores an old automatic restart that resolves after a new session has started', async () => {
+    await engine.start({ sessionId: 'old', nativePlayback: true });
+    let resolve!: (value: MediaStream) => void;
+    vi.mocked(navigator.mediaDevices.getUserMedia).mockReturnValueOnce(
+      new Promise((r) => {
+        resolve = r;
+      }) as Promise<MediaStream>,
+    );
+    await vi.advanceTimersByTimeAsync(2001);
+    expect(resolve).toBeTypeOf('function');
+    await engine.stop();
+    mic = stream();
+    await engine.start({ sessionId: 'new', nativePlayback: true });
+    resolve(stream() as unknown as MediaStream);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(engine.status()).toMatchObject({
+      sessionId: 'new',
+      phase: 'active',
+      hasMic: true,
+    });
+    expect(engine.diagnostics().recoveryAttempts).toBe(0);
+    expect(mic.item.stop).not.toHaveBeenCalled();
+  });
   it('tab-ended notification stops all streams even before the worker replies', async () => {
     const emit = vi.fn();
     engine = new AudioEngine(emit);
