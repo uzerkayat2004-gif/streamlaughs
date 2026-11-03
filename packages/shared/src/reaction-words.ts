@@ -71,6 +71,8 @@ const alias: Record<string, string> = {
   'lets goo': 'lets go',
   ohmygod: 'omg',
   'oh my god': 'omg',
+  'oh my gosh': 'omg',
+  ohmygosh: 'omg',
   omg: 'omg',
   noway: 'no way',
   dub: 'w',
@@ -135,7 +137,7 @@ export function canonicalize(text: string): string | null {
   const compact = variants.map((v) => v.replace(/ /g, ''));
   if (compact.some((v) => ['letsgo', 'lesgo', 'lessgo'].includes(v)))
     return 'lets go';
-  if (compact.includes('ohmygod')) return 'omg';
+  if (compact.includes('ohmygod') || compact.includes('ohmygosh')) return 'omg';
   if (compact.includes('noway')) return 'no way';
   const candidates = [...allowed]
     .map((word) => ({

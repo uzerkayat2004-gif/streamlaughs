@@ -257,3 +257,11 @@ Found from the owner's screen recording of v0.9.0 diagnostics (Realtek Microphon
 - maxSpeechJobs was raised to 3 but the health schema still capped speechQueue at 2. A third queued phrase made the health report invalid and the bridge shut the whole inference worker down for the session. Schema relaxed, and a health-shape mismatch is now a warning that never stops detection.
 - Softer speech penalty on laugh confidence (0.35 × max(0, speech − laugh − 0.2)) so voiced laughs that YAMNet partly scores as speech can count.
 Check: sandbox Chromium with an anti-phase stereo fake mic: v0.9.0 failed the welcome mic check (silence); v0.9.1 counted 4 laughs and 1 word with Moonshine ready. Fake device only, not the owner's real mic.
+
+## 2026-11-03 · v0.9.2 · words and laugh accuracy (Hark)
+
+Owner's real-PC test of 0.9.1: laughs counted (3 of about 6), words none.
+- Words: transcription deadline was max(2.5 s, 2.5× clip) of wall time including CPU-pacing waits, so slow laptops threw every phrase away. Now max(12 s, 7.5× clip).
+- Words: a swear or private word no longer drops the whole phrase ("what the hell bro" → bro). Everyday words (what, love, great, w…) count only as short standalone reactions. Repeated "bro bro bro" is no longer treated as an ASR loop below 8 repeats. Added "oh my gosh" → omg.
+- Laughs: an episode now ends on a dip below 45% of its own peak (so back-to-back laughs count separately), refractory 1.5 s, and sustained laughing counts again every 3.5 s.
+Sandbox anti-phase fake mic, full clip: "let's go"×3 + 16 s laughter → 7 laughs, 5 words; "you know what"×3 + laughter → 8 laughs, 5 words. Fake device only. Three pre-existing mock failures (models-backend ×2, bootstrap) unchanged.

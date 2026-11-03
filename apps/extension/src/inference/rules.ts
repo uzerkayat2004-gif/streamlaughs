@@ -265,7 +265,7 @@ export function hallucinationReason(text: string) {
   )
     return 'known ASR hallucination';
   const tokens = clean.split(' ');
-  if (tokens.length >= 4 && new Set(tokens).size === 1)
+  if (tokens.length >= 8 && new Set(tokens).size === 1)
     return 'repeated ASR loop';
   return '';
 }
@@ -297,18 +297,29 @@ export function extractWords(text: string): {
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 128);
-  if (tokens.some((w) => privacyClass(w) !== 'ok')) return empty;
+  // A swear, name or blocked word is dropped on its own; the reactions around
+  // it ("what the hell bro" -> bro) still count. Private words never leave here.
+  const blockedAt = new Set(
+    tokens.flatMap((w, i) => (privacyClass(w) !== 'ok' ? [i] : [])),
+  );
+  if (blockedAt.size === tokens.length) return empty;
   const words = new Map<string, number>();
-  const whole = canonicalize(text);
+  const whole = blockedAt.size ? null : canonicalize(text);
   if (whole) words.set(whole, 1);
   else
     for (let i = 0; i < tokens.length; i++) {
       for (const n of [3, 2, 1]) {
         if (i + n > tokens.length) continue;
+        if (tokens.slice(i, i + n).some((_, k) => blockedAt.has(i + k)))
+          continue;
         const candidate = tokens.slice(i, i + n).join(' '),
           canonical = canonicalize(candidate);
         // Fuzzy spelling repair belongs to a complete short utterance. Inside
         // sentences accept exact reactions/aliases, never arbitrary near-matches.
+        // Everyday words (what, love, great, w) count only as a short
+        // standalone reaction, never as filler inside a longer sentence.
+        if (canonical && standaloneReactions.has(canonical) && tokens.length > 3)
+          continue;
         if (
           canonical &&
           (normalizeReaction(candidate) === candidate ||

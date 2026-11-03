@@ -275,7 +275,7 @@ export class LocalModels implements ModelRunner {
       waitedBefore = budget?.waitedMs ?? 0;
     const deadline = new Deadline(
       enforceBudget
-        ? start + Math.max(2500, (samples.length / 16) * C.whisperBudgetRtf)
+        ? start + Math.max(12000, (samples.length / 16) * C.whisperBudgetRtf * 3)
         : Infinity,
     );
     const stopping = new StoppingCriteriaList();

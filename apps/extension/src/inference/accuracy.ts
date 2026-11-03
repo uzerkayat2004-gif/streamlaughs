@@ -1,9 +1,9 @@
 export type Sensitivity = 'strict' | 'normal' | 'sensitive';
 /** All laugh presets live here. Floor and rhythm are bonuses, never admission gates. */
 export const REACTION_ENGINE = {
-  strict: { start: 0.38, instant: 0.65, end: 0.15, refractoryMs: 2000 },
-  normal: { start: 0.3, instant: 0.55, end: 0.15, refractoryMs: 2000 },
-  sensitive: { start: 0.25, instant: 0.5, end: 0.12, refractoryMs: 2000 },
+  strict: { start: 0.38, instant: 0.65, end: 0.15, refractoryMs: 1500, sustainMs: 3500 },
+  normal: { start: 0.3, instant: 0.55, end: 0.15, refractoryMs: 1500, sustainMs: 3500 },
+  sensitive: { start: 0.25, instant: 0.5, end: 0.12, refractoryMs: 1500, sustainMs: 3500 },
 } as const;
 export type AcousticEvidence = {
   rms: number;
@@ -82,6 +82,7 @@ export class LaughEpisodes {
   private consecutive = 0;
   private lastCount = -Infinity;
   private lastHop = -Infinity;
+  private peak = 0;
   consider(
     confidence: number | boolean,
     ts: number,
@@ -94,15 +95,28 @@ export class LaughEpisodes {
       this.consecutive = 0;
     }
     this.lastHop = ts;
-    if (c < p.end) {
+    // An episode ends on a real dip: below the floor, or to under half its own
+    // peak, so back-to-back laughs with a short breath between count separately.
+    if (c < p.end || (this.active && c < this.peak * 0.45)) {
       this.active = false;
       this.consecutive = 0;
+      this.peak = 0;
       return false;
     }
     this.consecutive = c >= p.start ? this.consecutive + 1 : 0;
-    if (this.active || (c < p.instant && this.consecutive < 2)) return false;
-    this.active = true;
+    if (this.active) {
+      this.peak = Math.max(this.peak, c);
+      // Sustained laughing keeps counting, one per few seconds.
+      if (c >= p.start && ts - this.lastCount >= p.sustainMs) {
+        this.lastCount = ts;
+        return true;
+      }
+      return false;
+    }
+    if (c < p.instant && this.consecutive < 2) return false;
     if (ts - this.lastCount < p.refractoryMs) return false;
+    this.active = true;
+    this.peak = c;
     this.lastCount = ts;
     return true;
   }

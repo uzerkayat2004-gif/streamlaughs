@@ -28,7 +28,7 @@ it.each([
   'you',
   'bye',
   '♪ music ♫',
-  'bro bro bro bro bro',
+  'bro bro bro bro bro bro bro bro',
 ])('rejects hallucination %s', (text) => {
   expect(hallucinationReason(text)).not.toBe('');
   expect(extractWords(text).phrases).toEqual([]);
