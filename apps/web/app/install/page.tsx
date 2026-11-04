@@ -1,8 +1,9 @@
 import { PRODUCT } from '@laughline/shared';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { ManualInstall } from '../../components/manual-install';
 import { StoreButtons } from '../../components/store-buttons';
-import { JudgeInstall } from '../../components/judge-install';
+import { ZipDownload } from '../../components/zip-download';
 export const metadata: Metadata = { title: `add ${PRODUCT.name}` };
 export default function Install() {
   return (
@@ -16,8 +17,11 @@ export default function Install() {
         <p>Free. Private. Ready in a minute.</p>
         <div className="install-options">
           <StoreButtons />
-          <JudgeInstall />
+          <ZipDownload />
         </div>
+        <Link className="text-link install-demo" href="/try">
+          watch the demo <span aria-hidden="true">↗</span>
+        </Link>
       </header>
       <section className="store-steps" aria-label="install from the store">
         {[

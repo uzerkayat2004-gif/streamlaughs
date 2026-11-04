@@ -2,7 +2,7 @@ import { PRODUCT } from '@laughline/shared';
 import type { Metadata } from 'next';
 import { ExtensionDemo } from '../../components/extension-demo';
 import { StoreButtons } from '../../components/store-buttons';
-import { JudgeInstall } from '../../components/judge-install';
+import { ZipDownload } from '../../components/zip-download';
 export const metadata: Metadata = {
   title: 'take a peek',
   description: `Watch a full ${PRODUCT.name} night on a Twitch stream, or click along. No install, login or microphone needed.`,
@@ -28,7 +28,7 @@ export default function Try() {
         </h2>
         <div className="install-options">
           <StoreButtons hideNote />
-          <JudgeInstall />
+          <ZipDownload />
         </div>
       </section>
     </main>

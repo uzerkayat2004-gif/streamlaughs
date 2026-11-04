@@ -1,0 +1,28 @@
+.zip-download {
+  gap: 10px;
+}
+.zip-download .zip-version {
+  font-size: 0.78em;
+  opacity: 0.6;
+  font-weight: 600;
+}
+.hero-clean .hero-peek {
+  align-self: center;
+}
+.install-options {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+.try-download .install-options,
+.install-page .page-intro .install-options {
+  justify-content: center;
+}
+.install-demo {
+  margin-top: 18px;
+  display: inline-flex;
+  gap: 8px;
+  font-weight: 700;
+}
